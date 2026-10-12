@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(./gradlew test)",
+      "Bash(./gradlew test *)",
+      "Bash(./gradlew lint)",
+      "Bash(./gradlew lint *)",
+      "Bash(./gradlew assembleDebug)",
+      "Bash(./gradlew assembleDebug *)",
+      "Bash(./gradlew check)",
+      "Bash(./gradlew :core:test *)",
+      "Bash(./gradlew :app:testDebugUnitTest *)",
+      "Bash(git status)",
+      "Bash(git status *)",
+      "Bash(git diff)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git show *)",
+      "Bash(bd ready)",
+      "Bash(bd show *)",
+      "Bash(bd prime)"
+    ],
+    "ask": [
+      "Edit(./gradle/libs.versions.toml)",
+      "Edit(./gradle/wrapper/gradle-wrapper.properties)",
+      "Bash(./gradlew wrapper *)",
+      "Bash(adb install *)",
+      "Bash(adb uninstall *)",
+      "Bash(git rebase *)",
+      "Bash(git reset *)",
+      "Bash(git clean *)",
+      "Bash(git branch -D *)",
+      "Bash(gh pr merge *)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./**/.env)",
+      "Read(./**/.env.*)",
+      "Read(./keystore.properties)",
+      "Read(./**/*.keystore)",
+      "Read(./**/*.jks)",
+      "Read(./.beads-credential-key)",
+      "Edit(./gradle/wrapper/gradle-wrapper.jar)",
+      "Write(./gradle/wrapper/gradle-wrapper.jar)",
+      "Bash(git push --force *)",
+      "Bash(git push -f *)",
+      "Bash(git push * --force)",
+      "Bash(git push * -f)",
+      "Bash(git commit --no-verify *)",
+      "Bash(git commit * --no-verify *)",
+      "Bash(git commit * --no-verify)",
+      "Bash(rm -rf /)",
+      "Bash(rm -rf ~)",
+      "Bash(rm -rf ~/*)",
+      "Bash(sudo *)"
+    ]
+  }
+}

@@ -1,0 +1,108 @@
+# Contributing
+
+Thanks for helping out. This guide covers how to get set up, find work, and ship changes through review.
+
+Stack: Kotlin, Jetpack Compose, Gradle (Kotlin DSL with a version catalog), Android lint, JUnit.
+
+## Getting started
+
+You need:
+
+- JDK 21 (Gradle runs on it; e.g. Temurin 21)
+- The Android SDK with the platform and build tools named in `app/build.gradle.kts` (Android Studio installs them, or
+  use `sdkmanager`). Point Gradle at it with `ANDROID_HOME` or a `local.properties` file (`sdk.dir=...`, gitignored)
+- A device or emulator for UI work; a physical keyboard phone is best
+
+Everything else, Gradle included, is fetched by the wrapper:
+
+```bash
+./gradlew assembleDebug                  # build app/build/outputs/apk/debug/app-debug.apk
+./gradlew installDebug                   # install on the connected device
+```
+
+## Project layout
+
+```text
+app/                    Android application: manifest, activities, Compose UI, resources
+  src/main/java/...     Kotlin sources, package dev.buildwithtim.minimalui
+  src/main/res/         strings, themes, launcher icons
+  src/test/             JVM unit tests for app code
+core/                   pure Kotlin/JVM logic (no Android dependencies), unit-tested on the JVM
+gradle/libs.versions.toml   every dependency and plugin version
+scripts/                CI helper scripts
+```
+
+**Where code goes.** Anything that can be expressed without the Android framework (sorting, filtering, key-to-action
+mapping, config parsing) goes in `core`, so it is tested with plain JUnit and no emulator. `app` stays a thin shell that
+reads from Android APIs and renders with Compose.
+
+**Where a test goes.** Next to the module it covers, in the same package: a test for
+`core/src/main/kotlin/dev/buildwithtim/minimalui/core/Foo.kt` goes in `core/src/test/kotlin/dev/buildwithtim/minimalui/core/FooTest.kt`.
+
+## Finding and claiming work
+
+- GitHub issues are the **primary source of truth**. Browse open issues and assign one to yourself before starting.
+- Issues are mirrored into the local `bd` (beads) tracker; run `bd ready` to see available work.
+
+We favour small, focused changes tied to a tracked issue.
+
+## Development workflow
+
+1. Create a branch off `main`: `<type>/<number>-<slug>`.
+2. Work the issue **test-first** (see below).
+3. Commit with [Conventional Commits][conventional-commits] messages, e.g. `feat(launcher): add app search`,
+   `fix(input): handle Fn key`, `docs(agents): clarify gates`.
+4. Open a pull request and fill in the template (link the issue with `Fixes #<number>`, paste evidence).
+
+`main` is protected by the ruleset in [`.github/rulesets/main.json`](.github/rulesets/main.json): no direct pushes,
+force-pushes or deletion; changes land only through pull requests whose `PR review rubric` and `Build, lint, test`
+checks pass.
+
+[conventional-commits]: https://www.conventionalcommits.org/
+
+### Test-driven development
+
+We require TDD. One test at a time:
+
+1. Write a failing test for the behaviour you're adding or fixing.
+2. Confirm it fails for the expected reason.
+3. Make it pass with the smallest change.
+4. Refactor only as needed.
+
+Assert on observable outputs, return values, and side effects — never on internal state or private methods. Never
+weaken or skip a failing test to make it pass; fix the implementation.
+
+## Quality gates
+
+Run these before opening a PR (CI runs the same on every PR):
+
+| Command                    | What it runs                                  |
+| -------------------------- | --------------------------------------------- |
+| `./gradlew test`           | Unit tests for every module                   |
+| `./gradlew lint`           | Android lint, warnings as errors              |
+| `./gradlew assembleDebug`  | Debug APK build                               |
+
+## Code style
+
+- Kotlin official code style (`kotlin.code.style=official`), 4-space indent, max line length 120 (`.editorconfig`).
+- Prefer immutable data (`val`, `data class`, read-only collections) and pure functions in `core`.
+- No `!!`; model absence with nullable types or sealed results.
+- Compose: stateless composables that take state and callbacks; every interactive element must be reachable and usable
+  by keyboard focus.
+
+## Dependencies
+
+- Ask before adding, upgrading, or removing a dependency or plugin; state coordinates, version, and rationale.
+- Versions live only in `gradle/libs.versions.toml`.
+- Prefer the platform, AndroidX and the Kotlin stdlib over new libraries.
+
+## Agent safety layers
+
+AI agents working in this repo are bounded by several layers:
+
+1. **Instructions** — `AGENTS.md` (authoritative), `CLAUDE.md`, `.github/copilot-instructions.md` and
+   `.cursor/rules/agent-guidance.mdc` state the rules.
+2. **Project permissions** — `.claude/settings.json` pre-approves the quality gates, asks before dependency and
+   history-rewriting commands, and denies reading secrets (`.env*`, keystores), force-pushes and `--no-verify` commits.
+3. **Personal overrides** — `.claude/settings.local.json` (gitignored). Deny rules from the project file still apply.
+4. **Structural gates** — the ruleset on `main` and CI must pass before merge, regardless of who wrote the change.
