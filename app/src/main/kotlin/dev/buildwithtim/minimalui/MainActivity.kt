@@ -5,7 +5,6 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.addCallback
@@ -35,7 +34,7 @@ class MainActivity : ComponentActivity() {
         LatestLoader(
             background = worker,
             main = mainExecutor,
-            load = { packageManager.launchableApps().sortedForDisplay() },
+            load = ::installedApps,
             publish = { apps = it },
         )
     }
@@ -56,8 +55,7 @@ class MainActivity : ComponentActivity() {
                 addDataScheme("package")
             },
         )
-        // The home screen has nothing to go back to: finishing it would surface whichever launcher ran before.\
-        
+        // The home screen has nothing to go back to: finishing it would surface whichever launcher ran before.
         onBackPressedDispatcher.addCallback(this) {}
         setContent {
             MinimalTheme {
@@ -93,9 +91,10 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun reload() {
+    // Runs on the worker thread: the package queries and every label load stay off the main thread.
+    private fun installedApps(): List<LauncherApp> {
         val installed = packageManager.launchableApps()
         val settings = packageManager.systemSettings()
-        apps = (settings?.let(installed::withSystemSettings) ?: installed).sortedForDisplay()
+        return (settings?.let(installed::withSystemSettings) ?: installed).sortedForDisplay()
     }
 }
