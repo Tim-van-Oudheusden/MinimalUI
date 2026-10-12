@@ -5,15 +5,19 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.addCallback
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import dev.buildwithtim.minimalui.core.LatestLoader
 import dev.buildwithtim.minimalui.core.LauncherApp
 import dev.buildwithtim.minimalui.core.sortedForDisplay
+import dev.buildwithtim.minimalui.core.withSystemSettings
 import dev.buildwithtim.minimalui.ui.AppList
 import dev.buildwithtim.minimalui.ui.MinimalTheme
 import java.util.concurrent.Executors
@@ -21,6 +25,7 @@ import java.util.concurrent.Executors
 class MainActivity : ComponentActivity() {
 
     private var apps by mutableStateOf(emptyList<LauncherApp>())
+    private var homePresses by mutableIntStateOf(0)
 
     // One worker thread: loads never run side by side on a slow device, and superseded ones are skipped.
     private val worker = Executors.newSingleThreadExecutor()
@@ -51,11 +56,20 @@ class MainActivity : ComponentActivity() {
                 addDataScheme("package")
             },
         )
+        // The home screen has nothing to go back to: finishing it would surface whichever launcher ran before.\
+        
+        onBackPressedDispatcher.addCallback(this) {}
         setContent {
             MinimalTheme {
-                AppList(apps = apps, onOpen = ::open)
+                AppList(apps = apps, homePresses = homePresses, onOpen = ::open)
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        // singleTask: the Home key (or a launcher icon) reaches the running instance here, never a second one.
+        homePresses++
     }
 
     override fun onResume() {
@@ -77,5 +91,11 @@ class MainActivity : ComponentActivity() {
             // Uninstalled or disabled while the list was on screen: drop it rather than crash the launcher.
             loader.refresh()
         }
+    }
+
+    private fun reload() {
+        val installed = packageManager.launchableApps()
+        val settings = packageManager.systemSettings()
+        apps = (settings?.let(installed::withSystemSettings) ?: installed).sortedForDisplay()
     }
 }
