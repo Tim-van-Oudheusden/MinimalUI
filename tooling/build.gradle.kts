@@ -27,7 +27,7 @@ tasks.test {
     systemProperty("repo.root", repoRoot.asFile.absolutePath)
     // The files under test live outside this module; declare them so an edit reruns the tests instead of reusing a
     // cached result.
-    for (dir in listOf(".github", "scripts")) {
+    for (dir in listOf(".github", "scripts", "docs")) {
         inputs.dir(repoRoot.dir(dir))
             .withPropertyName("repo-$dir")
             .withPathSensitivity(PathSensitivity.RELATIVE)

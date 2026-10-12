@@ -23,6 +23,7 @@ class WorkflowInvariantsTest {
         "nightly-compliance.yml" to mapOf("contents" to "read"),
         "quality-report.yml" to mapOf("contents" to "read"),
         "review.yml" to mapOf("contents" to "read"),
+        "tier-classifier.yml" to mapOf("contents" to "read"),
     )
 
     private val jobPermissions = mapOf(

@@ -94,6 +94,9 @@ checks pass.
 
 [conventional-commits]: https://www.conventionalcommits.org/
 
+Every pull request is classified into a low, medium or high risk tier from the paths it changes (the informational
+`Risk tier` check); [`docs/risk-tiers.md`](docs/risk-tiers.md) lists the paths in each tier and the review each expects.
+
 ### Test-driven development
 
 We require TDD. One test at a time:
