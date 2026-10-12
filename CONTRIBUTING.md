@@ -111,6 +111,28 @@ Run these before opening a PR (CI runs the same on every PR):
 - Compose: stateless composables that take state and callbacks; every interactive element must be reachable and usable
   by keyboard focus.
 
+## Applying review suggestions
+
+Reviewers with write access (human or Claude) can leave ```` ```suggestion ```` blocks on a pull request's diff. To
+commit them all at once, a maintainer comments `/apply-suggestions` on the PR. `.github/workflows/auto-review.yml` then
+runs `scripts/apply-review-suggestions.sh`, commits the result to the PR branch as
+`chore(review): apply review suggestions (#<number>)`, and replies with a report of what was applied and skipped.
+
+- **Who:** only comments from `OWNER`, `MEMBER` or `COLLABORATOR` trigger it, and only their suggestions are applied.
+- **Refused:** pull requests from forks, and a head committed after the `/apply-suggestions` comment. Comment again to
+  apply to the newer head.
+- **Skipped, and listed in the report:** outdated suggestions; comments on the base (left) side of the diff; ranges
+  that overlap a suggestion already applied in the same run; paths outside the checkout or missing from it; comments
+  with more than one suggestion block; and files under `.github/workflows/`, which the workflow's token cannot push.
+- **Not detected:** whether a review thread was resolved, or the suggestion declined in discussion. To keep a declined
+  suggestion out, delete or edit its comment before running the command.
+- **Safety:** the script is checked out from `main`, never from the PR, and the PR checkout keeps no credentials. If
+  the branch moves while the job runs, the push fails rather than applying suggestions to lines they weren't written
+  for.
+- Pushes made with `GITHUB_TOKEN` start no new workflow runs, so CI re-runs on the PR's next push or a manual re-run.
+
+`scripts/apply-review-suggestions.test.sh` covers the script.
+
 ## Dependencies
 
 - Ask before adding, upgrading, or removing a dependency or plugin; state coordinates, version, and rationale.
