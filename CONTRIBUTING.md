@@ -91,7 +91,8 @@ We favour small, focused changes tied to a tracked issue.
 
 `main` is protected by the ruleset in [`.github/rulesets/main.json`](.github/rulesets/main.json): no direct pushes,
 force-pushes or deletion; changes land only through pull requests whose `PR review rubric` and `Build, lint, test`
-checks pass.
+checks pass. Pull requests merge with a merge commit only (no squash or rebase), so each issue's single commit lands on
+`main` unchanged, and the head branch is deleted on merge.
 
 [conventional-commits]: https://www.conventionalcommits.org/
 

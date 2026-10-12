@@ -6,7 +6,8 @@ body:
       value: |
         Thanks for contributing! Please keep the title in
         [Conventional Commits](https://www.conventionalcommits.org/) style,
-        e.g. `fix(input): ...`, `feat(launcher): ...`, `chore: ...`.
+        e.g. `fix(input): ...`, `feat(launcher): ...`, `chore: ...`, and
+        apply the labels shown in brackets after filing.
   - type: dropdown
     id: type
     attributes:
@@ -14,10 +15,10 @@ body:
       description: What kind of issue is this?
       multiple: false
       options:
-        - Bug
-        - Feature
-        - Task
-        - Chore
+        - Bug (type::bug)
+        - Feature (type::feature)
+        - Task (type::task)
+        - Chore (type::chore)
         - Refactor
     validations:
       required: true
@@ -30,9 +31,20 @@ body:
       options:
         - App (app)
         - Core logic (core)
-        - Tooling / CI
-        - Documentation
-        - Other
+        - Tooling / CI (ci)
+        - Documentation (documentation)
+        - Other (no label)
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      multiple: false
+      options:
+        - Critical (priority::critical)
+        - High (priority::high)
+        - Medium (priority::medium)
+        - Low (priority::low)
+      default: 2
   - type: input
     id: device
     attributes:
@@ -58,3 +70,10 @@ body:
       placeholder: |
         - [ ] Behaviour or deliverable that proves completion
         - [ ] Verification steps, if applicable
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: Followed the workflow in AGENTS.md (issues via GitHub API, beads sync, Conventional Commits)
+          required: false
