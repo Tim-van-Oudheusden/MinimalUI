@@ -93,6 +93,21 @@ We require TDD. One test at a time:
 Assert on observable outputs, return values, and side effects — never on internal state or private methods. Never
 weaken or skip a failing test to make it pass; fix the implementation.
 
+Coverage is measured with JaCoCo. Each module has a function and line floor in
+[`.github/auto-qa-tuning.json`](.github/auto-qa-tuning.json), and `scripts/coverage-check.sh` fails a module that drops
+below its floor. Check `core` locally:
+
+```bash
+./gradlew :core:jacocoTestReport   # HTML report: core/build/reports/jacoco/test/html/index.html
+floors=.github/auto-qa-tuning.json
+scripts/coverage-check.sh core core/build/reports/jacoco/test/jacocoTestReport.xml \
+  "$(jq -r '.floors.core.functions' "$floors")" "$(jq -r '.floors.core.lines' "$floors")"
+```
+
+`app` has no unit tests yet, so its floors are 0. Once it has some, `./gradlew :app:createDebugUnitTestCoverageReport`
+writes `app/build/reports/coverage/test/debug/report.xml`. Raise a floor when coverage rises. Never lower one to make a
+PR pass.
+
 ## Quality gates
 
 Run these before opening a PR (CI runs the same on every PR):

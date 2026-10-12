@@ -17,9 +17,17 @@ android {
     }
 
     buildTypes {
+        debug {
+            // Lets :app:createDebugUnitTestCoverageReport measure app unit tests once there are any.
+            enableUnitTestCoverage = true
+        }
         release {
             isMinifyEnabled = false
         }
+    }
+
+    testCoverage {
+        jacocoVersion = libs.versions.jacoco.get()
     }
 
     compileOptions {
