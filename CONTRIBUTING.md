@@ -9,9 +9,9 @@ Stack: Kotlin, Jetpack Compose, Gradle (Kotlin DSL with a version catalog), Andr
 You need:
 
 - JDK 21 (Gradle runs on it; e.g. Temurin 21)
-- The Android SDK with the platform named by `compileSdk` in `app/build.gradle.kts` (Android Studio installs it, or use
-  `sdkmanager`; AGP fetches missing build tools once the licences are accepted). Point Gradle at it with `ANDROID_HOME`
-  or a `local.properties` file (`sdk.dir=...`, gitignored)
+- The Android SDK with the platform named by `compileSdk` in `app/build.gradle.kts`. Android Studio installs it; from a
+  terminal, use [Android CLI](https://developer.android.com/tools/agents/android-cli) (see below). Point Gradle at the SDK
+  with `ANDROID_HOME` or a `local.properties` file (`sdk.dir=...`, gitignored)
 - A device or emulator for UI work; a physical keyboard phone is best
 
 Everything else, Gradle included, is fetched by the wrapper:
@@ -23,6 +23,22 @@ Everything else, Gradle included, is fetched by the wrapper:
 
 Every CI run uploads the debug APK as the `minimalui-debug-apk` artifact, so a build can be tried on a phone without a
 local toolchain.
+
+### Installing the SDK from a terminal
+
+Android CLI (`android`) replaces the deprecated `sdkmanager`. Install it with the command for your OS from the
+[download page](https://developer.android.com/tools/agents/android-cli/download) (Linux shown), then install the
+platform tools and the `compileSdk` platform:
+
+```bash
+curl -fsSL https://dl.google.com/android/cli/latest/linux_x86_64/install.sh | bash   # Linux, per-user install
+android update                                              # move to the latest Android CLI
+android info                                                # shows the SDK path it manages
+android sdk install platform-tools platforms/android-37.0   # keep in step with compileSdk
+```
+
+`android sdk install` accepts the SDK licence, so AGP downloads the build tools it needs on the first build. Use
+`android --sdk=<path> sdk install ...` to target an SDK other than the one `android info` reports.
 
 ## Project layout
 
