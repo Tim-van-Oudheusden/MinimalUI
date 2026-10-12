@@ -79,6 +79,11 @@ We favour small, focused changes tied to a tracked issue.
 force-pushes or deletion; changes land only through pull requests whose `PR review rubric` and `Build, lint, test`
 checks pass.
 
+Reviewers, human or agent, work through [`prompts/code-review.md`](prompts/code-review.md): standards (TDD evidence, no
+test tampering, gates, dependencies, keyboard first) and spec (every acceptance criterion, no scope creep).
+[`prompts/pull-request.md`](prompts/pull-request.md) writes a PR body that passes the rubric. See the
+[prompts catalog](prompts/README.md).
+
 [conventional-commits]: https://www.conventionalcommits.org/
 
 ### Test-driven development
