@@ -28,5 +28,5 @@ a plain list, driven entirely by keys, that gets out of the way. It is not a the
 
 ## 6. Visual identity
 
-- **Colour:** black background, white text, a single accent colour for the focused row.
+- **Colour:** black background, white text; the focused row is inverted (black text on white), as in MinUI.
 - **Type:** the system font until a dedicated one is chosen; legible at arm's length on small, square screens.

@@ -9,8 +9,9 @@ Stack: Kotlin, Jetpack Compose, Gradle (Kotlin DSL with a version catalog), Andr
 You need:
 
 - JDK 21 (Gradle runs on it; e.g. Temurin 21)
-- The Android SDK with the platform and build tools named in `app/build.gradle.kts` (Android Studio installs them, or
-  use `sdkmanager`). Point Gradle at it with `ANDROID_HOME` or a `local.properties` file (`sdk.dir=...`, gitignored)
+- The Android SDK with the platform named by `compileSdk` in `app/build.gradle.kts` (Android Studio installs it, or use
+  `sdkmanager`; AGP fetches missing build tools once the licences are accepted). Point Gradle at it with `ANDROID_HOME`
+  or a `local.properties` file (`sdk.dir=...`, gitignored)
 - A device or emulator for UI work; a physical keyboard phone is best
 
 Everything else, Gradle included, is fetched by the wrapper:
@@ -20,16 +21,20 @@ Everything else, Gradle included, is fetched by the wrapper:
 ./gradlew installDebug                   # install on the connected device
 ```
 
+Every CI run uploads the debug APK as the `minimalui-debug-apk` artifact, so a build can be tried on a phone without a
+local toolchain.
+
 ## Project layout
 
 ```text
-app/                    Android application: manifest, activities, Compose UI, resources
-  src/main/java/...     Kotlin sources, package dev.buildwithtim.minimalui
-  src/main/res/         strings, themes, launcher icons
-  src/test/             JVM unit tests for app code
-core/                   pure Kotlin/JVM logic (no Android dependencies), unit-tested on the JVM
+app/                        Android application: manifest, activity, Compose UI, resources
+  src/main/kotlin/          Kotlin sources, package dev.buildwithtim.minimalui (ui/ holds composables)
+  src/main/res/             strings, theme, adaptive launcher icon, backup rules
+core/                       pure Kotlin/JVM logic (no Android dependencies), package dev.buildwithtim.minimalui.core
+  src/test/kotlin/          JUnit tests, run on the JVM without an emulator
 gradle/libs.versions.toml   every dependency and plugin version
-scripts/                CI helper scripts
+gradle/wrapper/             Gradle wrapper (pinned version and checksum)
+scripts/                    CI helper scripts
 ```
 
 **Where code goes.** Anything that can be expressed without the Android framework (sorting, filtering, key-to-action

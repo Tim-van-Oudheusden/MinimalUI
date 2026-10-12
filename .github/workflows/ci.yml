@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  # One live run per PR: a new push cancels the superseded run. Pushes to main
+  # get a per-commit group, so no main run is ever cancelled.
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    # Required by the main ruleset (.github/rulesets/main.json); keep the name in sync.
+    name: Build, lint, test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Setup JDK
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: 21
+      # Also validates gradle/wrapper/gradle-wrapper.jar against Gradle's published checksums.
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+      # The runner image ships the Android SDK with licences accepted; AGP downloads
+      # the compileSdk platform from app/build.gradle.kts and its default build tools if missing.
+      - name: Unit tests, lint, debug build
+        run: ./gradlew test lint assembleDebug
+      - name: Upload debug APK
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: minimalui-debug-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 14
+      - name: Upload reports
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: reports
+          path: '**/build/reports/'
+          retention-days: 14

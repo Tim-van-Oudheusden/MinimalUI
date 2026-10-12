@@ -1,0 +1,83 @@
+package dev.buildwithtim.minimalui.ui
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import dev.buildwithtim.minimalui.core.LauncherApp
+
+/**
+ * One row per app. Arrow keys / D-pad move focus, Enter or D-pad centre opens the focused app; touch works too.
+ * The first row takes focus once, when first composed, so the keyboard works without touching the screen.
+ */
+@Composable
+fun AppList(apps: List<LauncherApp>, onOpen: (LauncherApp) -> Unit, modifier: Modifier = Modifier) {
+    // Lazy rows leave composition when scrolled away; without this flag row 0 would grab focus back on every return.
+    var initialFocusDone by remember { mutableStateOf(false) }
+
+    LazyColumn(
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .windowInsetsPadding(WindowInsets.safeDrawing),
+    ) {
+        itemsIndexed(apps, key = { _, app -> "${app.packageName}/${app.activityName}" }) { index, app ->
+            if (index == 0) {
+                // Requested from inside the row: the requester is attached only once the row is composed.
+                val focus = remember { FocusRequester() }
+                AppRow(app = app, onOpen = onOpen, modifier = Modifier.focusRequester(focus))
+                LaunchedEffect(Unit) {
+                    if (!initialFocusDone) {
+                        focus.requestFocus()
+                        initialFocusDone = true
+                    }
+                }
+            } else {
+                AppRow(app = app, onOpen = onOpen)
+            }
+        }
+    }
+}
+
+@Composable
+private fun AppRow(app: LauncherApp, onOpen: (LauncherApp) -> Unit, modifier: Modifier = Modifier) {
+    var focused by remember { mutableStateOf(false) }
+    val colors = MaterialTheme.colorScheme
+
+    Text(
+        text = app.label,
+        color = if (focused) colors.onPrimary else colors.onBackground,
+        style = MaterialTheme.typography.titleLarge,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+        modifier = modifier
+            .fillMaxWidth()
+            .onFocusChanged { focused = it.isFocused }
+            // Clickables refuse focus in touch mode; a keyboard launcher needs a focused row from the start.
+            .focusProperties { canFocus = true }
+            .clickable { onOpen(app) }
+            .background(if (focused) colors.primary else colors.background)
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+    )
+}

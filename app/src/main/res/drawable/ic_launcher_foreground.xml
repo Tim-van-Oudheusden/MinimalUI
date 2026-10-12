@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Three list rows, the middle one highlighted: the launcher's whole UI. Drawn inside the 66dp safe zone. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M36,38h36v4h-36z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M32,48h44v12h-44z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M36,66h36v4h-36z" />
+</vector>
