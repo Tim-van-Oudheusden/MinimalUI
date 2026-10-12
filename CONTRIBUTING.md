@@ -55,6 +55,7 @@ core/                       pure Kotlin/JVM logic (no Android dependencies), pac
   src/test/kotlin/          JUnit tests, run on the JVM without an emulator
 gradle/libs.versions.toml   every dependency and plugin version
 gradle/wrapper/             Gradle wrapper (pinned version and checksum)
+prompts/                    reusable agent prompts (code review, PR body)
 scripts/                    CI helper scripts
 tooling/                    JUnit tests over .github/ and scripts/ (workflow invariants, CI script behaviour)
 ```
@@ -150,6 +151,10 @@ triagers, and fork pull requests are refused, so outside contributors cannot sta
 the quality gates (`./gradlew test`, `lint`, `assembleDebug`, `check`, and the module test tasks). Its PRs go through the
 same checks and human review as any other. The workflow needs the `CLAUDE_CODE_OAUTH_TOKEN` repo secret and the Claude
 GitHub App.
+
+For reviews, point Claude at the shared rubric in [`prompts/code-review.md`](prompts/code-review.md), e.g.
+`@claude review this PR using prompts/code-review.md against issue #12`; [`prompts/`](prompts/README.md) also holds the
+PR-body template.
 
 ## Code style
 
