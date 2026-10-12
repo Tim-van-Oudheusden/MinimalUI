@@ -77,3 +77,39 @@ podman run --rm --userns=keep-id \
 
 In a git worktree, `.git` is a file pointing outside the mount, so git commands inside the container see no
 repository; the Gradle gates do not need one.
+
+## Coverage floors
+
+Unit-test coverage is measured with [Kover](https://github.com/Kotlin/kotlinx-kover) (`org.jetbrains.kotlinx.kover`),
+applied to `core` and `app`. `tooling` holds only repository tests and is not measured.
+`./gradlew :<module>:koverXmlReport` runs the module's unit tests (`testDebugUnitTest` for `app`) and writes a
+JaCoCo-format XML report to `<module>/build/reports/kover/report.xml`.
+
+The floors live in `.github/auto-qa-tuning.json`, per module, in percent:
+
+```json
+{ "margin": 2, "floors": { "core": { "functions": 100, "lines": 100 } } }
+```
+
+`scripts/coverage-check.sh <module> <functions> <lines>` reads the module's report and compares the module-level
+`METHOD` (functions) and `LINE` counters with the floors. It prints the observed coverage next to each floor and exits 1
+if either is below its floor, 2 if the report is missing or a floor is not a percentage between 0 and 100. The
+comparison uses the exact ratio, so 99.999 % does not pass a 100 % floor.
+
+`.github/workflows/coverage-gate.yml` (job **Unit-test coverage floors**, every PR and push to `main`) runs the check
+for every module listed in the floors file and is a required status check in the `main` ruleset. Adding a module to the
+gate means adding it to `.github/auto-qa-tuning.json` and applying the Kover plugin in its `build.gradle.kts`. Apply the
+ruleset entry to the live ruleset only after the workflow has run on `main` once; a required check that never reports
+blocks every PR.
+
+Raise a floor when coverage rises; never lower one to make a PR pass. Add tests instead.
+
+The initial floors are the coverage observed when the gate was added, rounded down: `core` 100 % / 100 %, `app` 0 % /
+0 % (it has no unit tests yet). Run the check locally:
+
+```bash
+./gradlew :core:koverXmlReport
+scripts/coverage-check.sh core 100 100
+```
+
+`./gradlew :core:koverHtmlReport` writes a browsable report to `core/build/reports/kover/html/`.

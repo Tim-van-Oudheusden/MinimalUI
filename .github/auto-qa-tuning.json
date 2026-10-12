@@ -1,0 +1,13 @@
+{
+  "margin": 2,
+  "floors": {
+    "app": {
+      "functions": 0,
+      "lines": 0
+    },
+    "core": {
+      "functions": 100,
+      "lines": 100
+    }
+  }
+}
