@@ -18,6 +18,7 @@ class WorkflowInvariantsTest {
         "claude.yml" to mapOf("contents" to "read"),
         // Sanctioned pull_request_target exception: labels PRs, never checks out code.
         "labeler.yml" to mapOf("contents" to "read", "pull-requests" to "write"),
+        "nightly-compliance.yml" to mapOf("contents" to "read"),
         "review.yml" to mapOf("contents" to "read"),
     )
 
@@ -30,6 +31,12 @@ class WorkflowInvariantsTest {
                 "id-token" to "write",
                 "actions" to "read",
             ),
+        ),
+        "nightly-compliance.yml" to mapOf(
+            // The dependency submission API writes the graph through contents: write.
+            "dependency-graph" to mapOf("contents" to "write"),
+            // vulnerability-alerts: read lists Dependabot alerts.
+            "compliance" to mapOf("contents" to "read", "vulnerability-alerts" to "read"),
         ),
     )
 
