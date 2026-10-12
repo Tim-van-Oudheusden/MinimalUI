@@ -181,6 +181,9 @@ AI agents working in this repo are bounded by several layers:
 3. **Personal overrides** — `.claude/settings.local.json` (gitignored). Deny rules from the project file still apply.
 4. **Structural gates** — the ruleset on `main` and CI must pass before merge, regardless of who wrote the change.
 
+The security side of these layers (trust boundaries, secrets, supply chain, review focus, reporting) is set out in
+[`docs/security/SECURITY-AI.md`](docs/security/SECURITY-AI.md).
+
 How agent work fares is measured, not guessed: the weekly `PR metrics` workflow reports how many agent-authored PRs
 (`claude/*` branches and the `hive-forge-app` GitHub App) were merged vs. closed unmerged. Every metric, its cadence,
 where it is published and how to reproduce it locally is catalogued in [`docs/metrics/README.md`](docs/metrics/README.md).
