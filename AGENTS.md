@@ -55,7 +55,11 @@ Work is NOT complete until the issue branch is pushed and its pull request is op
 1. **File issues for remaining work** — `gh issue create` for anything that needs follow-up
 2. **Run quality gates** (if code changed) — `./gradlew test lint assembleDebug`
 3. **Update issue status** — comment progress on the GitHub issue; run `bd github sync --pull-only`
-4. **Push the branch and open a PR** — `main` is protected by `.github/rulesets/main.json`: it only changes through
+4. **Write the hand-off** — overwrite "Latest session" in `.claude/session-summary.md` (date, issue and branch,
+   outcome, follow-ups, notes for next session) and append any correction round to `.claude/memory/corrections.tsv`,
+   both in the issue's commit; add a reflection to `docs/reflections/` when a lesson needs its why (format in
+   `docs/reflections/README.md`)
+5. **Push the branch and open a PR** — `main` is protected by `.github/rulesets/main.json`: it only changes through
    merged pull requests with passing checks (`PR review rubric`, `Build, lint, test`):
    ```bash
    bd dolt push
@@ -63,7 +67,10 @@ Work is NOT complete until the issue branch is pushed and its pull request is op
    gh pr create --title "type(scope): summary (#<number>)" --body-file <file>  # follow .github/pull_request_template.md
    git status  # MUST show "up to date with 'origin/<branch>'"
    ```
-5. **Hand off** — provide context for the next session, including the PR URL
+6. **Clean up** — clear stashes (`git stash list` is empty), `git fetch --prune`, and remove worktrees and local
+   branches whose PRs have merged
+7. **Verify** — every change is committed, the branch is pushed, and the PR is open with its checks running
+8. **Hand off** — give the PR URL and anything `.claude/session-summary.md` does not cover
 
 Never push to `main`, never force-push, and never say "ready to push when you are" — push the branch and open the PR.
 
