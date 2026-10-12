@@ -1,0 +1,10 @@
+* text=auto eol=lf
+
+# Windows scripts keep CRLF; binaries are never diffed or normalised.
+*.bat text eol=crlf
+*.jar binary
+*.png binary
+*.webp binary
+
+# Use bd merge for beads JSONL files
+.beads/issues.jsonl merge=beads

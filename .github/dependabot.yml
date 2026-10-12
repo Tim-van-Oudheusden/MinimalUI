@@ -1,0 +1,13 @@
+# Weekly update PRs for the workflow actions. Dependabot only proposes
+# changes; every PR still goes through CI and review.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: ci
+    groups:
+      github-actions:
+        update-types: [minor, patch]

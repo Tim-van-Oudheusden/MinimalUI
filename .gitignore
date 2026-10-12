@@ -1,3 +1,28 @@
+# Environment and secrets
+.env
+.env.*
+keystore.properties
+*.keystore
+*.jks
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local agent/sandbox state
+.tmp/
+.superpowers/
+worktrees/
+
+# Claude Code personal settings (project settings in .claude/settings.json are tracked)
+.claude/settings.local.json
 
 # Beads / Dolt files (added by bd init)
 .dolt/

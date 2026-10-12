@@ -1,0 +1,40 @@
+name: PR review rubric
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+jobs:
+  rubric:
+    name: PR review rubric
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Check title and issue link
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+        run: scripts/pr-review-check.sh
+      - name: Reviewer rubric
+        if: always()
+        run: |
+          cat >> "$GITHUB_STEP_SUMMARY" <<'EOF'
+          ## Reviewer rubric
+
+          Automated above: Conventional Commits title, linked issue. CI covers
+          unit tests, Android lint and the debug build.
+
+          Check by hand:
+
+          - [ ] **TDD evidence** — the PR shows a test that failed before the change and passes after.
+          - [ ] **Behaviour, not implementation** — tests assert observable output, not private state.
+          - [ ] **No test tampering** — existing tests were not weakened to pass; no `@Suppress` added to silence failures.
+          - [ ] **Scope** — one issue per PR; unrelated changes split out.
+          - [ ] **Dependencies** — none added without approval; any new one pinned in `gradle/libs.versions.toml`.
+          - [ ] **Keyboard first** — UI changes are fully usable without touch.
+          EOF

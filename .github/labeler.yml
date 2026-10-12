@@ -1,0 +1,26 @@
+# Path-based PR labels, applied by .github/workflows/labeler.yml (actions/labeler).
+
+app:
+  - changed-files:
+      - any-glob-to-any-file: 'app/**'
+
+core:
+  - changed-files:
+      - any-glob-to-any-file: 'core/**'
+
+build:
+  - changed-files:
+      - any-glob-to-any-file: ['gradle/**', '*.gradle.kts', 'gradle.properties', 'gradlew', 'gradlew.bat']
+
+ci:
+  - changed-files:
+      - any-glob-to-any-file: ['.github/**', 'scripts/**']
+
+documentation:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'docs/**'
+          - '*.md'
+          - '.github/copilot-instructions.md'
+          - '.cursor/**'
+          - '.claude/**'
