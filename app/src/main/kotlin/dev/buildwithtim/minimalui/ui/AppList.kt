@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -29,33 +30,36 @@ import dev.buildwithtim.minimalui.core.LauncherApp
 
 /**
  * One row per app. Arrow keys / D-pad move focus, Enter or D-pad centre opens the focused app; touch works too.
- * The first row takes focus once, when first composed, so the keyboard works without touching the screen.
+ * The first row takes focus when the apps first arrive, so the keyboard works without touching the screen, and again
+ * whenever [homePresses] changes, scrolled back into view.
  */
 @Composable
-fun AppList(apps: List<LauncherApp>, onOpen: (LauncherApp) -> Unit, modifier: Modifier = Modifier) {
-    // Lazy rows leave composition when scrolled away; without this flag row 0 would grab focus back on every return.
-    var initialFocusDone by remember { mutableStateOf(false) }
+fun AppList(apps: List<LauncherApp>, homePresses: Int, onOpen: (LauncherApp) -> Unit, modifier: Modifier = Modifier) {
+    val listState = rememberLazyListState()
+    val firstRow = remember { FocusRequester() }
+    val hasApps = apps.isNotEmpty()
+
+    LaunchedEffect(hasApps, homePresses) {
+        if (hasApps) {
+            // Scrolling composes row 0 again if it was scrolled away, attaching its requester before the request.
+            listState.scrollToItem(0)
+            firstRow.requestFocus()
+        }
+    }
 
     LazyColumn(
+        state = listState,
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
             .windowInsetsPadding(WindowInsets.safeDrawing),
     ) {
         itemsIndexed(apps, key = { _, app -> "${app.packageName}/${app.activityName}" }) { index, app ->
-            if (index == 0) {
-                // Requested from inside the row: the requester is attached only once the row is composed.
-                val focus = remember { FocusRequester() }
-                AppRow(app = app, onOpen = onOpen, modifier = Modifier.focusRequester(focus))
-                LaunchedEffect(Unit) {
-                    if (!initialFocusDone) {
-                        focus.requestFocus()
-                        initialFocusDone = true
-                    }
-                }
-            } else {
-                AppRow(app = app, onOpen = onOpen)
-            }
+            AppRow(
+                app = app,
+                onOpen = onOpen,
+                modifier = if (index == 0) Modifier.focusRequester(firstRow) else Modifier,
+            )
         }
     }
 }

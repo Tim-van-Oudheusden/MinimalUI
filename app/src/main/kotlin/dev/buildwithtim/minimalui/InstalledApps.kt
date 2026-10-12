@@ -4,6 +4,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
 import android.os.Build
+import android.provider.Settings
 import dev.buildwithtim.minimalui.core.LauncherApp
 
 private fun launcherIntent(): Intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
@@ -16,6 +17,12 @@ fun PackageManager.launchableApps(): List<LauncherApp> =
             packageName = info.activityInfo.packageName,
             activityName = info.activityInfo.name,
         )
+    }
+
+/** The activity that opens the system settings, or null on a device where nothing handles it. */
+fun PackageManager.systemSettings(): LauncherApp? =
+    Intent(Settings.ACTION_SETTINGS).resolveActivityInfo(this, PackageManager.MATCH_DEFAULT_ONLY)?.let { info ->
+        LauncherApp(label = info.loadLabel(this).toString(), packageName = info.packageName, activityName = info.name)
     }
 
 /** Starts [this] app the way a home screen does: its existing task if it has one, a new one otherwise. */
