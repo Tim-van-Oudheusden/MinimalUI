@@ -88,6 +88,9 @@ class MainActivity : ComponentActivity() {
         } catch (_: ActivityNotFoundException) {
             // Uninstalled or disabled while the list was on screen: drop it rather than crash the launcher.
             loader.refresh()
+        } catch (_: SecurityException) {
+            // Listed but not startable by us (not exported, or guarded by a permission we lack): ignore the press
+            // rather than crash the launcher; a refresh would list it again.
         }
     }
 
