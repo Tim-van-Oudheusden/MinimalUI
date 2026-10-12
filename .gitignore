@@ -1,3 +1,12 @@
+# Gradle / Android build output
+.gradle/
+.kotlin/
+build/
+local.properties
+captures/
+.externalNativeBuild/
+.cxx/
+
 # Environment and secrets
 .env
 .env.*

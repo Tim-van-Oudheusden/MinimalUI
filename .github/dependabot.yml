@@ -1,5 +1,6 @@
-# Weekly update PRs for the workflow actions. Dependabot only proposes
-# changes; every PR still goes through CI and review.
+# Weekly update PRs for the workflow actions and the Gradle build.
+# Dependabot only proposes changes; every PR still goes through CI and review.
+# Majors stay as one PR each: AGENTS.md makes a major upgrade its own task.
 version: 2
 updates:
   - package-ecosystem: github-actions
@@ -10,4 +11,16 @@ updates:
       prefix: ci
     groups:
       github-actions:
+        update-types: [minor, patch]
+
+  # Reads gradle/libs.versions.toml and the build scripts of every module.
+  - package-ecosystem: gradle
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: build(deps)
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
         update-types: [minor, patch]
