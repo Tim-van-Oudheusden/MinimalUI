@@ -22,6 +22,8 @@ class WorkflowInvariantsTest {
         "labeler.yml" to mapOf("contents" to "read", "pull-requests" to "write"),
         "nightly-compliance.yml" to mapOf("contents" to "read"),
         "quality-report.yml" to mapOf("contents" to "read"),
+        // Reads closed PRs for the acceptance metric.
+        "pr-metrics.yml" to mapOf("contents" to "read", "pull-requests" to "read"),
         "review.yml" to mapOf("contents" to "read"),
         "tier-classifier.yml" to mapOf("contents" to "read"),
     )
