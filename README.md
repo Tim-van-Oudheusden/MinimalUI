@@ -40,13 +40,18 @@ another home app in the same place.
 | ---------------------------- | ----------------------------------------------------------------------------- |
 | Up / Down (arrows, D-pad)    | Move one row. A fresh press past either end wraps around; holding stops there |
 | Left / Right (arrows, D-pad) | Turn a page, stopping at the first or last app                                |
-| Enter or D-pad centre        | Open the highlighted app                                                      |
+| Enter or D-pad centre        | Open the highlighted app; in the app menu, do the highlighted action          |
+| Menu, or hold Enter / centre | Open the highlighted app's menu (touch: long-press the app)                   |
+| Back or Esc                  | Close the app menu; does nothing on the home screen                           |
 | Home                         | Return to the top of the list                                                 |
-| Back                         | Does nothing on the home screen                                               |
 
 The list updates on its own when apps are installed or removed. Apps open without a transition animation. Coming
 back from an app by Back, Recents or the app closing selects that app again, so one press reopens it; the filter
 stays. Home instead clears the filter and returns to the top.
+
+The app menu replaces the list until it is closed: App info, Uninstall (dim and inactive for system apps and the
+Settings entry), and, when there are recently used apps, Remove from recently used and Clear recently used. After an
+action, Back or Esc, the list comes back with the same app highlighted.
 
 ## Contributing
 
