@@ -4,4 +4,7 @@
     <!-- Centred where the app list would be, MinUI-terse (#75). -->
     <string name="no_apps">No apps</string>
     <string name="no_match">No match</string>
+    <!-- Spoken for the status pill's glyphs (#65); the battery percentage and the clock are text already. -->
+    <string name="status_wifi">Wi-Fi</string>
+    <string name="status_charging">Charging</string>
 </resources>

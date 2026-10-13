@@ -45,6 +45,7 @@ import dev.buildwithtim.minimalui.R
 import dev.buildwithtim.minimalui.core.LauncherApp
 import dev.buildwithtim.minimalui.core.ListContent
 import dev.buildwithtim.minimalui.core.ListPosition
+import dev.buildwithtim.minimalui.core.StatusPill
 import dev.buildwithtim.minimalui.core.listRhythm
 import dev.buildwithtim.minimalui.core.paged
 import dev.buildwithtim.minimalui.core.selecting
@@ -58,9 +59,10 @@ import dev.buildwithtim.minimalui.core.stepped
  *
  * The first row is selected when the apps first arrive, so the keyboard works without touching the screen, and again
  * whenever [homePresses] or the type-to-filter [query] changes. Each new [returned] selects its row instead, keeping
- * the screen where it was if that row is on it. A non-empty [query] is shown in the top row, so the
- * user never filters blind. Without apps to list, the rest of the screen stays blank while they load, or shows a
- * centred message when there are none or none match the query.
+ * the screen where it was if that row is on it. The [status] pill, when given, takes the top row, so no app row ever
+ * runs under it. A non-empty [query] is shown in the row below it, so the user never filters blind. Without apps to
+ * list, the rest of the screen stays blank while they load (the status pill too), or shows a centred message when
+ * there are none or none match the query.
  */
 @Composable
 fun AppList(
@@ -70,6 +72,7 @@ fun AppList(
     onOpen: (LauncherApp) -> Unit,
     modifier: Modifier = Modifier,
     returned: Returned? = null,
+    status: StatusPill? = null,
 ) {
     val apps = (content as? ListContent.Apps)?.apps.orEmpty()
     val listState = rememberLazyListState()
@@ -100,8 +103,12 @@ fun AppList(
         val density = LocalDensity.current
         val rhythm = listRhythm(constraints.maxHeight, with(density) { RowMetrics.rowHeight().roundToPx() })
         val rowHeight = with(density) { rhythm.rowHeight.toDp() }
-        // The query line takes the top row; the list gets the rest.
-        val rowsPerPage = maxOf(1, if (query.isEmpty()) rhythm.rows else rhythm.rows - 1)
+        // The status line and the query line each take a whole row at the top; the list gets the rest. A reserved row,
+        // rather than MinUI's shortened first row, because the first row on screen changes as the list scrolls, and
+        // every page keeps the same rhythm.
+        val shownStatus = status?.takeUnless { content == ListContent.Loading }
+        val reserved = (if (shownStatus != null) 1 else 0) + (if (query.isEmpty()) 0 else 1)
+        val rowsPerPage = maxOf(1, rhythm.rows - reserved)
 
         LaunchedEffect(returned) {
             // Start from the screen as it is now, which touch scrolling may have moved.
@@ -111,6 +118,7 @@ fun AppList(
         }
 
         Column {
+            if (shownStatus != null) StatusLine(shownStatus, rowHeight)
             if (query.isNotEmpty()) {
                 // The trailing underscore marks it as typed text rather than another app.
                 // One row tall, its text aligned with the app labels below.

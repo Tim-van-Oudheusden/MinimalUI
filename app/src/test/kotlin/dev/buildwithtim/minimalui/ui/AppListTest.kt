@@ -16,6 +16,7 @@ import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performKeyInput
@@ -23,8 +24,10 @@ import androidx.compose.ui.test.performKeyPress
 import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.dp
+import dev.buildwithtim.minimalui.core.Battery
 import dev.buildwithtim.minimalui.core.LauncherApp
 import dev.buildwithtim.minimalui.core.ListContent
+import dev.buildwithtim.minimalui.core.StatusPill
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -45,13 +48,20 @@ class AppListTest {
     private val opened = mutableListOf<LauncherApp>()
     private var homePresses by mutableIntStateOf(0)
     private var query by mutableStateOf("")
+    private var status by mutableStateOf<StatusPill?>(null)
 
     private fun show(list: List<LauncherApp> = apps) = show(ListContent.Apps(list))
 
     private fun show(content: ListContent) {
         rule.setContent {
             MinimalTheme {
-                AppList(content = content, query = query, homePresses = homePresses, onOpen = { opened += it })
+                AppList(
+                    content = content,
+                    query = query,
+                    homePresses = homePresses,
+                    onOpen = { opened += it },
+                    status = status,
+                )
             }
         }
     }
@@ -255,6 +265,77 @@ class AppListTest {
         val message = rule.onNodeWithText("No match").getUnclippedBoundsInRoot()
         assertCentred(message)
         assertTrue("the message covers the query line", queryLine.bottom <= message.top)
+    }
+
+    private val pill = StatusPill(wifi = false, battery = Battery(57, charging = false), clock = "9:41")
+
+    @Test
+    fun `the status pill shows the battery percentage and the clock in the top-right corner`() {
+        status = pill
+        show()
+
+        val shown = rule.onNodeWithText("57%").assertIsDisplayed().getUnclippedBoundsInRoot()
+        rule.onNodeWithText("9:41").assertIsDisplayed()
+        val root = rule.onRoot().getUnclippedBoundsInRoot()
+        assertTrue("the pill is not at the right edge", root.right - shown.right <= RowMetrics.ListPaddingHorizontal + Slack)
+        assertTrue("the pill is not at the top", shown.top - root.top < shown.bottom - shown.top)
+    }
+
+    @Test
+    fun `the Wi-Fi glyph shows only while connected`() {
+        status = pill
+        show()
+        rule.onNodeWithContentDescription("Wi-Fi", useUnmergedTree = true).assertDoesNotExist()
+
+        status = pill.copy(wifi = true)
+
+        rule.onNodeWithContentDescription("Wi-Fi", useUnmergedTree = true).assertExists()
+    }
+
+    @Test
+    fun `a charging battery says so`() {
+        status = pill.copy(battery = Battery(40, charging = true))
+        show()
+
+        rule.onNodeWithContentDescription("Charging", useUnmergedTree = true).assertExists()
+        rule.onNodeWithText("40%").assertExists()
+    }
+
+    @Test
+    @Config(qualifiers = "w360dp-h360dp")
+    fun `the status pill takes the top row, no row overlaps it, and the rest stay whole`() {
+        show(manyApps)
+        val rows = rowsOnScreen().size
+
+        status = pill
+
+        assertEquals(rows - 1, rowsOnScreen().size)
+        val shown = rule.onNodeWithText("57%").getUnclippedBoundsInRoot()
+        val list = rule.onNode(hasScrollAction()).getUnclippedBoundsInRoot()
+        assertTrue("a row overlaps the status pill", list.top >= shown.bottom - Slack)
+        assertFillsWithWholeRows()
+        rule.onNodeWithText("App 00").assertIsFocused()
+    }
+
+    @Test
+    @Config(qualifiers = "w360dp-h360dp")
+    fun `the query line sits below the status pill`() {
+        status = pill
+        query = "app"
+        show(manyApps)
+
+        val shown = rule.onNodeWithText("57%").getUnclippedBoundsInRoot()
+        val queryLine = rule.onNodeWithText("app_").getUnclippedBoundsInRoot()
+        assertTrue("the query line overlaps the status pill", queryLine.top >= shown.bottom - Slack)
+        assertFillsWithWholeRows()
+    }
+
+    @Test
+    fun `while the apps load the status pill stays hidden too`() {
+        status = pill
+        show(ListContent.Loading)
+
+        assertEquals(0, rule.onAllNodes(hasText("", substring = true)).fetchSemanticsNodes().size)
     }
 
     /** [message] sits in the middle of the screen. */
