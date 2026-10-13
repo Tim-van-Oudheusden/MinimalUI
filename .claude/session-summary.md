@@ -10,17 +10,18 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 ## Latest session
 
 - **Date:** 2026-10-13
-- **Worked:** #73 — settings list and About (stack row 5 of the #60 interface stack, on `feat/67-context-menu`).
-- **Outcome:** core `Settings.kt` (`Choice`, `Setting` enum with key/choices/default, `SettingsLink`, `SettingsRow`,
-  `settingsRows`, `Settings` with `cycled(setting, step)` wrapping both ways, `stored()`/`fromStored`), core
-  `LauncherSettings.kt` (the `MinimalUI settings` pseudo-entry, placed right after Android's Settings), and
-  `StatusPill.shownWith(settings)` (Clock / Battery percentage). App: `SettingsStore` (SharedPreferences
-  `settings`), `ui/SettingsList.kt` (`SettingsList`, `AboutList`), `TitledList` in `ui/PillList.kt` shared with the
-  context menu, `PillList(value = …)` for a right-aligned value, and `BuildConfig.BUILD_COMMIT` from
-  `git rev-parse --short HEAD` (`unknown` without git).
-- **Open follow-ups:** later layers add rows (Hidden apps link, Recently used toggle) as one enum entry each.
+- **Worked:** #70 — root screen structure (stack row 6 of the #60 interface stack, on `feat/73-settings-list`).
+- **Outcome:** D1 (c) hybrid with one blank row. Core `RootEntries.kt` (`RootSection`, `RootEntry.App`/`Blank`,
+  `rootEntries(apps, recents, settings)`, `followedRow` so the selection follows its entry when the block changes),
+  `ScreenStack<S>` (`pushed`/`popped`/`home`), `ListContent.Apps(entries)` + `rowApps`, the `Recently used` setting
+  (Off / 3 / 5 / 15, default 3; `Choice.count`), and `ListPosition.stepped`/`paged`/`selecting` taking a `blank`
+  predicate. App: `MainActivity` keeps one `screens: ScreenStack<Screen>` instead of the menu/settings flags;
+  `PillList(selectable = …)` draws an empty, unfocusable row.
+- **Open follow-ups:** #68 adds a favourites `RootSection` and entries; #69 adds a `RootEntry` kind that opens a list
+  and a `Screen` for it.
 - **Notes for next session:**
-  - `PillList`'s `onKey` now sees arrow keys before paging; return true to take one over.
-  - Lazy-list keys must be Bundle-storable: a data class key crashes; use a string or an enum.
-  - The new row shifts list positions in tests: with no Android Settings resolved, it sorts after `MinimalUI`.
+  - A screen opened from the root is one `Screen` subclass pushed on `screens`; Back calls `back()`, Home `home()`.
+  - Typing filters only while `screens.isRoot`; a query hides the block and the blank row.
+  - The emulator kept an older APK when `adb install -r` hit a signature mismatch: check `lastUpdateTime` and
+    `adb uninstall dev.buildwithtim.minimalui` first.
   - No JDK on the host: run Gradle via the podman sandbox (`/tmp/gates.sh`).

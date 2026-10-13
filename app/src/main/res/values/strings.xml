@@ -16,8 +16,12 @@
     <string name="settings_entry">MinimalUI settings</string>
     <string name="setting_clock">Clock</string>
     <string name="setting_battery_percentage">Battery percentage</string>
+    <string name="setting_recently_used">Recently used</string>
     <string name="choice_on">On</string>
     <string name="choice_off">Off</string>
+    <string name="choice_three">3</string>
+    <string name="choice_five">5</string>
+    <string name="choice_fifteen">15</string>
     <string name="settings_about">About</string>
     <string name="about_version">Version %1$s</string>
     <string name="about_commit">Commit %1$s</string>

@@ -71,4 +71,14 @@ class SettingsTest {
         assertEquals(SettingsRow.Link(SettingsLink.About), rows.last())
         assertEquals(Setting.entries.size + SettingsLink.entries.size, rows.size)
     }
+
+    @Test
+    fun `Recently used offers Off, 3, 5 and 15 rows, 3 by default`() {
+        assertEquals(listOf(Choice.Off, Choice.Three, Choice.Five, Choice.Fifteen), Setting.RecentlyUsed.choices)
+        assertEquals(3, Settings().recentlyUsed)
+
+        val counts = generateSequence(Settings()) { it.cycled(Setting.RecentlyUsed, 1) }.take(4).map { it.recentlyUsed }
+        assertEquals(listOf(3, 5, 15, 0), counts.toList())
+        assertEquals(RECENT_APPS_LIMIT, Choice.Fifteen.count)
+    }
 }

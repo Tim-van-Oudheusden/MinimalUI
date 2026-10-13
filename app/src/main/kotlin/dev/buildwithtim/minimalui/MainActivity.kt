@@ -15,7 +15,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
 import androidx.core.view.WindowCompat
@@ -28,6 +27,7 @@ import dev.buildwithtim.minimalui.core.ListContent
 import dev.buildwithtim.minimalui.core.MenuAction
 import dev.buildwithtim.minimalui.core.MenuItem
 import dev.buildwithtim.minimalui.core.RecentApps
+import dev.buildwithtim.minimalui.core.ScreenStack
 import dev.buildwithtim.minimalui.core.Setting
 import dev.buildwithtim.minimalui.core.Settings
 import dev.buildwithtim.minimalui.core.SettingsLink
@@ -38,6 +38,7 @@ import dev.buildwithtim.minimalui.core.launcherSettings
 import dev.buildwithtim.minimalui.core.listContent
 import dev.buildwithtim.minimalui.core.minusLastTyped
 import dev.buildwithtim.minimalui.core.plusTyped
+import dev.buildwithtim.minimalui.core.rowApps
 import dev.buildwithtim.minimalui.core.sortedForDisplay
 import dev.buildwithtim.minimalui.core.withLauncherSettings
 import dev.buildwithtim.minimalui.core.withSystemSettings
@@ -60,12 +61,8 @@ class MainActivity : ComponentActivity() {
     private var returned by mutableStateOf<Returned?>(null)
     private var status by mutableStateOf<StatusPill?>(null)
 
-    // The context menu on screen in place of the list (#67), or null while the list shows.
-    private var menu by mutableStateOf<AppMenu?>(null)
-
-    // MinimalUI's settings list (#73) on screen in place of the app list, and the list of the link row opened from it.
-    private var settingsOpen by mutableStateOf(false)
-    private var settingsLink by mutableStateOf<SettingsLink?>(null)
+    // The lists on screen (#70): the app list at the root, and the one opened from it on top, which alone shows.
+    private var screens by mutableStateOf(ScreenStack<Screen>(Screen.Root))
 
     private val settingsStore by lazy { SettingsStore(this) }
     private var settings by mutableStateOf(Settings())
@@ -121,41 +118,14 @@ class MainActivity : ComponentActivity() {
         // The home screen has nothing to go back to: finishing it would surface whichever launcher ran before.
         onBackPressedDispatcher.addCallback(this) {}
         setContent {
-            // Outside the list, so the list comes back from the menu with the same app selected and the same screen.
+            // Outside the list, so the list comes back from another screen with the same row selected and the same
+            // rows on screen.
             val listState = rememberAppListState()
-            // Fresh each time the settings open, kept while a link's list is up, so its row is selected on return.
-            val settingsState = remember(settingsOpen) { PillListState() }
             val shownStatus = status?.shownWith(settings)
             MinimalTheme {
-                val shownMenu = menu
-                val link = settingsLink
-                when {
-                    link != null -> when (link) {
-                        SettingsLink.About -> AboutList(
-                            version = BuildConfig.VERSION_NAME,
-                            commit = BuildConfig.BUILD_COMMIT,
-                            onClose = { settingsLink = null },
-                            status = shownStatus,
-                        )
-                    }
-                    settingsOpen -> SettingsList(
-                        title = stringResource(R.string.settings_entry),
-                        settings = settings,
-                        onCycle = ::cycle,
-                        onOpen = { settingsLink = it },
-                        onClose = { settingsOpen = false },
-                        state = settingsState,
-                        status = shownStatus,
-                    )
-                    shownMenu != null -> ContextMenu(
-                        title = shownMenu.app.label,
-                        items = shownMenu.items,
-                        onChoose = { choose(shownMenu.app, it) },
-                        onClose = { menu = null },
-                        status = shownStatus,
-                    )
-                    else -> AppList(
-                        content = listContent(apps, query),
+                when (val screen = screens.top) {
+                    Screen.Root -> AppList(
+                        content = shownList(),
                         query = query,
                         homePresses = homePresses,
                         onOpen = ::open,
@@ -164,9 +134,41 @@ class MainActivity : ComponentActivity() {
                         returned = returned,
                         status = shownStatus,
                     )
+                    is Screen.Menu -> ContextMenu(
+                        title = screen.app.label,
+                        items = screen.items,
+                        onChoose = { choose(screen.app, it) },
+                        onClose = ::back,
+                        status = shownStatus,
+                    )
+                    is Screen.SettingsList -> SettingsList(
+                        title = stringResource(R.string.settings_entry),
+                        settings = settings,
+                        onCycle = ::cycle,
+                        onOpen = { screens = screens.pushed(Screen.Link(it)) },
+                        onClose = ::back,
+                        state = screen.list,
+                        status = shownStatus,
+                    )
+                    is Screen.Link -> when (screen.link) {
+                        SettingsLink.About -> AboutList(
+                            version = BuildConfig.VERSION_NAME,
+                            commit = BuildConfig.BUILD_COMMIT,
+                            onClose = ::back,
+                            status = shownStatus,
+                        )
+                    }
                 }
             }
         }
+    }
+
+    /** What the root list shows: the full list under its recently used block, or the apps the query keeps. */
+    private fun shownList(): ListContent = listContent(apps, query, recents, settings)
+
+    /** Back or Esc on a list opened from the root: the list below comes back as it was. */
+    private fun back() {
+        screens = screens.popped()
     }
 
     /**
@@ -196,19 +198,17 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         // singleTask: the Home key (or a launcher icon) reaches the running instance here, never a second one.
         awayInApp = false
-        menu = null
-        settingsOpen = false
-        settingsLink = null
+        screens = screens.home()
         homePresses++
         query = ""
     }
 
     // Typing filters the list. Rows only handle arrows, Enter and Space, so typed keys fall through to here, and still
     // arrive when the filter leaves no row to hold focus. Other keys, and Ctrl or Meta shortcuts, keep their usual job,
-    // and so does every key while the context menu or the settings are open: they have nothing to filter.
+    // and so does every key while another list (a context menu, the settings) is open: it has nothing to filter.
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
         val newQuery = when {
-            menu != null || settingsOpen || event.isCtrlPressed || event.isMetaPressed -> null
+            !screens.isRoot || event.isCtrlPressed || event.isMetaPressed -> null
             keyCode == KeyEvent.KEYCODE_DEL -> query.minusLastTyped()
             else -> query.plusTyped(event.unicodeChar)
         }
@@ -224,8 +224,8 @@ class MainActivity : ComponentActivity() {
         // Home arrives through onNewIntent, always before this, so whatever is left here is a return from the app.
         if (awayInApp) {
             awayInApp = false
-            val shown = (listContent(apps, query) as? ListContent.Apps)?.apps.orEmpty()
-            returned = Returned(recents.returnRow(shown), (returned?.count ?: 0) + 1)
+            // Against the list as it shows now: on the root, the app's row in the recently used block.
+            returned = Returned(recents.returnRow(shownList().rowApps), (returned?.count ?: 0) + 1)
         }
     }
 
@@ -238,7 +238,7 @@ class MainActivity : ComponentActivity() {
     private fun open(app: LauncherApp) {
         // MinimalUI's own settings open in place; they are not an app to start, nor a recent one.
         if (app.isLauncherSettings) {
-            settingsOpen = true
+            screens = screens.pushed(Screen.SettingsList())
             return
         }
         if (start(app.launchIntent())) {
@@ -273,12 +273,12 @@ class MainActivity : ComponentActivity() {
             isRecent = app in recent,
             hasRecents = recent.isNotEmpty(),
         )
-        menu = AppMenu(app, contextMenu(facts))
+        screens = screens.pushed(Screen.Menu(app, contextMenu(facts)))
     }
 
     // The list comes back on the same app: its selection was kept while the menu was up.
     private fun choose(app: LauncherApp, action: MenuAction) {
-        menu = null
+        back()
         when (action) {
             MenuAction.AppInfo -> start(app.appInfoIntent())
             MenuAction.Uninstall -> start(app.uninstallIntent())
@@ -307,5 +307,19 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-/** The context menu of [app], with its [items] as they were when it opened. */
-private class AppMenu(val app: LauncherApp, val items: List<MenuItem>)
+/** A list on [ScreenStack], each holding what it needs to show again as it was left. */
+private sealed interface Screen {
+    /** The app list (its selection is kept by the activity's content, which outlives every other screen). */
+    data object Root : Screen
+
+    /** The context menu of [app], with its [items] as they were when it opened. */
+    class Menu(val app: LauncherApp, val items: List<MenuItem>) : Screen
+
+    /** MinimalUI's settings, opened fresh on their first row each time, kept while a link's list is up. */
+    class SettingsList : Screen {
+        val list = PillListState()
+    }
+
+    /** The list a settings link opens. */
+    class Link(val link: SettingsLink) : Screen
+}

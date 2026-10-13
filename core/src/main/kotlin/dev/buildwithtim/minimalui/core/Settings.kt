@@ -1,7 +1,10 @@
 package dev.buildwithtim.minimalui.core
 
-/** A value a setting can take. Each [Setting] lists the ones it offers; later settings add their own kinds. */
-enum class Choice { On, Off }
+/**
+ * A value a setting can take. Each [Setting] lists the ones it offers; later settings add their own kinds. A choice
+ * of how many rows to show has its [count].
+ */
+enum class Choice(val count: Int = 0) { On, Off, Three(3), Five(5), Fifteen(RECENT_APPS_LIMIT) }
 
 /**
  * A user-facing setting of the launcher (#73), stored under [key]: one of its [choices], [default] until the user
@@ -14,6 +17,9 @@ enum class Setting(val key: String, val choices: List<Choice>, val default: Choi
 
     /** The percentage next to the battery glyph in the status pill; the glyph itself stays. */
     BatteryPercentage("status_battery_percentage", listOf(Choice.On, Choice.Off), Choice.On),
+
+    /** How many recent apps the root list's block shows (#70); Off hides it. 15 is all the recent list keeps. */
+    RecentlyUsed("recently_used", listOf(Choice.Off, Choice.Three, Choice.Five, Choice.Fifteen), Choice.Three),
 }
 
 /**
@@ -42,6 +48,9 @@ data class Settings(private val chosen: Map<Setting, Choice> = Setting.entries.a
     operator fun get(setting: Setting): Choice = chosen[setting] ?: setting.default
 
     fun isOn(setting: Setting): Boolean = this[setting] == Choice.On
+
+    /** How many recent apps the root list's block shows: 0 when Off. */
+    val recentlyUsed: Int get() = this[Setting.RecentlyUsed].count
 
     /**
      * These settings with [setting] moved [step] choices along its list (1 forward, -1 back). It wraps around at both

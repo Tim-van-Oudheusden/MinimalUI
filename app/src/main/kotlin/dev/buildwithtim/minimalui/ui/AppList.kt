@@ -23,21 +23,25 @@ import dev.buildwithtim.minimalui.R
 import dev.buildwithtim.minimalui.core.LauncherApp
 import dev.buildwithtim.minimalui.core.ListContent
 import dev.buildwithtim.minimalui.core.ListPosition
+import dev.buildwithtim.minimalui.core.RootEntry
 import dev.buildwithtim.minimalui.core.StatusPill
+import dev.buildwithtim.minimalui.core.followedRow
 import dev.buildwithtim.minimalui.core.listRhythm
 import dev.buildwithtim.minimalui.core.selecting
 
 /**
- * One row per app, in a [PillList]: Enter, D-pad centre or a tap opens the selected app ([onOpen]); the Menu key,
- * holding Enter or D-pad centre, or a touch long-press asks for its context menu ([onMenu]).
+ * The root list (#70), in a [PillList]: one row per entry of [content], an app's row opening it ([onOpen]) on Enter,
+ * D-pad centre or a tap; the Menu key, holding Enter or D-pad centre, or a touch long-press asks for its context menu
+ * ([onMenu]). The blank row below the recently used block is empty, and the selection skips it.
  *
  * The first row is selected when the apps first arrive, so the keyboard works without touching the screen, and again
  * whenever [homePresses] or the type-to-filter [query] changes. Each new [returned] selects its row instead, keeping
- * the screen where it was if that row is on it. The selection and the screen live in [state], so a list that another
- * screen replaced for a while comes back exactly as it was. The [status] pill, when given, takes the top row, so no
- * app row ever runs under it. A non-empty [query] is shown in the row below it, so the user never filters blind.
- * Without apps to list, the rest of the screen stays blank while they load (the status pill too), or shows a centred
- * message when there are none or none match the query.
+ * the screen where it was if that row is on it. When the rows change otherwise (the block above grows or shrinks), the
+ * selection stays on its entry. The selection and the screen live in [state], so a list that another screen replaced
+ * for a while comes back exactly as it was. The [status] pill, when given, takes the top row, so no row ever runs
+ * under it. A non-empty [query] is shown in the row below it, so the user never filters blind. Without apps to list,
+ * the rest of the screen stays blank while they load (the status pill too), or shows a centred message when there are
+ * none or none match the query.
  */
 @Composable
 fun AppList(
@@ -51,18 +55,10 @@ fun AppList(
     returned: Returned? = null,
     status: StatusPill? = null,
 ) {
-    val apps = (content as? ListContent.Apps)?.apps.orEmpty()
+    val entries = (content as? ListContent.Apps)?.entries.orEmpty()
     val list = state.list
-    val hasApps = apps.isNotEmpty()
-
-    LaunchedEffect(hasApps, homePresses, query) {
-        // Only for a change since the list was last on screen, so coming back from another screen keeps the selection.
-        val reason = Triple(hasApps, homePresses, query)
-        if (reason != state.topFor) {
-            state.topFor = reason
-            if (hasApps) list.select(ListPosition(0, 0))
-        }
-    }
+    val hasApps = entries.isNotEmpty()
+    val blank = { row: Int -> !entries[row].selectable }
 
     BoxWithConstraints(
         modifier = modifier
@@ -80,12 +76,31 @@ fun AppList(
         val reserved = (if (shownStatus != null) 1 else 0) + (if (query.isEmpty()) 0 else 1)
         val rowsPerPage = maxOf(1, rhythm.rows - reserved)
 
-        LaunchedEffect(returned) {
-            // Start from the screen as it is now, which touch scrolling may have moved.
-            if (returned != null && returned != state.returned && hasApps) {
-                state.returned = returned
-                val now = ListPosition(returned.row, list.scroll.firstVisibleItemIndex)
-                list.select(now.selecting(apps.size, rowsPerPage))
+        LaunchedEffect(entries, homePresses, query, returned) {
+            // Only for a change since the list was last on screen, so coming back from another screen keeps the
+            // selection. Start from the screen as it is now, which touch scrolling may have moved.
+            val reason = Triple(hasApps, homePresses, query)
+            val select = { row: Int ->
+                val position = ListPosition(row, list.scroll.firstVisibleItemIndex)
+                list.select(position.selecting(entries.size, rowsPerPage, blank))
+            }
+            val before = state.shown
+            state.shown = entries
+            when {
+                reason != state.topFor -> {
+                    state.topFor = reason
+                    state.returned = returned
+                    if (hasApps) list.select(ListPosition(0, 0))
+                }
+                returned != null && returned != state.returned && hasApps -> {
+                    state.returned = returned
+                    select(returned.row)
+                }
+                // The block above grew or shrank: the selection stays on what it was on.
+                hasApps && entries != before -> {
+                    val row = followedRow(before, list.position.selected, entries)
+                    if (row != list.position.selected) select(row)
+                }
             }
         }
 
@@ -95,14 +110,23 @@ fun AppList(
             if (query.isNotEmpty()) HeaderLine("${query}_", rowHeight)
             if (hasApps) PillList(
                 state = list,
-                items = apps,
-                key = { "${it.packageName}/${it.activityName}" },
-                label = { it.label },
+                items = entries,
+                key = { it.key },
+                label = { it.app?.label.orEmpty() },
                 rowHeight = rowHeight,
                 rowsPerPage = rowsPerPage,
-                onConfirm = onOpen,
-                onLongPress = onMenu,
-                onKey = { key, app -> (key == Key.Menu).also { if (it) onMenu(app) } },
+                onConfirm = { it.app?.let(onOpen) },
+                selectable = { it.selectable },
+                onLongPress = { it.app?.let(onMenu) },
+                onKey = { key, entry ->
+                    val app = entry.app
+                    if (key == Key.Menu && app != null) {
+                        onMenu(app)
+                        true
+                    } else {
+                        false
+                    }
+                },
             )
         }
         // Centred on the whole screen, as MinUI does, whether or not the query line is showing above it.
@@ -125,6 +149,9 @@ class AppListState {
 
     // The last [Returned] acted on.
     internal var returned: Returned? = null
+
+    // The rows last on screen, so the selection can follow its entry when they change.
+    internal var shown: List<RootEntry> = emptyList()
 }
 
 @Composable
