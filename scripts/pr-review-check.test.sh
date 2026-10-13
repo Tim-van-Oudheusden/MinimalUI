@@ -44,6 +44,7 @@ for keyword in fix fixes fixed close closes closed resolve resolves resolved ref
   expect pass "body '$keyword #12'" "$title" "$keyword #12"
 done
 expect pass 'body keyword in upper case' "$title" 'FIXES #12'
+expect pass "body 'Closes: #10' (keyword ending in a colon, #28)" "$title" 'Closes: #10'
 expect pass "body 'Fixes owner/repo#N' (GitHub's long form)" "$title" 'Fixes Tim-van-Oudheusden/MinimalUI#12'
 expect pass 'body link after other text on the line' "$title" 'Part of the launcher work. Closes #4'
 expect pass 'body link on a later line' "$title" $'## Summary\n\nWhat: x\n\nResolves #7'
