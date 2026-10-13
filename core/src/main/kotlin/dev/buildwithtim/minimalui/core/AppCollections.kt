@@ -29,17 +29,19 @@ data class AppCollections(val byName: Map<String, List<String>> = emptyMap()) {
 
     /**
      * [app] moved [step] rows (-1 up, 1 down) in the collection called [name] as shown from [installed], so it never
-     * swaps with an app the user cannot see; those are dropped from the collection for good. It stays put at either
-     * end.
+     * swaps with an app the user cannot see (uninstalled, or hidden, #71): it trades places with the next app shown,
+     * and those in between keep theirs, so a hidden app comes back where it was. It stays put at either end.
      */
     fun moved(name: String, app: LauncherApp, step: Int, installed: List<LauncherApp>): AppCollections {
-        val shown = appsIn(name, installed).map { it.component }.toMutableList()
+        val shown = appsIn(name, installed).map { it.component }
         val from = shown.indexOf(app.component)
         val to = from + step
         if (from < 0 || to !in shown.indices) return this
-        shown[from] = shown[to]
-        shown[to] = app.component
-        return AppCollections(byName + (name to shown))
+        val stored = byName.getValue(name).toMutableList()
+        val other = stored.indexOf(shown[to])
+        stored[stored.indexOf(app.component)] = shown[to]
+        stored[other] = app.component
+        return AppCollections(byName + (name to stored))
     }
 
     /** The apps of the collection called [name] that are among [installed], in the collection's order. */

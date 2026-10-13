@@ -46,6 +46,8 @@ a plain list, driven entirely by keys, that gets out of the way. It is not a the
   never rests on the empty row.
 - **Favourite marker:** a favourite's name has a `★` and a space before it wherever it is listed, as in Cannoli. The
   star is only drawn: typing matches the plain name.
+- **Hidden apps:** a hidden app shows only when typing finds it, after the other matches, its name in grey
+  (`#808080`, the colour of an action that does not apply) whether selected or not, so it reads as hidden.
 - **Collections:** the `Collections` row opens a list of the collections' names, each opening its apps in the user's
   order (MinUI); both are lists in the same style, titled `Collections` and the collection's name. A new collection's
   name is typed on the line below its `New collection` title, with an underscore after it, like the filter.
@@ -53,6 +55,7 @@ a plain list, driven entirely by keys, that gets out of the way. It is not a the
   one list at a time. Its title, the app's name, sits in a dark-grey (`#262626`) pill below the status pill, as MinUI
   marks its in-game menu's title; an action that does not apply stays listed in grey (`#808080`) and does nothing.
 - **Settings:** MinimalUI's settings are such a list, titled `MinimalUI settings`; a setting's value (`On`, `Off`)
-  sits in white at the right end of its row, outside the selection pill, as in MinUI and Cannoli. About, the last row,
-  opens a list of its own with the version and the build commit.
+  sits in white at the right end of its row, outside the selection pill, as in MinUI and Cannoli. Hidden apps and
+  About, the last rows, open lists of their own: the hidden apps (`No hidden apps`, centred, when there are none), and
+  the version and the build commit.
 - **Type:** the system font at 24 sp until a dedicated one is chosen; legible at arm's length on small, square screens.

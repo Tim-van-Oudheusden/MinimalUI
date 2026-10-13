@@ -21,6 +21,11 @@
     <string name="menu_move_down">Move down</string>
     <string name="collections">Collections</string>
     <string name="new_collection">New collection</string>
+    <!-- Hidden apps (#71): the context-menu row by state, the settings link and its list's empty message. -->
+    <string name="menu_hide">Hide</string>
+    <string name="menu_unhide">Unhide</string>
+    <string name="settings_hidden_apps">Hidden apps</string>
+    <string name="no_hidden_apps">No hidden apps</string>
     <!-- MinimalUI's own settings (#73): the list's row next to Android's Settings, the list's title, its rows. -->
     <string name="settings_entry">MinimalUI settings</string>
     <string name="setting_clock">Clock</string>

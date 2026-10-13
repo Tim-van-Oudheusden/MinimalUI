@@ -54,7 +54,7 @@ import dev.buildwithtim.minimalui.core.paged
 import dev.buildwithtim.minimalui.core.selecting
 import dev.buildwithtim.minimalui.core.stepped
 
-/** Grey for a row that is listed but cannot be chosen. */
+/** Grey for a row that is listed but cannot be chosen, or that is listed though hidden (#71). */
 internal val DimText = Color(0xFF808080)
 
 /**
@@ -82,6 +82,7 @@ class PillListState {
  * row's label in an inverted pill that hugs it (see BRANDING.md) and holds focus; a row's [value], when it has one,
  * sits at its right end. Up/Down move one row and wrap around at the ends, except while held. Left/Right turn a page,
  * stopping at the ends. Enter, D-pad centre or a tap confirms a row; a disabled row is drawn dim and confirms nothing.
+ * A [dim] row is drawn dim too, selected or not, yet works as any other (a hidden app that type-to-filter found).
  * An item that is not [selectable] is an empty row (the root list's blank row): it takes a row on every page, and the
  * selection skips it. Holding Enter or D-pad centre until it repeats, or a touch long-press, calls [onLongPress]
  * instead, and the release that ends it confirms nothing. [onKey] sees every other key press first, arrows included,
@@ -102,6 +103,7 @@ internal fun <T> PillList(
     onLongPress: ((T) -> Unit)? = null,
     onKey: (Key, T) -> Boolean = { _, _ -> false },
     value: (T) -> String? = { null },
+    dim: (T) -> Boolean = { false },
 ) {
     val count = items.size
     val blank = { row: Int -> !selectable(items[row]) }
@@ -167,6 +169,7 @@ internal fun <T> PillList(
                     value = value(item),
                     height = rowHeight,
                     enabled = enabled(item),
+                    dim = dim(item),
                     onConfirm = { onConfirm(item) },
                     onLongPress = onLongPress?.let { { it(item) } },
                     // Focus that moves some other way (Tab, say) moves the selection with it.
@@ -249,6 +252,7 @@ private fun PillRow(
     value: String?,
     height: Dp,
     enabled: Boolean,
+    dim: Boolean,
     onConfirm: () -> Unit,
     onLongPress: (() -> Unit)?,
     onFocused: () -> Unit,
@@ -294,7 +298,7 @@ private fun PillRow(
             Text(
                 text = label,
                 color = when {
-                    !enabled -> DimText
+                    !enabled || dim -> DimText
                     focused -> colors.onPrimary
                     else -> colors.onBackground
                 },

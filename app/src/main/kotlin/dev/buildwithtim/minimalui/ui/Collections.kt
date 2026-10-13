@@ -177,4 +177,4 @@ internal fun NewCollection(
 }
 
 /** Esc closes a list, as Back does; whether [key] was it. */
-private fun closesOnEscape(key: Key, onClose: () -> Unit): Boolean = (key == Key.Escape).also { if (it) onClose() }
+internal fun closesOnEscape(key: Key, onClose: () -> Unit): Boolean = (key == Key.Escape).also { if (it) onClose() }

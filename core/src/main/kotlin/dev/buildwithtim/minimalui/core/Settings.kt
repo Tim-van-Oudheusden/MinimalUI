@@ -27,6 +27,9 @@ enum class Setting(val key: String, val choices: List<Choice>, val default: Choi
  * plus its label and its list in the app. About stays last.
  */
 enum class SettingsLink {
+    /** The apps the user hid (#71), each shown again by choosing it. */
+    HiddenApps,
+
     /** The app's version and the commit it was built from. */
     About,
 }
