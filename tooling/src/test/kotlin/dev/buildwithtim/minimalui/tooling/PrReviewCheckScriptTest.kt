@@ -46,6 +46,15 @@ class PrReviewCheckScriptTest {
         assertEquals(0, check("build(deps): bump junit", "Bumps junit.", author = "dependabot[bot]").exitCode)
     }
 
+    // The full case table (every closing keyword, CRLF, the colon form, the unfilled template) is a plain-bash script
+    // that runs without Gradle; running it here puts it in CI too.
+    @Test
+    fun `passes every case in the script's own case table`() {
+        val result = runScript("scripts/pr-review-check.test.sh")
+
+        assertEquals(result.stdout, 0, result.exitCode)
+    }
+
     @Test
     fun `reports every failed item in one run`() {
         val result = check("Add app search", "No issue here")
