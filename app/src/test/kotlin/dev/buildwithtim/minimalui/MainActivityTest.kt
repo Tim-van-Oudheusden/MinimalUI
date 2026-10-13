@@ -81,14 +81,17 @@ class MainActivityTest {
         controller?.pause()?.stop()?.destroy()
     }
 
-    private fun install(label: String, packageName: String) {
+    private fun install(label: String, packageName: String, category: Int = ApplicationInfo.CATEGORY_UNDEFINED) {
         val info = ResolveInfo().apply {
             nonLocalizedLabel = label
             activityInfo = ActivityInfo().apply {
                 this.packageName = packageName
                 name = "$packageName.Main"
                 exported = true
-                applicationInfo = ApplicationInfo().apply { this.packageName = packageName }
+                applicationInfo = ApplicationInfo().apply {
+                    this.packageName = packageName
+                    this.category = category
+                }
             }
         }
         shadowOf(application.packageManager).addResolveInfoForIntent(launcherQuery, info)
@@ -343,10 +346,13 @@ class MainActivityTest {
         launch()
         awaitListed("Alarm")
 
-        // Zebra is the last row (after MinimalUI and its settings row): Up wraps to it. Opened, it heads the recently
-        // used block above a blank row: Down wraps to it there, and Down again skips the blank row to Alarm.
+        // Zebra is the last app row (after MinimalUI and its settings row): Up wraps to the Groups row below it, and Up
+        // again skips the blank row to Zebra. Opened, it heads the recently used block above a blank row: Down reaches
+        // the Groups row, Down again wraps to Zebra there, and Down once more skips the blank row to Alarm.
+        press(Key.DirectionUp)
         press(Key.DirectionUp)
         press(Key.Enter)
+        press(Key.DirectionDown)
         press(Key.DirectionDown)
         press(Key.DirectionDown)
         press(Key.Enter)
@@ -395,6 +401,9 @@ class MainActivityTest {
         val activity = launch()
         awaitListed("Zebra")
 
+        // The last row is the Groups row (#69); Up again skips the blank row above it.
+        type(activity, KeyEvent.KEYCODE_DPAD_UP)
+        rule.onNodeWithText("Groups").assertIsFocused()
         type(activity, KeyEvent.KEYCODE_DPAD_UP)
         rule.onNodeWithText("Zebra").assertIsFocused()
 
@@ -402,7 +411,7 @@ class MainActivityTest {
         rule.onNodeWithText("Alarm").assertIsFocused()
 
         type(activity, KeyEvent.KEYCODE_DPAD_RIGHT)
-        rule.onNodeWithText("Zebra").assertIsFocused()
+        rule.onNodeWithText("Groups").assertIsFocused()
     }
 
     @Test
@@ -752,9 +761,13 @@ class MainActivityTest {
             .map { node -> node.config[SemanticsProperties.Text].joinToString { it.text } }
     }
 
-    /** Opens MinimalUI's settings from its row: the last row while no test app sorts after it and Settings is absent. */
+    /**
+     * Opens MinimalUI's settings from its row: the last app row while no test app sorts after it and Settings is absent.
+     * Up wraps to the Groups row below it (#69), and Up again skips the blank row above that.
+     */
     private fun openSettings() {
         awaitListed("MinimalUI settings")
+        press(Key.DirectionUp)
         press(Key.DirectionUp)
         rule.onNodeWithText("MinimalUI settings").assertIsFocused()
         press(Key.Enter)
@@ -911,6 +924,8 @@ class MainActivityTest {
     fun `Uninstall is disabled for the MinimalUI settings row`() {
         val activity = launch()
         awaitListed("MinimalUI settings")
+        // Up wraps to the Groups row, and Up again skips its blank row to the last app row.
+        press(Key.DirectionUp)
         press(Key.DirectionUp)
         openMenu(activity)
 
@@ -938,11 +953,11 @@ class MainActivityTest {
         install("Bell", "com.example.bell")
         val activity = launch()
         awaitListed("Bell")
-        assertEquals(listOf("Alarm", "Bell", "MinimalUI", "MinimalUI settings"), rowsMatching(activity, ""))
+        assertEquals(listOf("Alarm", "Bell", "MinimalUI", "MinimalUI settings", "Groups"), rowsMatching(activity, ""))
 
         openInTurn(activity, "Alarm", "Bell")
 
-        val rows = listOf("Bell", "Alarm", "Alarm", "Bell", "MinimalUI", "MinimalUI settings")
+        val rows = listOf("Bell", "Alarm", "Alarm", "Bell", "MinimalUI", "MinimalUI settings", "Groups")
         assertEquals(rows, rowsMatching(activity, ""))
         val bounds = rule.onAllNodes(hasClickAction()).fetchSemanticsNodes().map { it.boundsInRoot }
         // The blank row between the block and the full list is as tall as any other row.
@@ -1003,7 +1018,7 @@ class MainActivityTest {
         type(activity, KeyEvent.KEYCODE_ESCAPE)
         awaitListed("Clock", listed = false)
 
-        assertEquals(listOf("Alarm", "MinimalUI", "MinimalUI settings"), rowsMatching(activity, ""))
+        assertEquals(listOf("Alarm", "MinimalUI", "MinimalUI settings", "Groups"), rowsMatching(activity, ""))
         rule.onNodeWithText("MinimalUI settings").assertIsFocused()
     }
 
@@ -1068,7 +1083,7 @@ class MainActivityTest {
         chooseRow("Add to favourites")
 
         awaitListed("★ Bell")
-        val rows = listOf("★ Bell", "Alarm", "★ Bell", "MinimalUI", "MinimalUI settings")
+        val rows = listOf("★ Bell", "Alarm", "★ Bell", "MinimalUI", "MinimalUI settings", "Groups")
         assertEquals(rows, rowsMatching(activity, ""))
         val bounds = rule.onAllNodes(hasClickAction()).fetchSemanticsNodes().map { it.boundsInRoot }
         assertEquals(bounds[0].height, bounds[1].top - bounds[0].bottom, 1f)
@@ -1079,7 +1094,7 @@ class MainActivityTest {
         chooseRow("Remove from favourites")
 
         awaitListed("★ Bell", listed = false)
-        assertEquals(listOf("Alarm", "Bell", "MinimalUI", "MinimalUI settings"), rowsMatching(activity, ""))
+        assertEquals(listOf("Alarm", "Bell", "MinimalUI", "MinimalUI settings", "Groups"), rowsMatching(activity, ""))
     }
 
     @Test
@@ -1114,7 +1129,7 @@ class MainActivityTest {
         addToCollection(activity, "gamez", new = true)
 
         awaitListed("Collections")
-        val rows = listOf("Collections", "Alarm", "Bell", "MinimalUI", "MinimalUI settings")
+        val rows = listOf("Collections", "Alarm", "Bell", "MinimalUI", "MinimalUI settings", "Groups")
         assertEquals(rows, rowsMatching(activity, ""))
         rule.onNodeWithText("Bell").assertIsFocused()
         press(Key.DirectionUp)
@@ -1214,7 +1229,7 @@ class MainActivityTest {
         chooseRow("Remove from collection")
 
         awaitListed("MinimalUI")
-        assertEquals(listOf("Alarm", "Bell", "MinimalUI", "MinimalUI settings"), rowsMatching(activity, ""))
+        assertEquals(listOf("Alarm", "Bell", "MinimalUI", "MinimalUI settings", "Groups"), rowsMatching(activity, ""))
         rule.onNodeWithText("Collections").assertDoesNotExist()
     }
 
@@ -1275,6 +1290,7 @@ class MainActivityTest {
         chooseRow("Add to favourites")
         awaitListed("★ Bell")
         openInTurn(activity, "Cello")
+        // A full page: the Groups row is on the next one.
         val before = listOf("★ Bell", "Cello", "Alarm", "★ Bell", "Cello", "MinimalUI", "MinimalUI settings")
         assertEquals(before, rowsMatching(activity, ""))
         rule.onAllNodesWithText("Cello")[0].assertIsFocused()
@@ -1286,7 +1302,7 @@ class MainActivityTest {
         fromMenu(activity, "Hide")
 
         awaitListed("★ Bell", listed = false)
-        assertEquals(listOf("Alarm", "MinimalUI", "MinimalUI settings"), rowsMatching(activity, ""))
+        assertEquals(listOf("Alarm", "MinimalUI", "MinimalUI settings", "Groups"), rowsMatching(activity, ""))
         rule.onNodeWithText("Alarm").assertIsFocused()
     }
 
@@ -1317,7 +1333,7 @@ class MainActivityTest {
 
         awaitListed("MinimalUI")
         rule.onNodeWithText("Collections").assertDoesNotExist()
-        assertEquals(listOf("MinimalUI", "MinimalUI settings"), rowsMatching(activity, ""))
+        assertEquals(listOf("MinimalUI", "MinimalUI settings", "Groups"), rowsMatching(activity, ""))
         openHiddenApps()
         rule.onNodeWithText("Alarm").assertIsFocused()
         press(Key.Enter)
@@ -1384,7 +1400,7 @@ class MainActivityTest {
         assertNotEquals(DimText, textColor("Bike"))
         activity.newIntent(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME))
         awaitListed("b_", listed = false)
-        assertEquals(listOf("Bell", "Bell", "Bike", "MinimalUI", "MinimalUI settings"), rowsMatching(activity, ""))
+        assertEquals(listOf("Bell", "Bell", "Bike", "MinimalUI", "MinimalUI settings", "Groups"), rowsMatching(activity, ""))
     }
 
     /** Opens MinimalUI's settings, then its Hidden apps list. */
@@ -1429,7 +1445,7 @@ class MainActivityTest {
         rule.onNodeWithText("Hidden apps").assertIsFocused()
         activity.newIntent(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME))
         awaitListed("Alarm")
-        assertEquals(listOf("Alarm", "Bell", "Cello", "MinimalUI", "MinimalUI settings"), rowsMatching(activity, ""))
+        assertEquals(listOf("Alarm", "Bell", "Cello", "MinimalUI", "MinimalUI settings", "Groups"), rowsMatching(activity, ""))
         rule.onNodeWithText("Alarm").assertIsFocused()
     }
 
@@ -1458,7 +1474,7 @@ class MainActivityTest {
         val restarted = launch()
         awaitListed("Bell")
 
-        assertEquals(listOf("Bell", "MinimalUI", "MinimalUI settings"), rowsMatching(restarted, ""))
+        assertEquals(listOf("Bell", "MinimalUI", "MinimalUI settings", "Groups"), rowsMatching(restarted, ""))
         openHiddenApps()
         awaitListed("Alarm")
         rule.onNodeWithText("Alarm").assertIsFocused()
@@ -1513,7 +1529,7 @@ class MainActivityTest {
         rename(activity, current = "Alarm", name = "Zoo b")
 
         awaitListed("Zoo b")
-        assertEquals(listOf("Bell", "MinimalUI", "MinimalUI settings", "Zoo b"), rowsMatching(activity, ""))
+        assertEquals(listOf("Bell", "MinimalUI", "MinimalUI settings", "Zoo b", "Groups"), rowsMatching(activity, ""))
         rule.onNodeWithText("Zoo b").assertIsFocused()
         assertEquals(listOf("Zoo b"), rowsMatching(activity, "zo"))
     }
@@ -1541,7 +1557,7 @@ class MainActivityTest {
         type(activity, KeyEvent.KEYCODE_ESCAPE)
 
         awaitListed("Bell")
-        assertEquals(listOf("Alarm", "Bell", "MinimalUI", "MinimalUI settings"), rowsMatching(activity, ""))
+        assertEquals(listOf("Alarm", "Bell", "MinimalUI", "MinimalUI settings", "Groups"), rowsMatching(activity, ""))
         rule.onNodeWithText("Alarm").assertIsFocused()
     }
 
@@ -1560,7 +1576,7 @@ class MainActivityTest {
 
         awaitListed("Alarm")
         rule.onNodeWithText("q_").assertDoesNotExist()
-        assertEquals(listOf("Alarm", "MinimalUI", "MinimalUI settings"), rowsMatching(activity, ""))
+        assertEquals(listOf("Alarm", "MinimalUI", "MinimalUI settings", "Groups"), rowsMatching(activity, ""))
     }
 
     @Test
@@ -1576,7 +1592,7 @@ class MainActivityTest {
         rename(activity, current = "Zoo", name = "")
 
         awaitListed("Alarm")
-        assertEquals(listOf("Alarm", "Bell", "MinimalUI", "MinimalUI settings"), rowsMatching(activity, ""))
+        assertEquals(listOf("Alarm", "Bell", "MinimalUI", "MinimalUI settings", "Groups"), rowsMatching(activity, ""))
         rule.onNodeWithText("Alarm").assertIsFocused()
     }
 
@@ -1595,13 +1611,14 @@ class MainActivityTest {
         awaitListed("Ring")
         openInTurn(restarted, "Ring")
 
-        assertEquals(listOf("Ring", "Alarm", "MinimalUI", "MinimalUI settings", "Ring"), rowsMatching(restarted, ""))
+        assertEquals(listOf("Ring", "Alarm", "MinimalUI", "MinimalUI settings", "Ring", "Groups"), rowsMatching(restarted, ""))
     }
 
     @Test
     fun `Rename is disabled for the MinimalUI settings row`() {
         val activity = launch()
         awaitListed("MinimalUI settings")
+        press(Key.DirectionUp)
         press(Key.DirectionUp)
         rule.onNodeWithText("MinimalUI settings").assertIsFocused()
         openMenu(activity)
@@ -1618,7 +1635,9 @@ class MainActivityTest {
         awaitListed("Bell")
 
         assertEquals(
-            listOf("Bell", "MinimalUI", "MinimalUI settings", "Phone com.example.dialer", "Phone com.example.phone"),
+            listOf(
+                "Bell", "MinimalUI", "MinimalUI settings", "Phone com.example.dialer", "Phone com.example.phone", "Groups",
+            ),
             rowsMatching(activity, ""),
         )
         val layouts = mutableListOf<TextLayoutResult>()
@@ -1645,6 +1664,204 @@ class MainActivityTest {
         rule.onNodeWithText("Collections").assertIsFocused()
         press(Key.Enter)
         awaitListed("My games")
+    }
+
+    /** The texts of the open list's rows, top to bottom. */
+    private fun shownRows(): List<String> = rule.onAllNodes(hasClickAction()).fetchSemanticsNodes().map {
+        it.config[SemanticsProperties.Text].joinToString()
+    }
+
+    @Test
+    fun `the Groups row ends the root, Up wraps to it, a game is under Games, and Back restores each row`() {
+        install("Alarm", "com.example.alarm")
+        install("Chess", "com.example.chess", ApplicationInfo.CATEGORY_GAME)
+        val activity = launch()
+        awaitListed("Chess")
+        assertEquals(listOf("Alarm", "Chess", "MinimalUI", "MinimalUI settings", "Groups"), shownRows())
+        rule.onNodeWithText("Alarm").assertIsFocused()
+
+        press(Key.DirectionUp)
+        rule.onNodeWithText("Groups").assertIsFocused()
+        press(Key.Enter)
+        awaitListed("Games")
+        assertEquals(listOf("Games", "Other"), shownRows())
+        rule.onNodeWithText("Games").assertIsFocused()
+        press(Key.Enter)
+        awaitListed("Alarm", listed = false)
+        assertEquals(listOf("Chess"), shownRows())
+
+        type(activity, KeyEvent.KEYCODE_ESCAPE)
+        awaitListed("Other")
+        rule.onNodeWithText("Games").assertIsFocused()
+        press(Key.DirectionDown)
+        press(Key.Enter)
+        awaitListed("Games", listed = false)
+        assertEquals(listOf("Alarm", "MinimalUI"), shownRows())
+        activity.get().onBackPressedDispatcher.onBackPressed()
+        awaitListed("Games")
+        rule.onNodeWithText("Other").assertIsFocused()
+        activity.get().onBackPressedDispatcher.onBackPressed()
+        awaitListed("Chess")
+        rule.onNodeWithText("Groups").assertIsFocused()
+    }
+
+    /** From the first row of the root, by keyboard: Up wraps to the Groups row, and Enter opens the groups. */
+    private fun openGroups() {
+        press(Key.DirectionUp)
+        rule.onNodeWithText("Groups").assertIsFocused()
+        press(Key.Enter)
+        awaitListed("Other")
+    }
+
+    /** From the selected app's menu, by keyboard: Add to group, then [name], made new when [new]. */
+    private fun addToGroup(activity: ActivityController<MainActivity>, name: String, new: Boolean) {
+        openMenu(activity)
+        chooseRow("Add to group")
+        awaitListed("App info", listed = false)
+        if (new) {
+            chooseRow("New group")
+            awaitEditor()
+            typeChars(activity, name)
+            rule.waitUntil(timeoutMillis = 5_000) { editorText() == name }
+            press(Key.Enter)
+        } else {
+            chooseRow(name)
+        }
+        awaitListed("App info", listed = false)
+    }
+
+    @Test
+    fun `a new group is made by keyboard from an app's menu, then renamed and deleted from the group's menu`() {
+        install("Alarm", "com.example.alarm")
+        install("Bell", "com.example.bell")
+        val activity = launch()
+        awaitListed("Bell")
+        press(Key.DirectionDown)
+        addToGroup(activity, "Work", new = true)
+        rule.onNodeWithText("Bell").assertIsFocused()
+
+        press(Key.DirectionUp)
+        openGroups()
+        assertEquals(listOf("Work", "Other"), shownRows())
+        rule.onNodeWithText("Work").assertIsFocused()
+        press(Key.Enter)
+        awaitListed("Other", listed = false)
+        assertEquals(listOf("Bell"), shownRows())
+        type(activity, KeyEvent.KEYCODE_ESCAPE)
+        awaitListed("Other")
+
+        type(activity, KeyEvent.KEYCODE_MENU)
+        awaitListed("Rename group")
+        chooseRow("Rename group")
+        awaitEditor()
+        assertEquals("Work", editorText())
+        repeat(4) { type(activity, KeyEvent.KEYCODE_DEL) }
+        typeChars(activity, "Play")
+        rule.waitUntil(timeoutMillis = 5_000) { editorText() == "Play" }
+        press(Key.Enter)
+        awaitListed("Play")
+        assertEquals(listOf("Play", "Other"), shownRows())
+
+        rule.onNodeWithText("Play").assertIsFocused()
+        type(activity, KeyEvent.KEYCODE_MENU)
+        awaitListed("Delete group")
+        chooseRow("Delete group")
+        awaitListed("Play", listed = false)
+        assertEquals(listOf("Other"), shownRows())
+        rule.onNodeWithText("Other").assertIsFocused()
+    }
+
+    @Test
+    fun `an automatic group's menu shows Rename group and Delete group disabled`() {
+        install("Alarm", "com.example.alarm")
+        val activity = launch()
+        awaitListed("Alarm")
+        openGroups()
+
+        type(activity, KeyEvent.KEYCODE_MENU)
+        awaitListed("Rename group")
+        rule.onNodeWithText("Rename group").assertIsNotEnabled()
+        rule.onNodeWithText("Delete group").assertIsNotEnabled()
+        press(Key.Enter)
+        rule.onNodeWithText("Rename group").assertExists()
+        type(activity, KeyEvent.KEYCODE_ESCAPE)
+        awaitListed("Rename group", listed = false)
+        rule.onNodeWithText("Other").assertIsFocused()
+    }
+
+    @Test
+    fun `user groups are kept when the launcher starts again, and Remove from group empties one until it goes`() {
+        install("Alarm", "com.example.alarm")
+        install("Bell", "com.example.bell")
+        val activity = launch()
+        awaitListed("Bell")
+        press(Key.DirectionDown)
+        addToGroup(activity, "Work", new = true)
+        press(Key.DirectionUp)
+        addToGroup(activity, "Work", new = false)
+
+        closeActivity()
+        val restarted = launch()
+        awaitListed("Alarm")
+        openGroups()
+        press(Key.Enter)
+        awaitListed("Other", listed = false)
+        assertEquals(listOf("Alarm", "Bell"), shownRows())
+
+        openMenu(restarted)
+        chooseRow("Remove from group")
+        awaitListed("App info", listed = false)
+        assertEquals(listOf("Bell"), shownRows())
+        openMenu(restarted)
+        chooseRow("Remove from group")
+
+        awaitListed("Other")
+        assertEquals(listOf("Other"), shownRows())
+    }
+
+    @Test
+    fun `a group whose apps are all hidden is not shown, yet kept to add to`() {
+        install("Alarm", "com.example.alarm")
+        install("Bell", "com.example.bell")
+        val activity = launch()
+        awaitListed("Bell")
+        press(Key.DirectionDown)
+        addToGroup(activity, "Work", new = true)
+        fromMenu(activity, "Hide")
+        awaitListed("Bell", listed = false)
+        press(Key.DirectionUp)
+        rule.onNodeWithText("Alarm").assertIsFocused()
+
+        openGroups()
+        assertEquals(listOf("Other"), shownRows())
+        type(activity, KeyEvent.KEYCODE_ESCAPE)
+        awaitListed("Alarm")
+        rule.onNodeWithText("Groups").assertIsFocused()
+        press(Key.DirectionDown)
+        rule.onNodeWithText("Alarm").assertIsFocused()
+        openMenu(activity)
+        chooseRow("Add to group")
+        awaitListed("App info", listed = false)
+        assertEquals(listOf("Work", "New group"), shownRows())
+    }
+
+    @Test
+    fun `an app opened from a group becomes recent, and coming back keeps the group open on it`() {
+        install("Alarm", "com.example.alarm")
+        install("Chess", "com.example.chess", ApplicationInfo.CATEGORY_GAME)
+        val activity = launch()
+        awaitListed("Chess")
+        openGroups()
+        press(Key.Enter)
+        awaitListed("Other", listed = false)
+        press(Key.Enter)
+
+        val started = shadowOf(application).nextStartedActivity
+        assertEquals(ComponentName("com.example.chess", "com.example.chess.Main"), started.component)
+        assertEquals(listOf("Chess"), activity.get().recentApps.map { it.label })
+        leaveAndComeBack(activity)
+        rule.onNodeWithText("Chess").assertIsFocused()
+        rule.onNodeWithText("Alarm").assertDoesNotExist()
     }
 }
 

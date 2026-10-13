@@ -41,9 +41,18 @@ sealed interface RootEntry {
         override val app: LauncherApp? get() = null
     }
 
-    /** One empty row between the block and the full list; it still takes a row on every page. */
-    data object Blank : RootEntry {
-        override val key: String get() = "blank"
+    /** The one row that opens the list of groups (#69), last on the root, as MinUI lists Tools last. */
+    data object Groups : RootEntry {
+        override val key: String get() = "groups"
+        override val selectable: Boolean get() = true
+        override val app: LauncherApp? get() = null
+    }
+
+    /**
+     * One empty row that sets a part apart: the block from the full list, or the full list from the Groups row (the
+     * two differ by [key]). It still takes a row on every page.
+     */
+    data class Blank(override val key: String = "blank") : RootEntry {
         override val selectable: Boolean get() = false
         override val app: LauncherApp? get() = null
     }
@@ -53,7 +62,9 @@ sealed interface RootEntry {
  * The root list, top to bottom (#70, the hybrid of MinUI's root and a flat list): the [favourites] among [apps] in
  * their order (#68), then the newest of the [recents] that are not favourites, as many as the Recently used setting
  * allows, then a Collections row when any of the [collections] is shown, then one blank row, then all [apps] in their
- * order, which still lists those apps too. With none of these at the top there is no block and no blank row.
+ * order, which still lists those apps too. With none of these at the top there is no block and no blank row. When any
+ * group is shown ([appGroups] of [apps] and the user's [groups], #69), one more blank row and the Groups row end it, so
+ * the first row stays an app and Up from it reaches the groups at once.
  */
 fun rootEntries(
     apps: List<LauncherApp>,
@@ -61,15 +72,19 @@ fun rootEntries(
     settings: Settings,
     favourites: Favourites = Favourites(),
     collections: AppCollections = AppCollections(),
+    groups: UserGroups = UserGroups(),
 ): List<RootEntry> {
     val all = apps.map { RootEntry.App(it, isFavourite = it in favourites) }
     val recent = recents.shownFrom(apps).filterNot { it in favourites }.take(settings.recentlyUsed)
     val block = favourites.shownFrom(apps).map { RootEntry.App(it, RootSection.Favourite, isFavourite = true) } +
         recent.map { RootEntry.App(it, RootSection.Recent) } +
         listOfNotNull(RootEntry.Collections.takeIf { collections.names(apps).isNotEmpty() })
-    if (block.isEmpty()) return all
-    return block + RootEntry.Blank + all
+    val top = if (block.isEmpty()) all else block + RootEntry.Blank() + all
+    if (appGroups(apps, groups).isEmpty()) return top
+    return top + RootEntry.Blank(GROUPS_BLANK) + RootEntry.Groups
 }
+
+private const val GROUPS_BLANK = "groups-blank"
 
 /**
  * The row of [now] to select so the selection stays on what row [selected] of [before] showed when the list changes

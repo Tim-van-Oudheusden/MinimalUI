@@ -2,15 +2,19 @@ package dev.buildwithtim.minimalui.core
 
 import dev.buildwithtim.minimalui.core.MenuAction.AddToCollection
 import dev.buildwithtim.minimalui.core.MenuAction.AddToFavourites
+import dev.buildwithtim.minimalui.core.MenuAction.AddToGroup
 import dev.buildwithtim.minimalui.core.MenuAction.AppInfo
 import dev.buildwithtim.minimalui.core.MenuAction.ClearRecents
+import dev.buildwithtim.minimalui.core.MenuAction.DeleteGroup
 import dev.buildwithtim.minimalui.core.MenuAction.Hide
 import dev.buildwithtim.minimalui.core.MenuAction.MoveDown
 import dev.buildwithtim.minimalui.core.MenuAction.MoveUp
 import dev.buildwithtim.minimalui.core.MenuAction.RemoveFromCollection
 import dev.buildwithtim.minimalui.core.MenuAction.RemoveFromFavourites
+import dev.buildwithtim.minimalui.core.MenuAction.RemoveFromGroup
 import dev.buildwithtim.minimalui.core.MenuAction.RemoveFromRecents
 import dev.buildwithtim.minimalui.core.MenuAction.Rename
+import dev.buildwithtim.minimalui.core.MenuAction.RenameGroup
 import dev.buildwithtim.minimalui.core.MenuAction.Unhide
 import dev.buildwithtim.minimalui.core.MenuAction.Uninstall
 import org.junit.Assert.assertEquals
@@ -21,11 +25,10 @@ class ContextMenuTest {
     private val userApp = AppFacts(isSystem = false, isSettingsEntry = false, isRecent = false, hasRecents = false)
 
     // Every app's menu ends its own part with these, before any recents rows.
-    private val listRows =
-        listOf(MenuItem(AddToFavourites), MenuItem(AddToCollection), MenuItem(Rename), MenuItem(Hide))
+    private val listRows = listOf(AddToFavourites, AddToCollection, AddToGroup, Rename, Hide).map(::MenuItem)
 
     @Test
-    fun `a user app offers App info and Uninstall, then the favourite, collection, Rename and Hide rows`() {
+    fun `a user app offers App info and Uninstall, then the favourite, collection, group, Rename and Hide rows`() {
         assertEquals(listOf(MenuItem(AppInfo), MenuItem(Uninstall)) + listRows, contextMenu(userApp))
     }
 
@@ -61,7 +64,7 @@ class ContextMenuTest {
         val menu = contextMenu(userApp.copy(isHidden = true))
 
         assertEquals(
-            listOf(AppInfo, Uninstall, AddToFavourites, AddToCollection, Rename, Unhide),
+            listOf(AppInfo, Uninstall, AddToFavourites, AddToCollection, AddToGroup, Rename, Unhide),
             menu.map { it.action },
         )
     }
@@ -71,7 +74,7 @@ class ContextMenuTest {
         val menu = contextMenu(userApp.copy(hasRecents = true))
 
         assertEquals(
-            listOf(AppInfo, Uninstall, AddToFavourites, AddToCollection, Rename, Hide, ClearRecents),
+            listOf(AppInfo, Uninstall, AddToFavourites, AddToCollection, AddToGroup, Rename, Hide, ClearRecents),
             menu.map { it.action },
         )
     }
@@ -82,7 +85,8 @@ class ContextMenuTest {
 
         assertEquals(
             listOf(
-                AppInfo, Uninstall, AddToFavourites, AddToCollection, Rename, Hide, RemoveFromRecents, ClearRecents,
+                AppInfo, Uninstall, AddToFavourites, AddToCollection, AddToGroup, Rename, Hide, RemoveFromRecents,
+                ClearRecents,
             ),
             menu.map { it.action },
         )
@@ -94,7 +98,7 @@ class ContextMenuTest {
         val menu = contextMenu(userApp.copy(isFavourite = true))
 
         assertEquals(
-            listOf(AppInfo, Uninstall, RemoveFromFavourites, AddToCollection, Rename, Hide),
+            listOf(AppInfo, Uninstall, RemoveFromFavourites, AddToCollection, AddToGroup, Rename, Hide),
             menu.map { it.action },
         )
     }
@@ -102,7 +106,7 @@ class ContextMenuTest {
     @Test
     fun `inside a collection an app can be removed from it and moved, but not past either end, before Rename`() {
         fun menuAt(row: Int, count: Int) = contextMenu(userApp.copy(place = CollectionPlace(row, count)))
-        val inCollection = listOf(AppInfo, Uninstall, AddToFavourites, AddToCollection, RemoveFromCollection)
+        val inCollection = listOf(AppInfo, Uninstall, AddToFavourites, AddToCollection, AddToGroup, RemoveFromCollection)
 
         assertEquals(
             inCollection.map(::MenuItem) + MenuItem(MoveUp) + MenuItem(MoveDown) + MenuItem(Rename) + MenuItem(Hide),
@@ -115,6 +119,25 @@ class ContextMenuTest {
         assertEquals(
             listOf(MenuItem(MoveUp), MenuItem(MoveDown, enabled = false), MenuItem(Rename), MenuItem(Hide)),
             menuAt(2, 3).takeLast(4),
+        )
+    }
+
+    @Test
+    fun `inside a user group that holds it an app can be removed from it, after Add to group`() {
+        val menu = contextMenu(userApp.copy(isGroupMember = true))
+
+        assertEquals(
+            listOf(AppInfo, Uninstall, AddToFavourites, AddToCollection, AddToGroup, RemoveFromGroup, Rename, Hide),
+            menu.map { it.action },
+        )
+    }
+
+    @Test
+    fun `a user group's menu renames or deletes it, and an automatic group's shows both disabled`() {
+        assertEquals(listOf(MenuItem(RenameGroup), MenuItem(DeleteGroup)), groupMenu(isUserGroup = true))
+        assertEquals(
+            listOf(MenuItem(RenameGroup, enabled = false), MenuItem(DeleteGroup, enabled = false)),
+            groupMenu(isUserGroup = false),
         )
     }
 }

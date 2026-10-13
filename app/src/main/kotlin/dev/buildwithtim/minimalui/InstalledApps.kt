@@ -8,24 +8,37 @@ import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import dev.buildwithtim.minimalui.core.LauncherApp
+import dev.buildwithtim.minimalui.core.appCategory
 
 private fun launcherIntent(): Intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
 
-/** Every activity that declares itself as a launcher entry point; visibility comes from the manifest's `<queries>`. */
+/**
+ * Every activity that declares itself as a launcher entry point, with the category its app declared (#69); visibility
+ * comes from the manifest's `<queries>`.
+ */
 fun PackageManager.launchableApps(): List<LauncherApp> =
     queryLauncherActivities().map { info ->
         LauncherApp(
             label = info.loadLabel(this).toString(),
             packageName = info.activityInfo.packageName,
             activityName = info.activityInfo.name,
+            category = info.activityInfo.applicationInfo.groupCategory(),
         )
     }
 
 /** The activity that opens the system settings, or null on a device where nothing handles it. */
 fun PackageManager.systemSettings(): LauncherApp? =
     Intent(Settings.ACTION_SETTINGS).resolveActivityInfo(this, PackageManager.MATCH_DEFAULT_ONLY)?.let { info ->
-        LauncherApp(label = info.loadLabel(this).toString(), packageName = info.packageName, activityName = info.name)
+        LauncherApp(
+            label = info.loadLabel(this).toString(),
+            packageName = info.packageName,
+            activityName = info.name,
+            category = info.applicationInfo.groupCategory(),
+        )
     }
+
+/** The automatic group (#69) of the app [this] describes, from the category its developer declared. */
+private fun ApplicationInfo.groupCategory() = appCategory(category, Build.VERSION.SDK_INT)
 
 /** Whether [packageName] came with the system image, so it cannot be uninstalled; false if it is not installed. */
 fun PackageManager.isSystemApp(packageName: String): Boolean {

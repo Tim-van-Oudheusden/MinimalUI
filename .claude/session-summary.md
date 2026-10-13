@@ -10,20 +10,18 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 ## Latest session
 
 - **Date:** 2026-10-13
-- **Worked:** #72 — rename apps and tell apart duplicate labels (stack row 9 of the #60 interface stack, on
-  `feat/71-hide-apps`, PR #103).
-- **Outcome:** D7 (b) rename + duplicates (b) Cannoli-style suffix. Core `Aliases` (by component, never pruned;
-  `renamed` clears on blank or the system label; `labelled(installed, settingsPackage)` re-sorts and keeps the
-  MinimalUI settings row after Android's Settings; stored), `duplicateSuffixes` (equal under the list collator →
-  package, or short activity class within one package), shared `labelCollator()` and `typedName()` (one line, trimmed;
-  collection names use it too), `MenuAction.Rename` + `AppFacts.isLauncherSettings`. App: `AliasesStore` (prefs
-  "aliases"), `ui/TextEntry.kt` (one editor for Rename and New collection, replacing `NewCollection`),
-  `PillList(suffix = …)` draws the dim 0.75× suffix in the same Text.
-- **Open follow-ups:** none for #72.
+- **Worked:** #69 — app groups (stack row 10 of the #60 interface stack, on `feat/72-rename-apps`, PR #104).
+- **Outcome:** D2 (d) automatic + user groups. Core `AppCategory` + `appCategory(code, sdk)` (Accessibility only from
+  API 31), `LauncherApp.category` (null = no automatic group: the MinimalUI settings row), `UserGroups` (by name,
+  members by component, unordered; last app out deletes; rename merges; stored), `appGroups(apps, user)` (alphabetical,
+  Other last, same-name user/automatic merged, empty hidden), `RootEntry.Groups` + keyed `RootEntry.Blank(key)` (the
+  Groups row ends the root after its own blank row, so the first row stays an app), `MenuAction` AddToGroup,
+  RemoveFromGroup, RenameGroup, DeleteGroup, `AppFacts.isGroupMember`, `groupMenu(isUserGroup)`. App: `GroupsStore`
+  (prefs "groups"), categories read in `launchableApps()`/`systemSettings()`, group screens reuse `CollectionsList`
+  (now with `onMenu`), `CollectionApps`, `CollectionChoice` (now `newLabel`), `ContextMenu` and `TextEntry`.
+- **Open follow-ups:** #78 adds the work-profile automatic group: extend `LauncherApp.automaticGroups` (AppGroups.kt).
 - **Notes for next session:**
-  - `MainActivity.apps` is now derived (`loaded` system-labelled + `aliases`); every list takes it, so aliases show
-    everywhere. Rename looks up the system-labelled app in `loaded`.
-  - Use the `TextFieldState` `BasicTextField` (not the `TextFieldValue` one): the latter drops keys sent faster than a
-    recomposition (Backspace right after a letter).
-  - Robolectric: wait for the editor's field to be focused before dispatching keys; Shift meta for capitals.
+  - Every Robolectric app has category -1 (Other), so every root list ends with a blank row and `Groups`: Up from the
+    first row lands on Groups, not the last app (`openSettings()` presses Up twice); `rowsMatching(…, "")` lists end
+    with "Groups" unless the list is longer than a page.
   - No JDK on the host: run Gradle via the podman sandbox (`/tmp/gates.sh`).

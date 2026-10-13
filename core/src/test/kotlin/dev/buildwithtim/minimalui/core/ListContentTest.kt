@@ -143,6 +143,19 @@ class ListContentTest {
     }
 
     @Test
+    fun `the Groups row ends the root, from the visible apps only, and a query shows neither it nor its blank`() {
+        val work = UserGroups().added("Work", app("Mail"))
+        val visible = (apps - app("Mail")).map { RootEntry.App(it) }
+
+        assertEquals(
+            ListContent.Apps(apps.map { RootEntry.App(it) } + RootEntry.Blank("groups-blank") + RootEntry.Groups),
+            listContent(apps, "", groups = work),
+        )
+        assertEquals(ListContent.Apps(visible), listContent(apps, "", hidden = mailHidden, groups = work))
+        assertEquals(ListContent.Apps(listOf(RootEntry.App(app("Mail")))), listContent(apps, "mai", groups = work))
+    }
+
+    @Test
     fun `without apps on screen no row holds an app`() {
         assertEquals(emptyList<LauncherApp?>(), ListContent.NoMatch.rowApps)
     }

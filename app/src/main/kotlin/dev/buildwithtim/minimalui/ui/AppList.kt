@@ -34,8 +34,8 @@ import dev.buildwithtim.minimalui.core.selecting
  * D-pad centre or a tap; the Menu key, holding Enter or D-pad centre, or a touch long-press asks for its context menu
  * ([onMenu]). A favourite's name has a `★` before it (#68); a hidden app, listed only when the query finds it (#71), is
  * drawn dim. An app whose name another app shares has its [suffix] after it, small and dim (#72). The Collections row
- * opens the collections ([onCollections]) and has no menu. The blank row below the block at the top is empty, and the
- * selection skips it.
+ * opens the collections ([onCollections]) and the Groups row at the end the groups ([onGroups], #69); neither has a
+ * menu. The blank rows below the block at the top and above the Groups row are empty, and the selection skips them.
  *
  * The first row is selected when the apps first arrive, so the keyboard works without touching the screen, and again
  * whenever [homePresses] or the type-to-filter [query] changes. Each new [returned] selects its row instead, keeping
@@ -55,6 +55,7 @@ fun AppList(
     modifier: Modifier = Modifier,
     onMenu: (LauncherApp) -> Unit = {},
     onCollections: () -> Unit = {},
+    onGroups: () -> Unit = {},
     state: AppListState = rememberAppListState(),
     returned: Returned? = null,
     status: StatusPill? = null,
@@ -65,6 +66,7 @@ fun AppList(
     val hasApps = entries.isNotEmpty()
     val blank = { row: Int -> !entries[row].selectable }
     val collections = stringResource(R.string.collections)
+    val groups = stringResource(R.string.groups)
 
     BoxWithConstraints(
         modifier = modifier
@@ -123,7 +125,8 @@ fun AppList(
                     when (entry) {
                         is RootEntry.App -> shownLabel(entry.app, entry.isFavourite)
                         RootEntry.Collections -> collections
-                        RootEntry.Blank -> ""
+                        RootEntry.Groups -> groups
+                        is RootEntry.Blank -> ""
                     }
                 },
                 rowHeight = rowHeight,
@@ -132,7 +135,8 @@ fun AppList(
                     when (entry) {
                         is RootEntry.App -> onOpen(entry.app)
                         RootEntry.Collections -> onCollections()
-                        RootEntry.Blank -> Unit
+                        RootEntry.Groups -> onGroups()
+                        is RootEntry.Blank -> Unit
                     }
                 },
                 selectable = { it.selectable },

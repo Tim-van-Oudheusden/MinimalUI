@@ -26,6 +26,12 @@ enum class MenuAction {
     /** Moves the app one row down in the collection the menu was opened in. */
     MoveDown,
 
+    /** Opens the list of user groups the app can be added to, or a new one (#69). */
+    AddToGroup,
+
+    /** Takes the app out of the user group the menu was opened in. */
+    RemoveFromGroup,
+
     /** Opens the text editor to give the app a name of the user's own (#72). */
     Rename,
 
@@ -40,6 +46,12 @@ enum class MenuAction {
 
     /** Empties the recently used apps. */
     ClearRecents,
+
+    /** In a group's menu: opens the text editor to give the user group another name, or merge it into another. */
+    RenameGroup,
+
+    /** In a group's menu: deletes the user group; its apps stay installed, and in any automatic group of its name. */
+    DeleteGroup,
 }
 
 /** One row of the context menu. A disabled row is still listed, drawn dim, and does nothing when chosen. */
@@ -53,7 +65,7 @@ data class CollectionPlace(val row: Int, val count: Int)
  * entry the list always keeps ([isSettingsEntry]), MinimalUI's own settings row ([isLauncherSettings], one of the two),
  * one of the recently used apps ([isRecent]), whether there are any recently used apps at all ([hasRecents]), whether
  * it is a favourite ([isFavourite]), its [place] when the menu was opened inside a collection, and whether it is
- * hidden ([isHidden]).
+ * hidden ([isHidden]), and whether the menu was opened inside a user group that holds it ([isGroupMember], #69).
  */
 data class AppFacts(
     val isSystem: Boolean,
@@ -64,15 +76,16 @@ data class AppFacts(
     val place: CollectionPlace? = null,
     val isHidden: Boolean = false,
     val isLauncherSettings: Boolean = false,
+    val isGroupMember: Boolean = false,
 )
 
 /**
  * The context menu for an app, top to bottom. Uninstall stays listed but disabled for a system app, which cannot be
  * removed, and for the Settings entry, which keeps the way back to another home app open. One row adds the app to the
  * favourites or removes it, by its state. Inside a collection the app can leave it or move, though not past either
- * end. Rename is disabled for MinimalUI's own settings row, which is the launcher's, not an app; Android's Settings can
- * be renamed. One row hides the app or shows it again, by its state; disabled for the Settings entry, which is never
- * hidden.
+ * end. Any app can be added to a user group (#69), and taken out of the one the menu was opened in. Rename is disabled
+ * for MinimalUI's own settings row, which is the launcher's, not an app; Android's Settings can be renamed. One row
+ * hides the app or shows it again, by its state; disabled for the Settings entry, which is never hidden.
  * The recents rows show only when they would change something.
  */
 fun contextMenu(facts: AppFacts): List<MenuItem> = buildList {
@@ -80,13 +93,22 @@ fun contextMenu(facts: AppFacts): List<MenuItem> = buildList {
     add(MenuItem(MenuAction.Uninstall, enabled = !facts.isSystem && !facts.isSettingsEntry))
     add(MenuItem(if (facts.isFavourite) MenuAction.RemoveFromFavourites else MenuAction.AddToFavourites))
     add(MenuItem(MenuAction.AddToCollection))
+    add(MenuItem(MenuAction.AddToGroup))
     facts.place?.let { place ->
         add(MenuItem(MenuAction.RemoveFromCollection))
         add(MenuItem(MenuAction.MoveUp, enabled = place.row > 0))
         add(MenuItem(MenuAction.MoveDown, enabled = place.row < place.count - 1))
     }
+    if (facts.isGroupMember) add(MenuItem(MenuAction.RemoveFromGroup))
     add(MenuItem(MenuAction.Rename, enabled = !facts.isLauncherSettings))
     add(MenuItem(if (facts.isHidden) MenuAction.Unhide else MenuAction.Hide, enabled = !facts.isSettingsEntry))
     if (facts.isRecent) add(MenuItem(MenuAction.RemoveFromRecents))
     if (facts.hasRecents) add(MenuItem(MenuAction.ClearRecents))
 }
+
+/**
+ * The menu of a group in the Groups list (#69): Rename group and Delete group. A purely automatic group has nothing
+ * to rename or delete, so both rows show disabled rather than the key doing nothing.
+ */
+fun groupMenu(isUserGroup: Boolean): List<MenuItem> =
+    listOf(MenuItem(MenuAction.RenameGroup, isUserGroup), MenuItem(MenuAction.DeleteGroup, isUserGroup))
