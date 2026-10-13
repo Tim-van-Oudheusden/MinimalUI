@@ -12,6 +12,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.addCallback
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -20,6 +21,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import dev.buildwithtim.minimalui.core.Aliases
 import dev.buildwithtim.minimalui.core.AppCollections
 import dev.buildwithtim.minimalui.core.AppFacts
 import dev.buildwithtim.minimalui.core.CollectionPlace
@@ -37,14 +39,13 @@ import dev.buildwithtim.minimalui.core.Settings
 import dev.buildwithtim.minimalui.core.SettingsLink
 import dev.buildwithtim.minimalui.core.StatusPill
 import dev.buildwithtim.minimalui.core.contextMenu
+import dev.buildwithtim.minimalui.core.duplicateSuffixes
 import dev.buildwithtim.minimalui.core.isLauncherSettings
 import dev.buildwithtim.minimalui.core.launcherSettings
 import dev.buildwithtim.minimalui.core.listContent
 import dev.buildwithtim.minimalui.core.minusLastTyped
 import dev.buildwithtim.minimalui.core.plusTyped
 import dev.buildwithtim.minimalui.core.rowApps
-import dev.buildwithtim.minimalui.core.sortedForDisplay
-import dev.buildwithtim.minimalui.core.withLauncherSettings
 import dev.buildwithtim.minimalui.core.withSystemSettings
 import dev.buildwithtim.minimalui.ui.AboutList
 import dev.buildwithtim.minimalui.ui.AppList
@@ -55,17 +56,34 @@ import dev.buildwithtim.minimalui.ui.CollectionsList
 import dev.buildwithtim.minimalui.ui.ContextMenu
 import dev.buildwithtim.minimalui.ui.HiddenAppsList
 import dev.buildwithtim.minimalui.ui.MinimalTheme
-import dev.buildwithtim.minimalui.ui.NewCollection
 import dev.buildwithtim.minimalui.ui.PillListState
 import dev.buildwithtim.minimalui.ui.Returned
 import dev.buildwithtim.minimalui.ui.SettingsList
+import dev.buildwithtim.minimalui.ui.TextEntry
 import dev.buildwithtim.minimalui.ui.rememberAppListState
 import java.util.concurrent.Executors
 
 class MainActivity : ComponentActivity() {
 
-    // Null until the first load arrives, so loading (a blank screen) is told apart from having no apps.
-    private var apps by mutableStateOf<List<LauncherApp>?>(null)
+    // The installed apps with their system labels, null until the first load arrives, so loading (a blank screen) is
+    // told apart from having no apps.
+    private var loaded by mutableStateOf<Loaded?>(null)
+
+    // The names the user gave apps (#72).
+    private val aliasesStore by lazy { AliasesStore(this) }
+    private var aliases by mutableStateOf(Aliases())
+
+    /**
+     * The installed apps as every list shows them: renamed ones by their alias, sorted by it (#72). Every list, the
+     * filter, the recents, favourites, collections and hidden apps take their apps from here.
+     */
+    private val apps: List<LauncherApp>? by derivedStateOf {
+        loaded?.let { aliases.labelled(it.apps, it.settingsPackage) }
+    }
+
+    /** What tells apart apps listed under the same name (#72): a dim suffix after the name. */
+    private val suffixes: Map<LauncherApp, String> by derivedStateOf { duplicateSuffixes(apps.orEmpty()) }
+
     private var homePresses by mutableIntStateOf(0)
     private var query by mutableStateOf("")
     private var returned by mutableStateOf<Returned?>(null)
@@ -114,7 +132,7 @@ class MainActivity : ComponentActivity() {
             background = worker,
             main = mainExecutor,
             load = ::installedApps,
-            publish = { apps = it },
+            publish = { loaded = it },
         )
     }
 
@@ -130,6 +148,7 @@ class MainActivity : ComponentActivity() {
         favourites = favouritesStore.loadFavourites()
         collections = favouritesStore.loadCollections()
         hidden = hiddenStore.load()
+        aliases = aliasesStore.load()
         // Registered for the activity's whole life, not only while resumed, so the list is current before a return.
         registerReceiver(
             packageChanges,
@@ -159,6 +178,7 @@ class MainActivity : ComponentActivity() {
                         state = listState,
                         returned = returned,
                         status = shownStatus,
+                        suffix = suffixes::get,
                     )
                     is Screen.Menu -> ContextMenu(
                         title = screen.app.label,
@@ -185,6 +205,7 @@ class MainActivity : ComponentActivity() {
                         onClose = ::back,
                         state = screen.state,
                         status = shownStatus,
+                        suffix = suffixes::get,
                     )
                     is Screen.CollectionChoice -> CollectionChoice(
                         title = stringResource(R.string.menu_add_collection),
@@ -196,13 +217,18 @@ class MainActivity : ComponentActivity() {
                         state = screen.list,
                         status = shownStatus,
                     )
-                    is Screen.NewCollection -> NewCollection(
+                    is Screen.NewCollection -> TextEntry(
                         title = stringResource(R.string.new_collection),
-                        name = screen.name,
+                        initial = "",
                         // Back down past the name, the list of collections and the menu. A blank name makes nothing.
-                        onDone = {
-                            if (screen.name.isNotBlank()) addToCollection(screen.name, screen.app, closing = 3)
-                        },
+                        onDone = { name -> if (name.isNotBlank()) addToCollection(name, screen.app, closing = 3) },
+                        onClose = ::back,
+                        status = shownStatus,
+                    )
+                    is Screen.Rename -> TextEntry(
+                        title = stringResource(R.string.menu_rename),
+                        initial = screen.app.label,
+                        onDone = { rename(screen.app, it) },
                         onClose = ::back,
                         status = shownStatus,
                     )
@@ -223,6 +249,7 @@ class MainActivity : ComponentActivity() {
                             onClose = ::back,
                             state = screen.list,
                             status = shownStatus,
+                            suffix = suffixes::get,
                         )
                         SettingsLink.About -> AboutList(
                             version = BuildConfig.VERSION_NAME,
@@ -281,23 +308,17 @@ class MainActivity : ComponentActivity() {
 
     // Typing filters the list. Rows only handle arrows, Enter and Space, so typed keys fall through to here, and still
     // arrive when the filter leaves no row to hold focus. Other keys, and Ctrl or Meta shortcuts, keep their usual job,
-    // and so does every key while another list (a context menu, the settings) is open: it has nothing to filter. A new
-    // collection's name is typed the same way.
+    // and so does every key while another list (a context menu, the settings) or the text editor is open: the editor
+    // takes its own typing.
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
-        val naming = screens.top as? Screen.NewCollection
-        val typed = when {
-            event.isCtrlPressed || event.isMetaPressed -> null
-            naming != null -> naming.name
-            screens.isRoot -> query
-            else -> null
-        }
+        val typed = query.takeIf { screens.isRoot && !event.isCtrlPressed && !event.isMetaPressed }
         val edited = when {
             typed == null -> null
             keyCode == KeyEvent.KEYCODE_DEL -> typed.minusLastTyped()
             else -> typed.plusTyped(event.unicodeChar)
         }
         if (edited == null) return super.onKeyDown(keyCode, event)
-        if (naming != null) naming.name = edited else query = edited
+        query = edited
         return true
     }
 
@@ -364,15 +385,16 @@ class MainActivity : ComponentActivity() {
             isFavourite = app in favourites,
             place = inCollection?.let { CollectionPlace(it.indexOf(app), it.size) },
             isHidden = app in hidden,
+            isLauncherSettings = app.isLauncherSettings,
         )
         screens = screens.pushed(Screen.Menu(app, contextMenu(facts), collection))
     }
 
-    // The list comes back on the same app: its selection was kept while the menu was up. Add to collection keeps the
-    // menu below the list of collections, so Back returns to it.
+    // The list comes back on the same app: its selection was kept while the menu was up. Add to collection and Rename
+    // keep the menu below the list or editor they open, so Back returns to it.
     private fun choose(menu: Screen.Menu, action: MenuAction) {
         val app = menu.app
-        if (action != MenuAction.AddToCollection) back()
+        if (action != MenuAction.AddToCollection && action != MenuAction.Rename) back()
         when (action) {
             MenuAction.AppInfo -> start(app.appInfoIntent())
             MenuAction.Uninstall -> start(app.uninstallIntent())
@@ -381,11 +403,23 @@ class MainActivity : ComponentActivity() {
             MenuAction.RemoveFromCollection -> menu.collection?.let { removeFromCollection(it, app) }
             MenuAction.MoveUp -> menu.collection?.let { moveInCollection(it, app, -1) }
             MenuAction.MoveDown -> menu.collection?.let { moveInCollection(it, app, 1) }
+            MenuAction.Rename -> screens = screens.pushed(Screen.Rename(app))
             MenuAction.Hide -> hide(menu)
             MenuAction.Unhide -> saveHidden(hidden.unhidden(app))
             MenuAction.RemoveFromRecents -> saveRecents(recents.without(app))
             MenuAction.ClearRecents -> saveRecents(recents.cleared())
         }
+    }
+
+    /**
+     * [app], as listed, renamed [name] (a blank name, or its own label, gives it back its system label), then the
+     * editor and the menu below it closed: the list it was opened from shows it at its new place, selected.
+     */
+    private fun rename(app: LauncherApp, name: String) {
+        val installed = loaded?.apps.orEmpty()
+            .firstOrNull { it.packageName == app.packageName && it.activityName == app.activityName }
+        if (installed != null) saveAliases(aliases.renamed(installed, name))
+        repeat(2) { back() }
     }
 
     /** [app] added to the collection called [name], then [closing] lists closed, back to where the menu was opened. */
@@ -437,20 +471,31 @@ class MainActivity : ComponentActivity() {
         recentStore.save(changed)
     }
 
+    private fun saveAliases(changed: Aliases) {
+        aliases = changed
+        aliasesStore.save(changed)
+    }
+
     private fun cycle(setting: Setting, step: Int) {
         settings = settings.cycled(setting, step)
         settingsStore.save(settings)
     }
 
-    // Runs on the worker thread: the package queries and every label load stay off the main thread.
-    private fun installedApps(): List<LauncherApp> {
+    // Runs on the worker thread: the package queries and every label load stay off the main thread. Sorting waits for
+    // the aliases, in [apps].
+    private fun installedApps(): Loaded {
         val installed = packageManager.launchableApps()
         val system = packageManager.systemSettings()
-        val sorted = (system?.let(installed::withSystemSettings) ?: installed).sortedForDisplay()
         val entry = launcherSettings(getString(R.string.settings_entry), packageName)
-        return sorted.withLauncherSettings(entry, system?.packageName)
+        return Loaded((system?.let(installed::withSystemSettings) ?: installed) + entry, system?.packageName)
     }
 }
+
+/**
+ * The launchable [apps] with their system labels and MinimalUI's settings row, unsorted, and the package of Android's
+ * Settings, which that row follows however the apps are named.
+ */
+private class Loaded(val apps: List<LauncherApp>, val settingsPackage: String?)
 
 /** A list on [ScreenStack], each holding what it needs to show again as it was left. */
 private sealed interface Screen {
@@ -480,10 +525,11 @@ private sealed interface Screen {
         val list = PillListState()
     }
 
-    /** The [name] of a new collection for [app], as it is being typed. */
-    class NewCollection(val app: LauncherApp) : Screen {
-        var name by mutableStateOf("")
-    }
+    /** A new collection's name for [app], in the text editor. */
+    class NewCollection(val app: LauncherApp) : Screen
+
+    /** A new name for [app] (#72), in the text editor, which starts with the name it is listed under. */
+    class Rename(val app: LauncherApp) : Screen
 
     /** MinimalUI's settings, opened fresh on their first row each time, kept while a link's list is up. */
     class SettingsList : Screen {
