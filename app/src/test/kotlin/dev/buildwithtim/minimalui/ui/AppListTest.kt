@@ -7,14 +7,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.semantics.SemanticsProperties
-import androidx.compose.ui.semantics.SemanticsProperties.Focused
 import androidx.compose.ui.test.ExperimentalTestApi
-import androidx.compose.ui.test.SemanticsMatcher
-import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsFocused
+import androidx.compose.ui.test.assertIsNotFocused
 import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
@@ -23,6 +22,7 @@ import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performKeyPress
 import androidx.compose.ui.test.performTouchInput
@@ -115,7 +115,7 @@ class AppListTest {
     /** Labels of the rows on screen, top to bottom, after checking that each one is drawn whole. */
     private fun rowsOnScreen(): List<String> {
         val list = rule.onNode(hasScrollAction()).getUnclippedBoundsInRoot()
-        val rows = rule.onAllNodes(hasClickAction())
+        val rows = rule.onAllNodes(hasClickAction() and hasAnyAncestor(hasScrollAction()))
         return List(rows.fetchSemanticsNodes().size) { rows[it] }
             .map { it.fetchSemanticsNode().config[SemanticsProperties.Text].joinToString() to it.getUnclippedBoundsInRoot() }
             .onEach { (label, row) ->
@@ -549,10 +549,23 @@ class AppListTest {
         assertTrue("the menu hint is not on the left", menu.right < middle)
         assertTrue("the open hint is not on the right", open.left > middle)
         assertTrue("the hints are not in the bottom row", root.bottom - open.bottom < open.bottom - open.top)
-        for (text in listOf("MENU", "OPEN", "☰", "⏎")) {
-            rule.onNodeWithText(text).assert(!hasClickAction()).assert(SemanticsMatcher.keyNotDefined(Focused))
-        }
+        for (text in listOf("MENU", "OPEN")) rule.onNodeWithText(text).assertIsNotFocused()
         rule.onNodeWithText("Calculator").assertIsFocused()
+    }
+
+    @Test
+    fun `tapping a hint presses its key, and the selection stays where it was`() {
+        show()
+        press(Key.DirectionDown)
+
+        rule.onNodeWithText("MENU").performClick()
+        rule.onNodeWithText("OPEN").performClick()
+
+        assertEquals(listOf("Calendar"), menus.map { it.label })
+        assertEquals(listOf("Calendar"), opened.map { it.label })
+        rule.onNodeWithText("Calendar").assertIsFocused()
+        press(Key.DirectionDown)
+        rule.onNodeWithText("Camera").assertIsFocused()
     }
 
     @Test
