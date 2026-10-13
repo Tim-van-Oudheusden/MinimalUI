@@ -53,6 +53,31 @@ class ListContentTest {
         assertEquals(ListContent.Apps(apps.drop(1).map { RootEntry.App(it) }), content)
     }
 
+    private val mapsStarred = Favourites().toggled(app("Maps"))
+
+    @Test
+    fun `without a query the root shows the favourites and the Collections row as rootEntries does`() {
+        val games = AppCollections().added("Games", app("Camera"))
+        val content = listContent(apps, "", mapsOpened, Settings(), mapsStarred, games)
+
+        assertEquals(ListContent.Apps(rootEntries(apps, mapsOpened, Settings(), mapsStarred, games)), content)
+    }
+
+    @Test
+    fun `a query lists the favourites it keeps first, each part in its order, and matches their plain label`() {
+        val content = listContent(apps, "ma", favourites = mapsStarred)
+
+        assertEquals(
+            ListContent.Apps(listOf(RootEntry.App(app("Maps"), isFavourite = true), RootEntry.App(app("Mail")))),
+            content,
+        )
+    }
+
+    @Test
+    fun `the star is not part of the label a query matches`() {
+        assertEquals(ListContent.NoMatch, listContent(apps, "★", favourites = mapsStarred))
+    }
+
     @Test
     fun `without apps on screen no row holds an app`() {
         assertEquals(emptyList<LauncherApp?>(), ListContent.NoMatch.rowApps)

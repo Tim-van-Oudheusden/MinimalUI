@@ -20,7 +20,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import dev.buildwithtim.minimalui.core.AppCollections
 import dev.buildwithtim.minimalui.core.AppFacts
+import dev.buildwithtim.minimalui.core.CollectionPlace
+import dev.buildwithtim.minimalui.core.Favourites
 import dev.buildwithtim.minimalui.core.LatestLoader
 import dev.buildwithtim.minimalui.core.LauncherApp
 import dev.buildwithtim.minimalui.core.ListContent
@@ -44,8 +47,13 @@ import dev.buildwithtim.minimalui.core.withLauncherSettings
 import dev.buildwithtim.minimalui.core.withSystemSettings
 import dev.buildwithtim.minimalui.ui.AboutList
 import dev.buildwithtim.minimalui.ui.AppList
+import dev.buildwithtim.minimalui.ui.CollectionApps
+import dev.buildwithtim.minimalui.ui.CollectionChoice
+import dev.buildwithtim.minimalui.ui.CollectionState
+import dev.buildwithtim.minimalui.ui.CollectionsList
 import dev.buildwithtim.minimalui.ui.ContextMenu
 import dev.buildwithtim.minimalui.ui.MinimalTheme
+import dev.buildwithtim.minimalui.ui.NewCollection
 import dev.buildwithtim.minimalui.ui.PillListState
 import dev.buildwithtim.minimalui.ui.Returned
 import dev.buildwithtim.minimalui.ui.SettingsList
@@ -77,6 +85,11 @@ class MainActivity : ComponentActivity() {
     private val recentStore by lazy { RecentAppsStore(this) }
     private var recents by mutableStateOf(RecentApps())
 
+    // The favourites pinned to the top of the root list and the user's collections (#68).
+    private val favouritesStore by lazy { FavouritesStore(this) }
+    private var favourites by mutableStateOf(Favourites())
+    private var collections by mutableStateOf(AppCollections())
+
     /**
      * The apps last opened from here, newest first, for the root screen (#70). Derived from the installed list, so an
      * uninstalled app leaves it as soon as the package-change receiver reloads the apps.
@@ -105,6 +118,8 @@ class MainActivity : ComponentActivity() {
         hideStatusBar()
         recents = recentStore.load()
         settings = settingsStore.load()
+        favourites = favouritesStore.loadFavourites()
+        collections = favouritesStore.loadCollections()
         // Registered for the activity's whole life, not only while resumed, so the list is current before a return.
         registerReceiver(
             packageChanges,
@@ -129,7 +144,8 @@ class MainActivity : ComponentActivity() {
                         query = query,
                         homePresses = homePresses,
                         onOpen = ::open,
-                        onMenu = ::openMenu,
+                        onMenu = { openMenu(it) },
+                        onCollections = { screens = screens.pushed(Screen.CollectionsList()) },
                         state = listState,
                         returned = returned,
                         status = shownStatus,
@@ -137,7 +153,46 @@ class MainActivity : ComponentActivity() {
                     is Screen.Menu -> ContextMenu(
                         title = screen.app.label,
                         items = screen.items,
-                        onChoose = { choose(screen.app, it) },
+                        onChoose = { choose(screen, it) },
+                        onClose = ::back,
+                        status = shownStatus,
+                        state = screen.list,
+                    )
+                    is Screen.CollectionsList -> CollectionsList(
+                        title = stringResource(R.string.collections),
+                        names = collections.names(apps.orEmpty()),
+                        onOpen = { screens = screens.pushed(Screen.Collection(it)) },
+                        onClose = ::back,
+                        state = screen.list,
+                        status = shownStatus,
+                    )
+                    is Screen.Collection -> CollectionApps(
+                        name = screen.name,
+                        apps = collections.appsIn(screen.name, apps.orEmpty()),
+                        isFavourite = { it in favourites },
+                        onOpen = ::open,
+                        onMenu = { openMenu(it, screen.name) },
+                        onClose = ::back,
+                        state = screen.state,
+                        status = shownStatus,
+                    )
+                    is Screen.CollectionChoice -> CollectionChoice(
+                        title = stringResource(R.string.menu_add_collection),
+                        names = collections.namesWithout(screen.app, apps.orEmpty()),
+                        // Back down past this list and the menu, to the list the menu was opened from.
+                        onChoose = { addToCollection(it, screen.app, closing = 2) },
+                        onNew = { screens = screens.pushed(Screen.NewCollection(screen.app)) },
+                        onClose = ::back,
+                        state = screen.list,
+                        status = shownStatus,
+                    )
+                    is Screen.NewCollection -> NewCollection(
+                        title = stringResource(R.string.new_collection),
+                        name = screen.name,
+                        // Back down past the name, the list of collections and the menu. A blank name makes nothing.
+                        onDone = {
+                            if (screen.name.isNotBlank()) addToCollection(screen.name, screen.app, closing = 3)
+                        },
                         onClose = ::back,
                         status = shownStatus,
                     )
@@ -163,8 +218,11 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    /** What the root list shows: the full list under its recently used block, or the apps the query keeps. */
-    private fun shownList(): ListContent = listContent(apps, query, recents, settings)
+    /**
+     * What the root list shows: the full list under its block of favourites, recently used apps and the Collections
+     * row, or the apps the query keeps.
+     */
+    private fun shownList(): ListContent = listContent(apps, query, recents, settings, favourites, collections)
 
     /** Back or Esc on a list opened from the root: the list below comes back as it was. */
     private fun back() {
@@ -205,15 +263,23 @@ class MainActivity : ComponentActivity() {
 
     // Typing filters the list. Rows only handle arrows, Enter and Space, so typed keys fall through to here, and still
     // arrive when the filter leaves no row to hold focus. Other keys, and Ctrl or Meta shortcuts, keep their usual job,
-    // and so does every key while another list (a context menu, the settings) is open: it has nothing to filter.
+    // and so does every key while another list (a context menu, the settings) is open: it has nothing to filter. A new
+    // collection's name is typed the same way.
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
-        val newQuery = when {
-            !screens.isRoot || event.isCtrlPressed || event.isMetaPressed -> null
-            keyCode == KeyEvent.KEYCODE_DEL -> query.minusLastTyped()
-            else -> query.plusTyped(event.unicodeChar)
+        val naming = screens.top as? Screen.NewCollection
+        val typed = when {
+            event.isCtrlPressed || event.isMetaPressed -> null
+            naming != null -> naming.name
+            screens.isRoot -> query
+            else -> null
         }
-        if (newQuery == null) return super.onKeyDown(keyCode, event)
-        query = newQuery
+        val edited = when {
+            typed == null -> null
+            keyCode == KeyEvent.KEYCODE_DEL -> typed.minusLastTyped()
+            else -> typed.plusTyped(event.unicodeChar)
+        }
+        if (edited == null) return super.onKeyDown(keyCode, event)
+        if (naming != null) naming.name = edited else query = edited
         return true
     }
 
@@ -224,8 +290,11 @@ class MainActivity : ComponentActivity() {
         // Home arrives through onNewIntent, always before this, so whatever is left here is a return from the app.
         if (awayInApp) {
             awayInApp = false
-            // Against the list as it shows now: on the root, the app's row in the recently used block.
-            returned = Returned(recents.returnRow(shownList().rowApps), (returned?.count ?: 0) + 1)
+            // Against the list as it shows now: on the root, the app's row in the recently used block. A collection
+            // the app was opened from keeps its own selection, on that app.
+            if (screens.isRoot) {
+                returned = Returned(recents.returnRow(shownList().rowApps), (returned?.count ?: 0) + 1)
+            }
         }
     }
 
@@ -263,28 +332,67 @@ class MainActivity : ComponentActivity() {
             false
         }
 
-    // The facts are read once, as the menu opens; every action closes it again.
-    private fun openMenu(app: LauncherApp) {
+    // The facts are read once, as the menu opens; every action closes it again. A menu opened inside the [collection]
+    // can also take the app out of it or move it there.
+    private fun openMenu(app: LauncherApp, collection: String? = null) {
         val recent = recentApps
+        val inCollection = collection?.let { collections.appsIn(it, apps.orEmpty()) }
         val facts = AppFacts(
             isSystem = packageManager.isSystemApp(app.packageName),
             // Android's Settings keeps the way back to another home app; MinimalUI's row stands for the launcher itself.
             isSettingsEntry = app.isLauncherSettings || app.packageName == packageManager.systemSettings()?.packageName,
             isRecent = app in recent,
             hasRecents = recent.isNotEmpty(),
+            isFavourite = app in favourites,
+            place = inCollection?.let { CollectionPlace(it.indexOf(app), it.size) },
         )
-        screens = screens.pushed(Screen.Menu(app, contextMenu(facts)))
+        screens = screens.pushed(Screen.Menu(app, contextMenu(facts), collection))
     }
 
-    // The list comes back on the same app: its selection was kept while the menu was up.
-    private fun choose(app: LauncherApp, action: MenuAction) {
-        back()
+    // The list comes back on the same app: its selection was kept while the menu was up. Add to collection keeps the
+    // menu below the list of collections, so Back returns to it.
+    private fun choose(menu: Screen.Menu, action: MenuAction) {
+        val app = menu.app
+        if (action != MenuAction.AddToCollection) back()
         when (action) {
             MenuAction.AppInfo -> start(app.appInfoIntent())
             MenuAction.Uninstall -> start(app.uninstallIntent())
+            MenuAction.AddToFavourites, MenuAction.RemoveFromFavourites -> saveFavourites(favourites.toggled(app))
+            MenuAction.AddToCollection -> screens = screens.pushed(Screen.CollectionChoice(app))
+            MenuAction.RemoveFromCollection -> menu.collection?.let { removeFromCollection(it, app) }
+            MenuAction.MoveUp -> menu.collection?.let { moveInCollection(it, app, -1) }
+            MenuAction.MoveDown -> menu.collection?.let { moveInCollection(it, app, 1) }
             MenuAction.RemoveFromRecents -> saveRecents(recents.without(app))
             MenuAction.ClearRecents -> saveRecents(recents.cleared())
         }
+    }
+
+    /** [app] added to the collection called [name], then [closing] lists closed, back to where the menu was opened. */
+    private fun addToCollection(name: String, app: LauncherApp, closing: Int) {
+        saveCollections(collections.added(name, app))
+        repeat(closing) { back() }
+    }
+
+    // The collection goes with its last app, and the list of collections with the last collection that has any.
+    private fun removeFromCollection(name: String, app: LauncherApp) {
+        saveCollections(collections.removed(name, app))
+        val names = collections.names(apps.orEmpty())
+        if (name !in names) back()
+        if (names.isEmpty()) back()
+    }
+
+    // The collection's list follows the app to its new row.
+    private fun moveInCollection(name: String, app: LauncherApp, step: Int) =
+        saveCollections(collections.moved(name, app, step, apps.orEmpty()))
+
+    private fun saveFavourites(changed: Favourites) {
+        favourites = changed
+        favouritesStore.save(changed)
+    }
+
+    private fun saveCollections(changed: AppCollections) {
+        collections = changed
+        favouritesStore.save(changed)
     }
 
     private fun saveRecents(changed: RecentApps) {
@@ -312,8 +420,33 @@ private sealed interface Screen {
     /** The app list (its selection is kept by the activity's content, which outlives every other screen). */
     data object Root : Screen
 
-    /** The context menu of [app], with its [items] as they were when it opened. */
-    class Menu(val app: LauncherApp, val items: List<MenuItem>) : Screen
+    /**
+     * The context menu of [app], with its [items] as they were when it opened, and the [collection] it was opened in;
+     * its selection is kept while a list opened from it is up.
+     */
+    class Menu(val app: LauncherApp, val items: List<MenuItem>, val collection: String?) : Screen {
+        val list = PillListState()
+    }
+
+    /** The names of the collections, from the root's Collections row (#68). */
+    class CollectionsList : Screen {
+        val list = PillListState()
+    }
+
+    /** The apps of the collection called [name], in the user's order. */
+    class Collection(val name: String) : Screen {
+        val state = CollectionState()
+    }
+
+    /** The collections [app] can be added to, and a new one. */
+    class CollectionChoice(val app: LauncherApp) : Screen {
+        val list = PillListState()
+    }
+
+    /** The [name] of a new collection for [app], as it is being typed. */
+    class NewCollection(val app: LauncherApp) : Screen {
+        var name by mutableStateOf("")
+    }
 
     /** MinimalUI's settings, opened fresh on their first row each time, kept while a link's list is up. */
     class SettingsList : Screen {

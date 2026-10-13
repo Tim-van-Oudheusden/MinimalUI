@@ -32,7 +32,8 @@ import dev.buildwithtim.minimalui.core.selecting
 /**
  * The root list (#70), in a [PillList]: one row per entry of [content], an app's row opening it ([onOpen]) on Enter,
  * D-pad centre or a tap; the Menu key, holding Enter or D-pad centre, or a touch long-press asks for its context menu
- * ([onMenu]). The blank row below the recently used block is empty, and the selection skips it.
+ * ([onMenu]). A favourite's name has a `★` before it (#68). The Collections row opens the collections
+ * ([onCollections]) and has no menu. The blank row below the block at the top is empty, and the selection skips it.
  *
  * The first row is selected when the apps first arrive, so the keyboard works without touching the screen, and again
  * whenever [homePresses] or the type-to-filter [query] changes. Each new [returned] selects its row instead, keeping
@@ -51,6 +52,7 @@ fun AppList(
     onOpen: (LauncherApp) -> Unit,
     modifier: Modifier = Modifier,
     onMenu: (LauncherApp) -> Unit = {},
+    onCollections: () -> Unit = {},
     state: AppListState = rememberAppListState(),
     returned: Returned? = null,
     status: StatusPill? = null,
@@ -59,6 +61,7 @@ fun AppList(
     val list = state.list
     val hasApps = entries.isNotEmpty()
     val blank = { row: Int -> !entries[row].selectable }
+    val collections = stringResource(R.string.collections)
 
     BoxWithConstraints(
         modifier = modifier
@@ -96,10 +99,11 @@ fun AppList(
                     state.returned = returned
                     select(returned.row)
                 }
-                // The block above grew or shrank: the selection stays on what it was on.
+                // The block above grew or shrank: the selection stays on what it was on. When that row is gone and
+                // the blank row now takes its number (the Collections row's last collection removed), it moves on.
                 hasApps && entries != before -> {
                     val row = followedRow(before, list.position.selected, entries)
-                    if (row != list.position.selected) select(row)
+                    if (row != list.position.selected || entries.getOrNull(row)?.selectable == false) select(row)
                 }
             }
         }
@@ -112,10 +116,22 @@ fun AppList(
                 state = list,
                 items = entries,
                 key = { it.key },
-                label = { it.app?.label.orEmpty() },
+                label = { entry ->
+                    when (entry) {
+                        is RootEntry.App -> shownLabel(entry.app, entry.isFavourite)
+                        RootEntry.Collections -> collections
+                        RootEntry.Blank -> ""
+                    }
+                },
                 rowHeight = rowHeight,
                 rowsPerPage = rowsPerPage,
-                onConfirm = { it.app?.let(onOpen) },
+                onConfirm = { entry ->
+                    when (entry) {
+                        is RootEntry.App -> onOpen(entry.app)
+                        RootEntry.Collections -> onCollections()
+                        RootEntry.Blank -> Unit
+                    }
+                },
                 selectable = { it.selectable },
                 onLongPress = { it.app?.let(onMenu) },
                 onKey = { key, entry ->
@@ -159,6 +175,10 @@ fun rememberAppListState(): AppListState = remember { AppListState() }
 
 /** The user came back to the launcher by a route other than Home, for the [count]th time: the list selects [row]. */
 data class Returned(val row: Int, val count: Int)
+
+/** [app]'s name as listed: a favourite's with Cannoli's `★` before it (#68). Drawn only; filtering never sees it. */
+internal fun shownLabel(app: LauncherApp, isFavourite: Boolean): String =
+    if (isFavourite) "★ ${app.label}" else app.label
 
 /** Centred on the screen, in the rows' text style. */
 @Composable

@@ -6,3 +6,11 @@ data class LauncherApp(
     val packageName: String,
     val activityName: String,
 )
+
+/** The app's component, `package/activity`: what the launcher stores to remember an app across relabels and loads. */
+internal val LauncherApp.component: String get() = "$packageName/$activityName"
+
+/** Whether a stored [line] is a component as [component] writes it. */
+internal fun isComponent(line: String): Boolean = COMPONENT.matches(line)
+
+private val COMPONENT = Regex("[^/]+/[^/]+")

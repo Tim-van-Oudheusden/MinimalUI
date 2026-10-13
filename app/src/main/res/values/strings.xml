@@ -12,6 +12,15 @@
     <string name="menu_uninstall">Uninstall</string>
     <string name="menu_remove_recent">Remove from recently used</string>
     <string name="menu_clear_recents">Clear recently used</string>
+    <!-- Favourites and collections (#68): their context-menu rows, the root's row and the lists it opens. -->
+    <string name="menu_add_favourite">Add to favourites</string>
+    <string name="menu_remove_favourite">Remove from favourites</string>
+    <string name="menu_add_collection">Add to collection</string>
+    <string name="menu_remove_collection">Remove from collection</string>
+    <string name="menu_move_up">Move up</string>
+    <string name="menu_move_down">Move down</string>
+    <string name="collections">Collections</string>
+    <string name="new_collection">New collection</string>
     <!-- MinimalUI's own settings (#73): the list's row next to Android's Settings, the list's title, its rows. -->
     <string name="settings_entry">MinimalUI settings</string>
     <string name="setting_clock">Clock</string>

@@ -26,6 +26,7 @@ import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isFocused
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onLast
@@ -1015,6 +1016,227 @@ class MainActivityTest {
 
         awaitListed("App info", listed = false)
         rule.onAllNodesWithText("Alarm")[0].assertIsFocused()
+    }
+
+    /** Moves down the open list until the row [label] is selected, then presses Enter on it. */
+    private fun chooseRow(label: String) {
+        val selected = hasText(label) and isFocused()
+        repeat(10) {
+            if (rule.onAllNodes(selected).fetchSemanticsNodes().isNotEmpty()) return@repeat
+            press(Key.DirectionDown)
+        }
+        rule.onNode(selected).assertExists()
+        press(Key.Enter)
+    }
+
+    /** Types [text] (letters and digits) through [activity]. */
+    private fun typeText(activity: ActivityController<MainActivity>, text: String) =
+        text.forEach { type(activity, KeyEvent.keyCodeFromString("KEYCODE_${it.uppercaseChar()}")) }
+
+    /** From the selected app's menu, by keyboard: Add to collection, then [name], made new when [new]. */
+    private fun addToCollection(activity: ActivityController<MainActivity>, name: String, new: Boolean) {
+        openMenu(activity)
+        chooseRow("Add to collection")
+        awaitListed("App info", listed = false)
+        if (new) {
+            chooseRow("New collection")
+            typeText(activity, name)
+            awaitListed("${name}_")
+            press(Key.Enter)
+        } else {
+            chooseRow(name)
+        }
+        awaitListed("App info", listed = false)
+    }
+
+    @Test
+    fun `the context menu stars an app as a favourite, pinned above the blank row, and takes it off again`() {
+        install("Alarm", "com.example.alarm")
+        install("Bell", "com.example.bell")
+        val activity = launch()
+        awaitListed("Bell")
+        press(Key.DirectionDown)
+        openMenu(activity)
+
+        chooseRow("Add to favourites")
+
+        awaitListed("★ Bell")
+        val rows = listOf("★ Bell", "Alarm", "★ Bell", "MinimalUI", "MinimalUI settings")
+        assertEquals(rows, rowsMatching(activity, ""))
+        val bounds = rule.onAllNodes(hasClickAction()).fetchSemanticsNodes().map { it.boundsInRoot }
+        assertEquals(bounds[0].height, bounds[1].top - bounds[0].bottom, 1f)
+        // The selection stays on the row the menu was opened on, now one block row lower.
+        rule.onAllNodesWithText("★ Bell")[1].assertIsFocused()
+
+        openMenu(activity)
+        chooseRow("Remove from favourites")
+
+        awaitListed("★ Bell", listed = false)
+        assertEquals(listOf("Alarm", "Bell", "MinimalUI", "MinimalUI settings"), rowsMatching(activity, ""))
+    }
+
+    @Test
+    fun `favourites are kept when the launcher starts again, and typing finds them by their plain name, first`() {
+        install("Alarm", "com.example.alarm")
+        install("Bell", "com.example.bell")
+        install("Bike", "com.example.bike")
+        val activity = launch()
+        awaitListed("Bike")
+        press(Key.DirectionDown)
+        press(Key.DirectionDown)
+        rule.onNodeWithText("Bike").assertIsFocused()
+        openMenu(activity)
+        chooseRow("Add to favourites")
+        awaitListed("★ Bike")
+
+        closeActivity()
+        val restarted = launch()
+        awaitListed("★ Bike")
+
+        assertEquals(listOf("★ Bike", "Bell"), rowsMatching(restarted, "b"))
+    }
+
+    @Test
+    fun `a new collection opens from the root's Collections row, and Back goes up a list at a time`() {
+        install("Alarm", "com.example.alarm")
+        install("Bell", "com.example.bell")
+        val activity = launch()
+        awaitListed("Bell")
+        press(Key.DirectionDown)
+        rule.onNodeWithText("Bell").assertIsFocused()
+        addToCollection(activity, "gamez", new = true)
+
+        awaitListed("Collections")
+        val rows = listOf("Collections", "Alarm", "Bell", "MinimalUI", "MinimalUI settings")
+        assertEquals(rows, rowsMatching(activity, ""))
+        rule.onNodeWithText("Bell").assertIsFocused()
+        press(Key.DirectionUp)
+        addToCollection(activity, "gamez", new = false)
+        rule.onNodeWithText("Alarm").assertIsFocused()
+
+        press(Key.DirectionUp)
+        rule.onNodeWithText("Collections").assertIsFocused()
+        press(Key.Enter)
+        awaitListed("gamez")
+        rule.onNodeWithText("gamez").assertIsFocused()
+        press(Key.Enter)
+        awaitListed("Bell")
+        assertEquals(listOf("Bell", "Alarm"), rule.onAllNodes(hasClickAction()).fetchSemanticsNodes().map {
+            it.config[SemanticsProperties.Text].joinToString()
+        })
+        rule.onNodeWithText("Bell").assertIsFocused()
+
+        activity.get().onBackPressedDispatcher.onBackPressed()
+        awaitListed("Bell", listed = false)
+        rule.onNodeWithText("gamez").assertIsFocused()
+        type(activity, KeyEvent.KEYCODE_ESCAPE)
+        awaitListed("Bell")
+        rule.onNodeWithText("Collections").assertIsFocused()
+    }
+
+    @Test
+    fun `a new collection's name takes Backspace, and Esc leaves without making it`() {
+        install("Alarm", "com.example.alarm")
+        val activity = launch()
+        awaitListed("Alarm")
+        openMenu(activity)
+        chooseRow("Add to collection")
+        chooseRow("New collection")
+        typeText(activity, "gamex")
+        type(activity, KeyEvent.KEYCODE_DEL)
+        typeText(activity, "s")
+        awaitListed("games_")
+
+        type(activity, KeyEvent.KEYCODE_ESCAPE)
+        awaitListed("games_", listed = false)
+        rule.onNodeWithText("New collection").assertIsFocused()
+        chooseRow("New collection")
+        awaitListed("_")
+        press(Key.Enter)
+        rule.onNodeWithText("_").assertExists()
+        activity.get().onBackPressedDispatcher.onBackPressed()
+        type(activity, KeyEvent.KEYCODE_ESCAPE)
+        awaitListed("App info")
+        rule.onNodeWithText("Add to collection").assertIsFocused()
+        type(activity, KeyEvent.KEYCODE_ESCAPE)
+
+        awaitListed("Alarm")
+        rule.onNodeWithText("Collections").assertDoesNotExist()
+    }
+
+    @Test
+    fun `an app moves up and down in its collection with the selection, and the last one out hides the row`() {
+        install("Alarm", "com.example.alarm")
+        install("Bell", "com.example.bell")
+        val activity = launch()
+        awaitListed("Bell")
+        press(Key.DirectionDown)
+        addToCollection(activity, "games", new = true)
+        press(Key.DirectionUp)
+        addToCollection(activity, "games", new = false)
+        press(Key.DirectionUp)
+        press(Key.Enter)
+        awaitListed("games")
+        press(Key.Enter)
+        awaitListed("Alarm")
+        fun rows() = rule.onAllNodes(hasClickAction()).fetchSemanticsNodes().map {
+            it.config[SemanticsProperties.Text].joinToString()
+        }
+
+        openMenu(activity)
+        rule.onNodeWithText("Move up").assertIsNotEnabled()
+        chooseRow("Move down")
+        awaitListed("App info", listed = false)
+        assertEquals(listOf("Alarm", "Bell"), rows())
+        rule.onNodeWithText("Bell").assertIsFocused()
+
+        openMenu(activity)
+        rule.onNodeWithText("Move down").assertIsNotEnabled()
+        chooseRow("Move up")
+        awaitListed("App info", listed = false)
+        assertEquals(listOf("Bell", "Alarm"), rows())
+        rule.onNodeWithText("Bell").assertIsFocused()
+
+        openMenu(activity)
+        chooseRow("Remove from collection")
+        awaitListed("App info", listed = false)
+        assertEquals(listOf("Alarm"), rows())
+        openMenu(activity)
+        chooseRow("Remove from collection")
+
+        awaitListed("MinimalUI")
+        assertEquals(listOf("Alarm", "Bell", "MinimalUI", "MinimalUI settings"), rowsMatching(activity, ""))
+        rule.onNodeWithText("Collections").assertDoesNotExist()
+    }
+
+    @Test
+    fun `collections are kept when the launcher starts again, and their apps open and become recent`() {
+        install("Alarm", "com.example.alarm")
+        install("Bell", "com.example.bell")
+        val activity = launch()
+        awaitListed("Bell")
+        press(Key.DirectionDown)
+        addToCollection(activity, "games", new = true)
+
+        closeActivity()
+        val restarted = launch()
+        awaitListed("Collections")
+        press(Key.Enter)
+        awaitListed("games")
+        press(Key.Enter)
+        awaitListed("Bell")
+        press(Key.Enter)
+
+        val started = shadowOf(application).nextStartedActivity
+        assertEquals(ComponentName("com.example.bell", "com.example.bell.Main"), started.component)
+        assertEquals(listOf("Bell"), restarted.get().recentApps.map { it.label })
+        leaveAndComeBack(restarted)
+        rule.onNodeWithText("Bell").assertIsFocused()
+        rule.onNodeWithText("Alarm").assertDoesNotExist()
+
+        restarted.newIntent(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME))
+        awaitListed("Alarm")
+        rule.onAllNodesWithText("Bell")[0].assertIsFocused()
     }
 }
 

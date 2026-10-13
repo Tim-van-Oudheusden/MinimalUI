@@ -48,11 +48,7 @@ data class RecentApps(val components: List<String> = emptyList()) {
     companion object {
         /** The list [stored] wrote; lines that are not a component, repeats and lines past the limit are skipped. */
         fun fromStored(text: String?): RecentApps = RecentApps(
-            text.orEmpty().lines().filter(COMPONENT::matches).distinct().take(RECENT_APPS_LIMIT),
+            text.orEmpty().lines().filter(::isComponent).distinct().take(RECENT_APPS_LIMIT),
         )
-
-        private val COMPONENT = Regex("[^/]+/[^/]+")
     }
 }
-
-private val LauncherApp.component: String get() = "$packageName/$activityName"
