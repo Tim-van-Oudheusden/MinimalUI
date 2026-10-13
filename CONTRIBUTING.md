@@ -40,6 +40,11 @@ android sdk install platform-tools platforms/android-37.0   # keep in step with 
 `android sdk install` accepts the SDK licence, so AGP downloads the build tools it needs on the first build. Use
 `android --sdk=<path> sdk install ...` to target an SDK other than the one `android info` reports.
 
+To skip the local SDK install, use the sandbox image instead: `Dockerfile.sandbox` (JDK 21, Android SDK, `git`, `jq`,
+`gh`, `bd`) is also what `.devcontainer/devcontainer.json` builds, so VS Code "Reopen in Container" and a plain
+`podman build -f Dockerfile.sandbox -t minimalui-sandbox .` give the same environment. It runs the quality gates; see
+[docs/testing.md](docs/testing.md#agent-sandbox-what-runs-where) for what needs a real device.
+
 ## Project layout
 
 ```text

@@ -1,0 +1,66 @@
+# Agent sandbox / devcontainer image: JDK 21 + Android SDK (no emulator) + git, jq, gh, bd.
+# Runs the quality gates (`./gradlew test lint assembleDebug`) without any SDK download at build time.
+# .devcontainer/devcontainer.json builds from this file, so there is one recipe for both.
+#
+#   podman build -f Dockerfile.sandbox -t localhost/minimalui-sandbox .
+#   podman run --rm -it --userns=keep-id -v "$PWD":/workspace:z localhost/minimalui-sandbox \
+#     ./gradlew --no-daemon test lint assembleDebug
+#
+# Bumping: keep `platforms;android-*` equal to compileSdk in app/build.gradle.kts and `build-tools;*` equal to the
+# default build-tools revision of the AGP version in gradle/libs.versions.toml; otherwise Gradle tries to download them.
+FROM docker.io/library/eclipse-temurin:21.0.12.1_1-jdk@sha256:3e3c176ffed168beb42c607be9bc1639b466cf00261a0fb04425562c9d0c5c2b
+
+ARG CMDLINE_TOOLS_VERSION=16111833
+ARG CMDLINE_TOOLS_SHA256=0877a1d048fe4a24efe2eff536ca4223f7adeb58648bb81909d33c446918cfa8
+ARG ANDROID_PLATFORM=platforms;android-37.0
+ARG ANDROID_BUILD_TOOLS=build-tools;36.0.0
+ARG GH_VERSION=2.102.0
+ARG GH_SHA256=bb766f710eef8ede859c18578c72c327597cd4c8a85b06001b1f3843c6019386
+ARG BD_VERSION=1.3.1
+ARG BD_SHA256=3219443a9734b89b93fb16ee8d65844759fa1b3cd3cf139c606b7353cfb0715c
+
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+      ca-certificates \
+      curl \
+      git \
+      jq \
+      openssh-client \
+      unzip && \
+    rm -rf /var/lib/apt/lists/*
+
+# gh and bd: pinned GitHub release binaries, checksum-verified.
+RUN cd /tmp && \
+    curl -fsSLo gh.tar.gz "https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_amd64.tar.gz" && \
+    echo "${GH_SHA256}  gh.tar.gz" | sha256sum -c - && \
+    tar -xzf gh.tar.gz --strip-components=2 -C /usr/local/bin "gh_${GH_VERSION}_linux_amd64/bin/gh" && \
+    curl -fsSLo bd.tar.gz "https://github.com/gastownhall/beads/releases/download/v${BD_VERSION}/beads_${BD_VERSION}_linux_amd64.tar.gz" && \
+    echo "${BD_SHA256}  bd.tar.gz" | sha256sum -c - && \
+    tar -xzf bd.tar.gz -C /usr/local/bin bd && \
+    rm gh.tar.gz bd.tar.gz && \
+    gh --version && bd --version
+
+ENV ANDROID_HOME=/opt/android-sdk
+ENV PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH
+
+# Android SDK, root-owned and read-only for the build user: a missing component fails the build instead of
+# being downloaded silently at runtime.
+RUN mkdir -p "$ANDROID_HOME/cmdline-tools" && cd /tmp && \
+    curl -fsSLo clt.zip "https://dl.google.com/android/repository/commandlinetools-linux-${CMDLINE_TOOLS_VERSION}_latest.zip" && \
+    echo "${CMDLINE_TOOLS_SHA256}  clt.zip" | sha256sum -c - && \
+    unzip -q clt.zip -d "$ANDROID_HOME/cmdline-tools" && \
+    mv "$ANDROID_HOME/cmdline-tools/cmdline-tools" "$ANDROID_HOME/cmdline-tools/latest" && \
+    rm clt.zip && \
+    yes | sdkmanager --licenses > /dev/null && \
+    sdkmanager --install "platform-tools" "${ANDROID_PLATFORM}" "${ANDROID_BUILD_TOOLS}" && \
+    rm -rf /root/.android
+
+# Non-root user (uid 1000, matching a typical host user for `--userns=keep-id` bind mounts).
+RUN if id ubuntu > /dev/null 2>&1; then userdel -r ubuntu; fi && \
+    useradd --create-home --uid 1000 --shell /bin/bash dev && \
+    mkdir -p /workspace && chown dev:dev /workspace
+
+USER dev
+WORKDIR /workspace
+
+CMD ["bash"]

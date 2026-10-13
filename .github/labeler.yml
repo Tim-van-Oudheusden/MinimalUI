@@ -10,7 +10,15 @@ core:
 
 build:
   - changed-files:
-      - any-glob-to-any-file: ['gradle/**', '*.gradle.kts', 'gradle.properties', 'gradlew', 'gradlew.bat']
+      - any-glob-to-any-file:
+          - 'gradle/**'
+          - '*.gradle.kts'
+          - 'gradle.properties'
+          - 'gradlew'
+          - 'gradlew.bat'
+          - '.devcontainer/**'
+          - 'Dockerfile*'
+          - '.dockerignore'
 
 ci:
   - changed-files:
