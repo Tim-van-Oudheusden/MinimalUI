@@ -3,6 +3,11 @@ package dev.buildwithtim.minimalui.core
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
+/**
+ * Runs on the JDK collator, not the ICU collator a device uses (see [labelCollator]). Labels here stick to ASCII and
+ * Latin-1 accents, where the two agree. A case such as `Ø` or `Ł` sorting next to its base letter is true on a device
+ * but fails on the JVM.
+ */
 class AppOrderingTest {
 
     private fun app(label: String, packageName: String = "pkg.$label") =
