@@ -26,7 +26,8 @@ Pick one:
   download the artifact, unzip it, and install `app-debug.apk` on the phone. You can do this with `adb install
   app-debug.apk`, or by opening the file on the phone and allowing installs from that source.
 - **Build from source.** Follow [Getting started](CONTRIBUTING.md#getting-started) in `CONTRIBUTING.md`, then run
-  `./gradlew installDebug` with the phone connected.
+  `./gradlew installDebug` with the phone connected. No phone at hand? [Running it in an emulator on
+  Linux](CONTRIBUTING.md#running-it-in-an-emulator-on-linux) sets one up.
 
 ## Making it your home screen
 

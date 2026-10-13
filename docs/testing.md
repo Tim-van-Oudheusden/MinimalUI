@@ -53,7 +53,8 @@ file instead, and `ALERTS_IGNORE="GHSA-… GHSA-…"` to replace the ignore list
 **Decision:** the agent sandbox (`Dockerfile.sandbox`, also built by `.devcontainer/devcontainer.json`) runs the
 JVM and build gates only: `./gradlew test lint assembleDebug`. Anything that needs an Android device or emulator
 (`./gradlew installDebug`, `connectedAndroidTest`, manual keyboard/D-pad checks on the launcher) runs on a host with a
-device attached over `adb`, or on an emulator on the host.
+device attached over `adb`, or on an emulator on the host (see
+[Running it in an emulator on Linux](../CONTRIBUTING.md#running-it-in-an-emulator-on-linux)).
 
 Why: the image ships the SDK pieces the build needs (`platform-tools`, the `compileSdk` platform, and the build-tools
 revision AGP defaults to) but no emulator or system images. An emulator needs KVM (`/dev/kvm`) and a display, and
