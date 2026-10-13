@@ -1,0 +1,54 @@
+name: Quality report
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  report:
+    name: Quality report
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    # Publishes the report to the job summary and as an artifact; nothing is committed. The tuned floors file is an
+    # artifact a maintainer reviews and commits by hand (docs/testing.md#coverage-floor-self-tuning).
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Setup JDK
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+      - name: Generate quality report
+        run: scripts/quality-report.sh > quality-report.md
+      - name: Propose coverage floors
+        if: always()
+        run: |
+          scripts/auto-qa-tuner.sh --report quality-report.md --write > floor-tuning.md
+          { echo; cat floor-tuning.md; } >> quality-report.md
+      - name: Publish job summary
+        if: always()
+        run: cat quality-report.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload quality report
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: quality-report
+          path: quality-report.md
+          retention-days: 90
+      - name: Upload tuned coverage floors
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: auto-qa-tuning
+          path: .github/auto-qa-tuning.json
+          retention-days: 90

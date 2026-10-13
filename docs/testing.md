@@ -113,3 +113,33 @@ scripts/coverage-check.sh core 100 100
 ```
 
 `./gradlew :core:koverHtmlReport` writes a browsable report to `core/build/reports/kover/html/`.
+
+## Quality report
+
+`.github/workflows/quality-report.yml` (job **Quality report**: every push to `main`, weekly on Monday at 06:17 UTC,
+and on demand) runs `scripts/quality-report.sh > quality-report.md`. The script runs each quality gate separately
+(`./gradlew test`, `lint`, `assembleDebug`), then `./gradlew :<module>:koverXmlReport` for every module in
+`.github/auto-qa-tuning.json`, and prints a Markdown report: pass/fail per gate and function/line coverage per module.
+Every gate and coverage run happens even when an earlier one fails. A module whose coverage run fails, or leaves no
+report, shows `❌ n/a`; a report left by an earlier build is deleted first, so it never stands in for the current run.
+Gradle output goes to stderr. The script exits 1 if anything failed, 2 if the floors file lists no module.
+
+The workflow appends the floor tuning below (even when a gate failed), publishes the result to the job summary and
+uploads it as the `quality-report` artifact. Run it locally:
+
+```bash
+scripts/quality-report.sh > quality-report.md
+```
+
+## Coverage floor self-tuning
+
+`scripts/auto-qa-tuner.sh --report quality-report.md [--config .github/auto-qa-tuning.json] [--write]` reads the
+coverage rows of a quality report and proposes, per module and metric, the floor raised to the observed coverage minus
+the config's `margin` (in percentage points), rounded down to a whole percent. Floors only ratchet up: a proposal below
+the current floor keeps the floor, and a module reported as `n/a` keeps both floors. It prints the proposals as a
+Markdown table (`⬆️` marks a raise); `--write` saves them to the config, keeping every other key. It exits 2 for a
+missing report or a malformed config (a floor outside 0–100, a negative or missing margin, no modules) and then leaves
+the config untouched.
+
+The quality report workflow runs it with `--write` and uploads the tuned file as the `auto-qa-tuning` artifact. Nothing
+is committed automatically: to adopt the proposal, download the artifact, review the diff and commit it in a PR.
