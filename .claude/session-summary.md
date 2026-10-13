@@ -10,16 +10,17 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 ## Latest session
 
 - **Date:** 2026-10-13
-- **Worked:** #64 — instant app launch and selection on return (stack row 2 of the #60 interface stack, on
-  `feat/75-list-states`).
-- **Outcome:** apps start with `ActivityOptions.makeCustomAnimation(this, 0, 0)`. A return by any route but Home
-  (Back, Recents, the app exiting) selects the app opened last: `RecentApps.returnRow(shown)` in core picks the row
-  (top when uninstalled or filtered out), `MainActivity` turns it into a `Returned(row, count)` on the first resume
-  after a launch unless `onNewIntent` (Home) came first, and `AppList(returned = ...)` selects it via
-  `ListPosition.selecting`, keeping the screen if the row is on it. The filter stays on return.
+- **Worked:** #65 — status pill (stack row 3 of the #60 interface stack, on `feat/64-instant-launch`).
+- **Outcome:** the launcher hides Android's status bar (`enableEdgeToEdge` + `WindowInsetsControllerCompat`, swipe
+  shows it transiently) and draws a MinUI-style `#262626` pill top-right: Wi-Fi glyph while the default network is
+  Wi-Fi, battery glyph + percentage, clock following the 12/24-hour setting. Model in core `StatusPill.kt`
+  (`StatusPill`, `Battery` thresholds, `battery(level, scale, charging)`, `clockText`); `StatusWatcher` feeds it from
+  the sticky battery broadcast, `TIME_TICK`/`TIME_CHANGED`/`TIMEZONE_CHANGED` and `registerDefaultNetworkCallback`,
+  between `onStart` and `onStop`. `AppList(status = ...)` reserves the top row for it (hidden while loading).
 - **Open follow-ups:** the rest of the #60 stack builds on this branch.
 - **Notes for next session:**
-  - Test apps must sort before `MinimalUI` to be reachable with one Down press (`Bell`, not `Zebra`).
-  - While the launcher is stopped in Robolectric, Compose has no hierarchy to wait on: poll activity state and idle the
-    main looper (`awaitWhileAway` in `MainActivityTest`).
+  - Robolectric: `ShadowConnectivityManager.networkCallbacks` drives the network callback; a sticky
+    `ACTION_BATTERY_CHANGED` sent before launch is what `registerReceiver` returns.
+  - Render a composable to PNG under `@GraphicsMode(NATIVE)` with `captureToImage()` for a visual check; the ATD
+    emulator's `screencap` is black.
   - No JDK on the host: run Gradle via the podman sandbox (`/tmp/gates.sh`).

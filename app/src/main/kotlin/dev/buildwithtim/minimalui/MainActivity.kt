@@ -11,14 +11,19 @@ import android.view.KeyEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.addCallback
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import dev.buildwithtim.minimalui.core.LatestLoader
 import dev.buildwithtim.minimalui.core.LauncherApp
 import dev.buildwithtim.minimalui.core.ListContent
 import dev.buildwithtim.minimalui.core.RecentApps
+import dev.buildwithtim.minimalui.core.StatusPill
 import dev.buildwithtim.minimalui.core.listContent
 import dev.buildwithtim.minimalui.core.minusLastTyped
 import dev.buildwithtim.minimalui.core.plusTyped
@@ -36,6 +41,10 @@ class MainActivity : ComponentActivity() {
     private var homePresses by mutableIntStateOf(0)
     private var query by mutableStateOf("")
     private var returned by mutableStateOf<Returned?>(null)
+    private var status by mutableStateOf<StatusPill?>(null)
+
+    // Lazy: the system services exist only once the activity is attached.
+    private val statusWatcher by lazy { StatusWatcher(this) { status = it } }
 
     // Set once an app opens from here and cleared by Home, so the next resume is a return by Back, Recents or the app
     // exiting, which selects that app again.
@@ -69,6 +78,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        hideStatusBar()
         recents = recentStore.load()
         // Registered for the activity's whole life, not only while resumed, so the list is current before a return.
         registerReceiver(
@@ -90,9 +100,33 @@ class MainActivity : ComponentActivity() {
                     homePresses = homePresses,
                     onOpen = ::open,
                     returned = returned,
+                    status = status,
                 )
             }
         }
+    }
+
+    /**
+     * The status pill stands in for Android's status bar (#65), so the launcher's window hides it; a swipe from the top
+     * edge brings it back for a moment. It is this window's setting only, so the bar shows again in any other app.
+     */
+    private fun hideStatusBar() {
+        enableEdgeToEdge()
+        WindowCompat.getInsetsController(window, window.decorView).run {
+            systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            hide(WindowInsetsCompat.Type.statusBars())
+        }
+    }
+
+    // The pill's sources are watched only while the launcher can be seen.
+    override fun onStart() {
+        super.onStart()
+        statusWatcher.start()
+    }
+
+    override fun onStop() {
+        statusWatcher.stop()
+        super.onStop()
     }
 
     override fun onNewIntent(intent: Intent) {

@@ -33,4 +33,11 @@ a plain list, driven entirely by keys, that gets out of the way. It is not a the
   Rows are contiguous, with no gap between them. A label too long for the row ends in an ellipsis and never scrolls.
 - **Empty states:** a terse message (`No apps`, `No match`) centred on the screen in the list's text style, as in
   MinUI; while the apps load the screen stays plain black.
+- **Status pill:** Android's status bar is hidden on the launcher (a swipe from the top edge shows it for a moment; it
+  is back in every other app). In its place, a dark-grey (`#262626`) pill in the top-right corner, as in MinUI, holds
+  a Wi-Fi glyph (only while on Wi-Fi), a battery glyph with the percentage, and a clock that follows the system
+  12/24-hour setting. The battery's fill is proportional to the charge; the fill turns red at 20% and the outline too
+  at 10%, and a bolt replaces the fill while charging. Its text is 20 sp, on the rows' line height. The pill takes the
+  top row, so no app row runs under it; it stays hidden with the rest while the apps load. Glyphs are drawn in code,
+  never copied from MinUI.
 - **Type:** the system font at 24 sp until a dedicated one is chosen; legible at arm's length on small, square screens.

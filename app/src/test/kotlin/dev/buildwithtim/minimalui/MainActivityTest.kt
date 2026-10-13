@@ -8,19 +8,30 @@ import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.pm.ApplicationInfo
 import android.content.pm.ResolveInfo
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
+import android.os.BatteryManager
 import android.os.Bundle
 import android.os.Looper
+import android.provider.Settings
 import android.view.KeyEvent
 import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.pressKey
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.test.core.app.ApplicationProvider
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -38,6 +49,8 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.Implementation
 import org.robolectric.annotation.Implements
 import org.robolectric.shadows.ShadowActivity
+import org.robolectric.shadows.ShadowNetwork
+import org.robolectric.shadows.ShadowNetworkCapabilities
 
 @OptIn(ExperimentalTestApi::class)
 @RunWith(RobolectricTestRunner::class)
@@ -386,6 +399,91 @@ class MainActivityTest {
         )
 
         awaitListed("Zebra")
+    }
+
+    private fun batteryAt(level: Int, status: Int = BatteryManager.BATTERY_STATUS_DISCHARGING) =
+        application.sendStickyBroadcast(
+            Intent(Intent.ACTION_BATTERY_CHANGED)
+                .putExtra(BatteryManager.EXTRA_LEVEL, level)
+                .putExtra(BatteryManager.EXTRA_SCALE, 100)
+                .putExtra(BatteryManager.EXTRA_STATUS, status),
+        )
+
+    private fun texts(): List<String> = rule.onAllNodes(SemanticsMatcher.keyIsDefined(SemanticsProperties.Text), true)
+        .fetchSemanticsNodes()
+        .flatMap { node -> node.config[SemanticsProperties.Text].map { it.text } }
+
+    private val connectivity get() = shadowOf(application.getSystemService(ConnectivityManager::class.java))
+
+    @Test
+    fun `the status pill shows the battery charge, and follows it`() {
+        install("Alarm", "com.example.alarm")
+        batteryAt(42)
+        launch()
+        awaitListed("Alarm")
+        rule.onNodeWithText("42%").assertExists()
+
+        batteryAt(41, BatteryManager.BATTERY_STATUS_CHARGING)
+
+        awaitListed("41%")
+        rule.onNodeWithContentDescription("Charging", useUnmergedTree = true).assertExists()
+    }
+
+    @Test
+    fun `the clock follows the system 12 or 24-hour setting`() {
+        install("Alarm", "com.example.alarm")
+        Settings.System.putString(application.contentResolver, Settings.System.TIME_12_24, "24")
+        launch()
+        awaitListed("Alarm")
+        assertTrue(texts().toString(), texts().any { it.matches(Regex("\\d\\d:\\d\\d")) })
+
+        Settings.System.putString(application.contentResolver, Settings.System.TIME_12_24, "12")
+        application.sendBroadcast(Intent(Intent.ACTION_TIME_CHANGED))
+
+        rule.waitUntil(timeoutMillis = 5_000) { texts().any { it.matches(Regex("\\d{1,2}:\\d\\d (AM|PM)")) } }
+    }
+
+    @Test
+    fun `the Wi-Fi glyph shows while the default network is Wi-Fi`() {
+        install("Alarm", "com.example.alarm")
+        launch()
+        awaitListed("Alarm")
+        rule.onNodeWithContentDescription("Wi-Fi", useUnmergedTree = true).assertDoesNotExist()
+        val network = ShadowNetwork.newInstance(1)
+        val wifi = ShadowNetworkCapabilities.newInstance()
+        shadowOf(wifi).addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
+
+        connectivity.networkCallbacks.forEach { it.onCapabilitiesChanged(network, wifi) }
+        rule.waitForIdle()
+        rule.onNodeWithContentDescription("Wi-Fi", useUnmergedTree = true).assertExists()
+
+        connectivity.networkCallbacks.forEach { it.onLost(network) }
+        rule.waitForIdle()
+        rule.onNodeWithContentDescription("Wi-Fi", useUnmergedTree = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun `the status sources are watched only while the launcher is in front`() {
+        val activity = launch()
+        val watched = listOf(Intent.ACTION_BATTERY_CHANGED, Intent.ACTION_TIME_TICK)
+        fun receivers() = shadowOf(application).registeredReceivers.filter { r -> watched.all(r.intentFilter::hasAction) }
+        assertEquals(1, receivers().size)
+        assertEquals(1, connectivity.networkCallbacks.size)
+
+        activity.pause().stop()
+
+        assertEquals(0, receivers().size)
+        assertEquals(0, connectivity.networkCallbacks.size)
+    }
+
+    @Test
+    fun `the system status bar is hidden on the launcher`() {
+        val activity = launch()
+
+        val controller = WindowCompat.getInsetsController(activity.get().window, activity.get().window.decorView)
+        assertEquals(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE, controller.systemBarsBehavior)
+        val insets = ViewCompat.getRootWindowInsets(activity.get().window.decorView)!!
+        assertFalse(insets.isVisible(WindowInsetsCompat.Type.statusBars()))
     }
 }
 
