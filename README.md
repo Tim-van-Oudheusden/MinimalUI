@@ -1,5 +1,7 @@
 # MinimalUI
 
+![MinimalUI: a minimal Android launcher for keyboard-centric phones](docs/brand/banner/readme-banner.svg)
+
 A minimal Android launcher for keyboard-centric phones, such as those from Zinwa, Clicks and Unihertz. Inspired by
 [MinUI](https://github.com/shauninman/MinUI) and [Cannoli](https://github.com/CannoliHQ/cannoli): a plain list of
 apps, driven entirely by keys.
