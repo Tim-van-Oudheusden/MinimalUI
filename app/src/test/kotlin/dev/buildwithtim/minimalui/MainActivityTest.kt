@@ -1,6 +1,7 @@
 package dev.buildwithtim.minimalui
 
 import android.app.Activity
+import android.app.ActivityOptions
 import android.app.Application
 import android.content.ComponentName
 import android.content.Intent
@@ -8,6 +9,7 @@ import android.content.pm.ActivityInfo
 import android.content.pm.ApplicationInfo
 import android.content.pm.ResolveInfo
 import android.os.Bundle
+import android.os.Looper
 import android.view.KeyEvent
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -16,6 +18,7 @@ import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.pressKey
 import androidx.test.core.app.ApplicationProvider
@@ -92,6 +95,26 @@ class MainActivityTest {
         activity.get().dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_UP, keyCode))
     }
 
+    /** The user leaves for the opened app, [meanwhile] happens, and they come back by a route other than Home. */
+    private fun leaveAndComeBack(activity: ActivityController<MainActivity>, meanwhile: () -> Unit = {}) {
+        activity.pause().stop()
+        meanwhile()
+        activity.restart().resume()
+        rule.waitForIdle()
+    }
+
+    /** Compose has nothing on screen to wait on while the launcher is stopped, so this runs the main thread itself. */
+    private fun awaitWhileAway(condition: () -> Boolean) {
+        val deadline = System.currentTimeMillis() + 5_000
+        while (!condition()) {
+            check(System.currentTimeMillis() < deadline) { "Timed out while away from the launcher" }
+            shadowOf(Looper.getMainLooper()).idle()
+            Thread.sleep(10)
+        }
+    }
+
+    private fun Bundle?.contents(): Map<String, Any?>? = this?.let { b -> b.keySet().associateWith { b.get(it) } }
+
     @Test
     fun `Enter opens the focused app in its own task`() {
         install("Alarm", "com.example.alarm")
@@ -105,6 +128,88 @@ class MainActivityTest {
         assertEquals(Intent.ACTION_MAIN, started.action)
         val flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED
         assertEquals(flags, started.flags and flags)
+    }
+
+    @Test
+    fun `an app opens with no transition animation`() {
+        install("Alarm", "com.example.alarm")
+        val activity = launch()
+        awaitListed("Alarm")
+
+        press(Key.Enter)
+
+        val options = shadowOf(activity.get()).nextStartedActivityForResult.options
+        val none = ActivityOptions.makeCustomAnimation(activity.get(), 0, 0).toBundle()
+        assertEquals(none.contents(), options.contents())
+    }
+
+    @Test
+    fun `coming back from an app selects it, even when it was opened by touch`() {
+        install("Alarm", "com.example.alarm")
+        install("Zebra", "com.example.zebra")
+        val activity = launch()
+        awaitListed("Zebra")
+
+        rule.onNodeWithText("Zebra").performClick()
+        leaveAndComeBack(activity)
+
+        rule.onNodeWithText("Zebra").assertIsFocused()
+    }
+
+    @Test
+    fun `coming back selects the top when the app opened last was uninstalled meanwhile`() {
+        install("Alarm", "com.example.alarm")
+        install("Bell", "com.example.bell")
+        val activity = launch()
+        awaitListed("Bell")
+        press(Key.DirectionDown)
+        press(Key.Enter)
+
+        leaveAndComeBack(activity) {
+            uninstall("com.example.bell")
+            application.sendBroadcast(
+                Intent(Intent.ACTION_PACKAGE_REMOVED, android.net.Uri.fromParts("package", "com.example.bell", null)),
+            )
+            // Nothing is on screen while the launcher is stopped; the reload shows in the recent apps instead.
+            awaitWhileAway { activity.get().recentApps.isEmpty() }
+        }
+
+        rule.onNodeWithText("Alarm").assertIsFocused()
+    }
+
+    @Test
+    fun `coming back keeps the filter and selects the app opened from it`() {
+        install("Alarm", "com.example.alarm")
+        install("Zebra", "com.example.zebra")
+        install("Zoo", "com.example.zoo")
+        val activity = launch()
+        awaitListed("Zoo")
+        type(activity, KeyEvent.KEYCODE_Z)
+        awaitListed("Alarm", listed = false)
+        press(Key.DirectionDown)
+        press(Key.Enter)
+
+        leaveAndComeBack(activity)
+
+        rule.onNodeWithText("z_").assertExists()
+        rule.onNodeWithText("Zoo").assertIsFocused()
+    }
+
+    @Test
+    fun `Home from an app puts focus on the first row, not on the app`() {
+        install("Alarm", "com.example.alarm")
+        install("Bell", "com.example.bell")
+        val activity = launch()
+        awaitListed("Bell")
+        press(Key.DirectionDown)
+        press(Key.Enter)
+
+        activity.pause().stop().restart()
+        activity.newIntent(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME))
+        activity.resume()
+        rule.waitForIdle()
+
+        rule.onNodeWithText("Alarm").assertIsFocused()
     }
 
     @Test

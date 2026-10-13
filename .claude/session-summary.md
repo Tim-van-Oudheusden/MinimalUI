@@ -10,13 +10,16 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 ## Latest session
 
 - **Date:** 2026-10-13
-- **Worked:** #75 — loading, empty and no-match states for the app list (stack row 1 of the #60 interface stack, on
-  `feat/66-recent-apps`).
-- **Outcome:** `core/ListContent.kt` decides what the list area shows (`Loading`, `NoApps`, `NoMatch`, `Apps`);
-  `MainActivity.apps` is null until the first load; `AppList` takes a `ListContent` and centres `No apps` /
-  `No match` on the screen, keeping the query line so Backspace and Home still work.
+- **Worked:** #64 — instant app launch and selection on return (stack row 2 of the #60 interface stack, on
+  `feat/75-list-states`).
+- **Outcome:** apps start with `ActivityOptions.makeCustomAnimation(this, 0, 0)`. A return by any route but Home
+  (Back, Recents, the app exiting) selects the app opened last: `RecentApps.returnRow(shown)` in core picks the row
+  (top when uninstalled or filtered out), `MainActivity` turns it into a `Returned(row, count)` on the first resume
+  after a launch unless `onNewIntent` (Home) came first, and `AppList(returned = ...)` selects it via
+  `ListPosition.selecting`, keeping the screen if the row is on it. The filter stays on return.
 - **Open follow-ups:** the rest of the #60 stack builds on this branch.
 - **Notes for next session:**
-  - `AppList(content = listContent(apps, query), ...)`: filtering happens in `listContent`; map apps to their displayed
-    labels before calling it.
+  - Test apps must sort before `MinimalUI` to be reachable with one Down press (`Bell`, not `Zebra`).
+  - While the launcher is stopped in Robolectric, Compose has no hierarchy to wait on: poll activity state and idle the
+    main looper (`awaitWhileAway` in `MainActivityTest`).
   - No JDK on the host: run Gradle via the podman sandbox (`/tmp/gates.sh`).
