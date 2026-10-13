@@ -94,4 +94,48 @@ class ListNavigationTest {
         assertEquals(at(19, 12), at(25, 0).selecting(count = 20, rowsPerPage = 8))
         assertEquals(at(0, 0), at(3, 1).selecting(count = 0, rowsPerPage = 8))
     }
+
+    // Rows 2 and 3 are blank, as the blank row between the root's block and its full list is.
+    private val blank = { row: Int -> row == 2 || row == 3 }
+
+    @Test
+    fun `Up and Down skip blank rows`() {
+        assertEquals(at(4, 0), at(1, 0).stepped(1, held = false, count = 20, rowsPerPage = 8, blank = blank))
+        assertEquals(at(1, 0), at(4, 0).stepped(-1, held = true, count = 20, rowsPerPage = 8, blank = blank))
+    }
+
+    @Test
+    fun `a fresh press wraps past a blank row at either end, and a held key stops before it`() {
+        val blankEnds = { row: Int -> row == 0 || row == 19 }
+
+        assertEquals(at(1, 1), at(18, 12).stepped(1, held = false, count = 20, rowsPerPage = 8, blank = blankEnds))
+        assertEquals(at(18, 11), at(1, 0).stepped(-1, held = false, count = 20, rowsPerPage = 8, blank = blankEnds))
+        assertEquals(at(18, 12), at(18, 12).stepped(1, held = true, count = 20, rowsPerPage = 8, blank = blankEnds))
+        assertEquals(at(1, 0), at(1, 0).stepped(-1, held = true, count = 20, rowsPerPage = 8, blank = blankEnds))
+    }
+
+    @Test
+    fun `with no other row to go to, the selection stays`() {
+        val onlyOne = { row: Int -> row != 1 }
+
+        assertEquals(at(1, 0), at(1, 0).stepped(1, held = false, count = 3, rowsPerPage = 8, blank = onlyOne))
+    }
+
+    @Test
+    fun `a blank row still counts as a row for paging, and a page jump onto one moves on past it`() {
+        assertEquals(at(10, 8), at(1, 0).paged(1, count = 20, rowsPerPage = 8, blank = { it == 9 }))
+        assertEquals(at(1, 0), at(10, 8).paged(-1, count = 20, rowsPerPage = 8, blank = blank))
+    }
+
+    @Test
+    fun `a page jump onto a blank last row stops on the row before it`() {
+        assertEquals(at(18, 12), at(15, 8).paged(1, count = 20, rowsPerPage = 8, blank = { it == 19 }))
+    }
+
+    @Test
+    fun `selecting a blank row selects the next row that is not`() {
+        assertEquals(at(4, 0), at(2, 0).selecting(count = 20, rowsPerPage = 8, blank = blank))
+        assertEquals(at(18, 12), at(19, 12).selecting(count = 20, rowsPerPage = 8, blank = { it == 19 }))
+        assertEquals(at(0, 0), at(0, 0).selecting(count = 1, rowsPerPage = 8, blank = { true }))
+    }
 }

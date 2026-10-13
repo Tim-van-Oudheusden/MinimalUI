@@ -32,13 +32,14 @@ data class RecentApps(val components: List<String> = emptyList()) {
     }
 
     /**
-     * The row of [shown] to select when the user comes back from an app by any route but Home: the app opened last,
-     * so one press reopens it (MinUI's behaviour). The top row when that app is not in [shown], because it was
+     * The row of [shown] (its app on each row, `null` for a row with none) to select when the user comes back from an
+     * app by any route but Home: the app opened last, so one press reopens it (MinUI's behaviour). On the root that
+     * is its row in the recently used block, the top one. The top row when that app is not in [shown], because it was
      * uninstalled meanwhile or the filter hides it.
      */
-    fun returnRow(shown: List<LauncherApp>): Int {
+    fun returnRow(shown: List<LauncherApp?>): Int {
         val last = components.firstOrNull() ?: return 0
-        return shown.indexOfFirst { it.component == last }.coerceAtLeast(0)
+        return shown.indexOfFirst { it?.component == last }.coerceAtLeast(0)
     }
 
     /** One component per line, for app-private storage. */

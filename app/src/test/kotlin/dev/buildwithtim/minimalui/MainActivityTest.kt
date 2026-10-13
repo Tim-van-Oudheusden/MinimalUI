@@ -4,6 +4,7 @@ import android.app.Activity
 import android.app.ActivityOptions
 import android.app.Application
 import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.pm.ApplicationInfo
@@ -27,6 +28,7 @@ import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
@@ -171,7 +173,8 @@ class MainActivityTest {
         rule.onNodeWithText("Zebra").performClick()
         leaveAndComeBack(activity)
 
-        rule.onNodeWithText("Zebra").assertIsFocused()
+        // Zebra is now listed twice: first in the recently used block, whose row (the top one) is selected.
+        rule.onAllNodesWithText("Zebra")[0].assertIsFocused()
     }
 
     @Test
@@ -215,6 +218,8 @@ class MainActivityTest {
 
     @Test
     fun `Home from an app puts focus on the first row, not on the app`() {
+        // Without the recently used block, whose first row would be the app itself.
+        recentlyUsedOff()
         install("Alarm", "com.example.alarm")
         install("Bell", "com.example.bell")
         val activity = launch()
@@ -331,9 +336,11 @@ class MainActivityTest {
         launch()
         awaitListed("Alarm")
 
-        // Zebra is the last row (after MinimalUI and its settings row): Up wraps to it, Down wraps back to Alarm.
+        // Zebra is the last row (after MinimalUI and its settings row): Up wraps to it. Opened, it heads the recently
+        // used block above a blank row: Down wraps to it there, and Down again skips the blank row to Alarm.
         press(Key.DirectionUp)
         press(Key.Enter)
+        press(Key.DirectionDown)
         press(Key.DirectionDown)
         press(Key.Enter)
         assertEquals(listOf("Alarm", "Zebra"), controller!!.get().recentApps.map { it.label })
@@ -903,6 +910,111 @@ class MainActivityTest {
         press(Key.DirectionDown)
 
         rule.onNodeWithText("Uninstall").assertIsNotEnabled()
+    }
+
+    /** MinimalUI's Recently used setting at Off, as stored before the launcher starts. */
+    private fun recentlyUsedOff() {
+        application.getSharedPreferences("settings", Context.MODE_PRIVATE).edit()
+            .putString("recently_used", "Off")
+            .commit()
+    }
+
+    /** Opens each of [labels] in turn from its row in the full list (the last row with it), and comes back by Back. */
+    private fun openInTurn(activity: ActivityController<MainActivity>, vararg labels: String) = labels.forEach {
+        rule.onAllNodesWithText(it).onLast().performClick()
+        leaveAndComeBack(activity)
+    }
+
+    @Test
+    fun `the newest recent apps head the list above one blank row, and the full list still holds them`() {
+        install("Alarm", "com.example.alarm")
+        install("Bell", "com.example.bell")
+        val activity = launch()
+        awaitListed("Bell")
+        assertEquals(listOf("Alarm", "Bell", "MinimalUI", "MinimalUI settings"), rowsMatching(activity, ""))
+
+        openInTurn(activity, "Alarm", "Bell")
+
+        val rows = listOf("Bell", "Alarm", "Alarm", "Bell", "MinimalUI", "MinimalUI settings")
+        assertEquals(rows, rowsMatching(activity, ""))
+        val bounds = rule.onAllNodes(hasClickAction()).fetchSemanticsNodes().map { it.boundsInRoot }
+        // The blank row between the block and the full list is as tall as any other row.
+        assertEquals(bounds[1].height, bounds[2].top - bounds[1].bottom, 1f)
+        rule.onAllNodesWithText("Bell")[0].assertIsFocused()
+    }
+
+    @Test
+    fun `Up and Down skip the blank row`() {
+        install("Alarm", "com.example.alarm")
+        install("Bell", "com.example.bell")
+        val activity = launch()
+        awaitListed("Bell")
+        openInTurn(activity, "Bell")
+        rule.onAllNodesWithText("Bell")[0].assertIsFocused()
+
+        press(Key.DirectionDown)
+        rule.onNodeWithText("Alarm").assertIsFocused()
+
+        press(Key.DirectionUp)
+        rule.onAllNodesWithText("Bell")[0].assertIsFocused()
+    }
+
+    @Test
+    fun `typing shows only the matching apps, without the block`() {
+        install("Alarm", "com.example.alarm")
+        install("Bell", "com.example.bell")
+        val activity = launch()
+        awaitListed("Bell")
+        openInTurn(activity, "Bell", "Alarm")
+
+        assertEquals(listOf("Bell"), rowsMatching(activity, "b"))
+        assertEquals(listOf("Bell"), rowsMatching(activity, "e"))
+        type(activity, KeyEvent.KEYCODE_DEL)
+        type(activity, KeyEvent.KEYCODE_DEL)
+
+        assertEquals(listOf("Alarm", "Bell", "Alarm", "Bell"), rowsMatching(activity, "").take(4))
+    }
+
+    @Test
+    fun `the Recently used setting sizes the block, and Off hides it`() {
+        install("Alarm", "com.example.alarm")
+        val activity = launch()
+        awaitListed("Alarm")
+        openInTurn(activity, "Alarm")
+
+        openSettings()
+        press(Key.DirectionDown)
+        press(Key.DirectionDown)
+        rule.onNodeWithText("Recently used").assertIsFocused()
+        assertValue("Recently used", "3")
+        press(Key.DirectionRight)
+        assertValue("Recently used", "5")
+        press(Key.DirectionRight)
+        assertValue("Recently used", "15")
+        press(Key.DirectionRight)
+        assertValue("Recently used", "Off")
+        type(activity, KeyEvent.KEYCODE_ESCAPE)
+        awaitListed("Clock", listed = false)
+
+        assertEquals(listOf("Alarm", "MinimalUI", "MinimalUI settings"), rowsMatching(activity, ""))
+        rule.onNodeWithText("MinimalUI settings").assertIsFocused()
+    }
+
+    @Test
+    fun `Home returns to the root's first row, the newest recent app`() {
+        install("Alarm", "com.example.alarm")
+        install("Bell", "com.example.bell")
+        val activity = launch()
+        awaitListed("Bell")
+        openInTurn(activity, "Alarm")
+        press(Key.DirectionDown)
+        press(Key.DirectionDown)
+        openMenu(activity)
+
+        activity.newIntent(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME))
+
+        awaitListed("App info", listed = false)
+        rule.onAllNodesWithText("Alarm")[0].assertIsFocused()
     }
 }
 

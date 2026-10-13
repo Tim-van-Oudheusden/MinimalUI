@@ -47,6 +47,11 @@ another home app in the same place.
 | Back or Esc                  | Close the app menu, settings or About; does nothing on the home screen        |
 | Home                         | Close any menu or settings and return to the top of the list                  |
 
+The home screen is one list. At its top, the apps you opened last from MinimalUI, newest first, then one blank row,
+then every app in alphabetical order (the recent ones too). Up and Down skip the blank row. The **Recently used**
+setting picks how many recent apps show there: Off, 3 (the default), 5 or 15. Typing filters all apps and hides the
+recent block until the filter is cleared.
+
 The list updates on its own when apps are installed or removed. Apps open without a transition animation. Coming
 back from an app by Back, Recents or the app closing selects that app again, so one press reopens it; the filter
 stays. Home instead clears the filter and returns to the top.
@@ -57,8 +62,9 @@ action, Back or Esc, the list comes back with the same app highlighted.
 
 MinimalUI's own settings open from the **MinimalUI settings** row, listed right after Android's Settings (type `min`
 to find it). They replace the list until closed, the way the app menu does: Clock and Battery percentage show or hide
-those items in the status pill (both on by default), and About at the bottom shows the version and the commit the
-app was built from. Settings are kept in the app's private storage.
+those items in the status pill (both on by default), Recently used sizes the block at the top of the list, and About
+at the bottom shows the version and the commit the app was built from. Settings are kept in the app's private
+storage.
 
 ## Contributing
 

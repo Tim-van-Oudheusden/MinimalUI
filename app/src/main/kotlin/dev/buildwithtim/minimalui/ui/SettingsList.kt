@@ -105,6 +105,7 @@ private val Setting.label: Int
     get() = when (this) {
         Setting.Clock -> R.string.setting_clock
         Setting.BatteryPercentage -> R.string.setting_battery_percentage
+        Setting.RecentlyUsed -> R.string.setting_recently_used
     }
 
 private val SettingsLink.label: Int
@@ -116,4 +117,7 @@ private val Choice.label: Int
     get() = when (this) {
         Choice.On -> R.string.choice_on
         Choice.Off -> R.string.choice_off
+        Choice.Three -> R.string.choice_three
+        Choice.Five -> R.string.choice_five
+        Choice.Fifteen -> R.string.choice_fifteen
     }

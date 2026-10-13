@@ -121,4 +121,13 @@ class RecentAppsTest {
 
         assertEquals(0, recents.returnRow(installed.filteredBy("App1")))
     }
+
+    @Test
+    fun `on the root a return selects the app's row in the recently used block, the top row`() {
+        val recents = openedInOrder("App1", "App3")
+        val off = Settings().cycled(Setting.RecentlyUsed, -1)
+
+        assertEquals(0, recents.returnRow(listContent(installed, "", recents, Settings()).rowApps))
+        assertEquals(2, recents.returnRow(listContent(installed, "", recents, off).rowApps))
+    }
 }

@@ -29,6 +29,8 @@ import androidx.compose.ui.unit.dp
 import dev.buildwithtim.minimalui.core.Battery
 import dev.buildwithtim.minimalui.core.LauncherApp
 import dev.buildwithtim.minimalui.core.ListContent
+import dev.buildwithtim.minimalui.core.RootEntry
+import dev.buildwithtim.minimalui.core.RootSection
 import dev.buildwithtim.minimalui.core.StatusPill
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -57,7 +59,12 @@ class AppListTest {
     /** False while another screen (the context menu) takes the list's place. */
     private var listShown by mutableStateOf(true)
 
-    private fun show(list: List<LauncherApp> = apps) = show(ListContent.Apps(list))
+    private fun show(list: List<LauncherApp> = apps) = show(ListContent.Apps(list.map { RootEntry.App(it) }))
+
+    /** The root list with [recent] in its block above the blank row, then the full [list]. */
+    private fun root(recent: List<LauncherApp>, list: List<LauncherApp>) = ListContent.Apps(
+        recent.map { RootEntry.App(it, RootSection.Recent) } + RootEntry.Blank + list.map { RootEntry.App(it) },
+    )
 
     private fun show(content: ListContent) {
         this.content = content
@@ -198,7 +205,7 @@ class AppListTest {
         show()
         press(Key.DirectionUp)
 
-        content = ListContent.Apps(apps.dropLast(1))
+        content = ListContent.Apps(apps.dropLast(1).map { RootEntry.App(it) })
 
         rule.onNodeWithText("Calendar").assertIsFocused()
     }
@@ -295,6 +302,43 @@ class AppListTest {
         press(Key.DirectionUp)
         rule.onNodeWithText("App 39").assertIsFocused()
         rule.onNodeWithText("App 39").assertIsDisplayed()
+    }
+
+    @Test
+    fun `Up and Down skip the blank row below the block`() {
+        show(root(apps.take(1), apps))
+
+        press(Key.DirectionDown)
+        rule.onAllNodes(hasText("Calculator"))[1].assertIsFocused()
+
+        press(Key.DirectionUp)
+        rule.onAllNodes(hasText("Calculator"))[0].assertIsFocused()
+    }
+
+    @Test
+    @Config(qualifiers = "w360dp-h360dp")
+    fun `the blank row takes a whole row and counts as one for paging`() {
+        show(root(manyApps.take(1), manyApps))
+        val rows = rowsOnScreen().size + 1
+
+        press(Key.DirectionRight)
+
+        // Row number `rows` is the full list's app `rows - 2`: the block's one app and the blank row come first.
+        rule.onNodeWithText("App %02d".format(rows - 2)).assertIsFocused()
+        assertFillsWithWholeRows()
+    }
+
+    @Test
+    fun `the selection stays on its app when the block above it changes`() {
+        show()
+        press(Key.DirectionDown)
+        press(Key.DirectionDown)
+
+        content = root(apps.take(1), apps)
+        rule.onNodeWithText("Camera").assertIsFocused()
+
+        content = ListContent.Apps(apps.map { RootEntry.App(it) })
+        rule.onNodeWithText("Camera").assertIsFocused()
     }
 
     @Test

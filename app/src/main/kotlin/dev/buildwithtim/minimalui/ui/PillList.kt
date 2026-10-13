@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -81,9 +82,10 @@ class PillListState {
  * row's label in an inverted pill that hugs it (see BRANDING.md) and holds focus; a row's [value], when it has one,
  * sits at its right end. Up/Down move one row and wrap around at the ends, except while held. Left/Right turn a page,
  * stopping at the ends. Enter, D-pad centre or a tap confirms a row; a disabled row is drawn dim and confirms nothing.
- * Holding Enter or D-pad centre until it repeats, or a touch long-press, calls [onLongPress] instead, and the release
- * that ends it confirms nothing. [onKey] sees every other key press first, arrows included, with the selected item; a
- * key it takes does nothing else. Touch scrolling snaps to whole rows.
+ * An item that is not [selectable] is an empty row (the root list's blank row): it takes a row on every page, and the
+ * selection skips it. Holding Enter or D-pad centre until it repeats, or a touch long-press, calls [onLongPress]
+ * instead, and the release that ends it confirms nothing. [onKey] sees every other key press first, arrows included,
+ * with the selected item; a key it takes does nothing else. Touch scrolling snaps to whole rows.
  */
 @Composable
 internal fun <T> PillList(
@@ -96,11 +98,13 @@ internal fun <T> PillList(
     onConfirm: (T) -> Unit,
     modifier: Modifier = Modifier,
     enabled: (T) -> Boolean = { true },
+    selectable: (T) -> Boolean = { true },
     onLongPress: ((T) -> Unit)? = null,
     onKey: (Key, T) -> Boolean = { _, _ -> false },
     value: (T) -> String? = { null },
 ) {
     val count = items.size
+    val blank = { row: Int -> !selectable(items[row]) }
     // Confirm keys pressed down while this list was on screen. A release counts only after such a press, so the end
     // of a long press that opened another list never confirms a row there.
     val pressed = remember { mutableSetOf<Key>() }
@@ -111,7 +115,7 @@ internal fun <T> PillList(
     }
     LaunchedEffect(count) {
         // A row removed under the selection (an uninstalled app, say) hands it to the row now last.
-        if (state.position.selected >= count) state.select(state.position.selecting(count, rowsPerPage))
+        if (state.position.selected >= count) state.select(state.position.selecting(count, rowsPerPage, blank))
     }
 
     LazyColumn(
@@ -144,10 +148,10 @@ internal fun <T> PillList(
                 // Start from the screen as it is now, which touch scrolling may have moved.
                 val now = state.position.copy(first = state.scroll.firstVisibleItemIndex)
                 val next = when (event.key) {
-                    Key.DirectionUp -> now.stepped(-1, held, count, rowsPerPage)
-                    Key.DirectionDown -> now.stepped(1, held, count, rowsPerPage)
-                    Key.DirectionLeft -> now.paged(-1, count, rowsPerPage)
-                    Key.DirectionRight -> now.paged(1, count, rowsPerPage)
+                    Key.DirectionUp -> now.stepped(-1, held, count, rowsPerPage, blank)
+                    Key.DirectionDown -> now.stepped(1, held, count, rowsPerPage, blank)
+                    Key.DirectionLeft -> now.paged(-1, count, rowsPerPage, blank)
+                    Key.DirectionRight -> now.paged(1, count, rowsPerPage, blank)
                     else -> return@onPreviewKeyEvent false
                 }
                 state.select(next)
@@ -155,20 +159,24 @@ internal fun <T> PillList(
             },
     ) {
         itemsIndexed(items, key = { _, item -> key(item) }) { index, item ->
-            PillRow(
-                label = label(item),
-                value = value(item),
-                height = rowHeight,
-                enabled = enabled(item),
-                onConfirm = { onConfirm(item) },
-                onLongPress = onLongPress?.let { { it(item) } },
-                // Focus that moves some other way (Tab, say) moves the selection with it.
-                onFocused = {
-                    if (state.position.selected != index) state.position = state.position.copy(selected = index)
-                },
-                focusRequest = if (index == state.position.selected) state.moves else null,
-                isSelected = { index == state.position.selected },
-            )
+            if (!selectable(item)) {
+                Spacer(Modifier.fillMaxWidth().height(rowHeight))
+            } else {
+                PillRow(
+                    label = label(item),
+                    value = value(item),
+                    height = rowHeight,
+                    enabled = enabled(item),
+                    onConfirm = { onConfirm(item) },
+                    onLongPress = onLongPress?.let { { it(item) } },
+                    // Focus that moves some other way (Tab, say) moves the selection with it.
+                    onFocused = {
+                        if (state.position.selected != index) state.position = state.position.copy(selected = index)
+                    },
+                    focusRequest = if (index == state.position.selected) state.moves else null,
+                    isSelected = { index == state.position.selected },
+                )
+            }
         }
     }
 }
