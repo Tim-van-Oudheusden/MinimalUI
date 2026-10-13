@@ -16,6 +16,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import dev.buildwithtim.minimalui.core.LatestLoader
 import dev.buildwithtim.minimalui.core.LauncherApp
+import dev.buildwithtim.minimalui.core.RecentApps
 import dev.buildwithtim.minimalui.core.filteredBy
 import dev.buildwithtim.minimalui.core.minusLastTyped
 import dev.buildwithtim.minimalui.core.plusTyped
@@ -30,6 +31,15 @@ class MainActivity : ComponentActivity() {
     private var apps by mutableStateOf(emptyList<LauncherApp>())
     private var homePresses by mutableIntStateOf(0)
     private var query by mutableStateOf("")
+
+    private val recentStore by lazy { RecentAppsStore(this) }
+    private var recents by mutableStateOf(RecentApps())
+
+    /**
+     * The apps last opened from here, newest first, for the root screen (#70). Derived from the installed list, so an
+     * uninstalled app leaves it as soon as the package-change receiver reloads the apps.
+     */
+    internal val recentApps: List<LauncherApp> get() = recents.shownFrom(apps)
 
     // One worker thread: loads never run side by side on a slow device, and superseded ones are skipped.
     private val worker = Executors.newSingleThreadExecutor()
@@ -50,6 +60,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        recents = recentStore.load()
         // Registered for the activity's whole life, not only while resumed, so the list is current before a return.
         registerReceiver(
             packageChanges,
@@ -104,6 +115,8 @@ class MainActivity : ComponentActivity() {
     private fun open(app: LauncherApp) {
         try {
             startActivity(app.launchIntent())
+            recents = recents.opened(app, apps)
+            recentStore.save(recents)
         } catch (_: ActivityNotFoundException) {
             // Uninstalled or disabled while the list was on screen: drop it rather than crash the launcher.
             loader.refresh()

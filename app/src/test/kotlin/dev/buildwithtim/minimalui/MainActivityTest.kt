@@ -168,6 +168,57 @@ class MainActivityTest {
     }
 
     @Test
+    fun `an opened app is recent, and stays recent when the launcher starts again`() {
+        install("Alarm", "com.example.alarm")
+        install("Zebra", "com.example.zebra")
+        launch()
+        awaitListed("Alarm")
+
+        press(Key.DirectionDown)
+        press(Key.DirectionDown)
+        press(Key.Enter)
+        press(Key.DirectionUp)
+        press(Key.DirectionUp)
+        press(Key.Enter)
+        assertEquals(listOf("Alarm", "Zebra"), controller!!.get().recentApps.map { it.label })
+
+        // A new instance reads the list back from storage, as after the process was killed.
+        closeActivity()
+        val restarted = launch()
+        awaitListed("Alarm")
+        assertEquals(listOf("Alarm", "Zebra"), restarted.get().recentApps.map { it.label })
+    }
+
+    @Test
+    fun `an app uninstalled after it was opened is no longer recent`() {
+        install("Alarm", "com.example.alarm")
+        val activity = launch()
+        awaitListed("Alarm")
+        press(Key.Enter)
+
+        uninstall("com.example.alarm")
+        application.sendBroadcast(
+            Intent(Intent.ACTION_PACKAGE_REMOVED, android.net.Uri.fromParts("package", "com.example.alarm", null)),
+        )
+
+        awaitListed("Alarm", listed = false)
+        assertEquals(emptyList<String>(), activity.get().recentApps.map { it.label })
+    }
+
+    @Test
+    @Config(shadows = [StartActivityDenied::class])
+    fun `an app that could not be opened does not become recent`() {
+        install("Alarm", "com.example.alarm")
+        val activity = launch()
+        awaitListed("Alarm")
+
+        press(Key.Enter)
+        rule.waitForIdle()
+
+        assertEquals(emptyList<String>(), activity.get().recentApps)
+    }
+
+    @Test
     fun `hardware arrow keys and the D-pad wrap and page through the list`() {
         install("Alarm", "com.example.alarm")
         install("Zebra", "com.example.zebra")
