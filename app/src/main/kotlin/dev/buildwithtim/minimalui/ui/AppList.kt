@@ -2,6 +2,7 @@ package dev.buildwithtim.minimalui.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -31,15 +32,22 @@ import dev.buildwithtim.minimalui.core.LauncherApp
 /**
  * One row per app. Arrow keys / D-pad move focus, Enter or D-pad centre opens the focused app; touch works too.
  * The first row takes focus when the apps first arrive, so the keyboard works without touching the screen, and again
- * whenever [homePresses] changes, scrolled back into view.
+ * whenever [homePresses] or the type-to-filter [query] changes, scrolled back into view. A non-empty [query] is shown
+ * above the list, so the user never filters blind.
  */
 @Composable
-fun AppList(apps: List<LauncherApp>, homePresses: Int, onOpen: (LauncherApp) -> Unit, modifier: Modifier = Modifier) {
+fun AppList(
+    apps: List<LauncherApp>,
+    query: String,
+    homePresses: Int,
+    onOpen: (LauncherApp) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val listState = rememberLazyListState()
     val firstRow = remember { FocusRequester() }
     val hasApps = apps.isNotEmpty()
 
-    LaunchedEffect(hasApps, homePresses) {
+    LaunchedEffect(hasApps, homePresses, query) {
         if (hasApps) {
             // Scrolling composes row 0 again if it was scrolled away, attaching its requester before the request.
             listState.scrollToItem(0)
@@ -47,19 +55,31 @@ fun AppList(apps: List<LauncherApp>, homePresses: Int, onOpen: (LauncherApp) -> 
         }
     }
 
-    LazyColumn(
-        state = listState,
+    Column(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
             .windowInsetsPadding(WindowInsets.safeDrawing),
     ) {
-        itemsIndexed(apps, key = { _, app -> "${app.packageName}/${app.activityName}" }) { index, app ->
-            AppRow(
-                app = app,
-                onOpen = onOpen,
-                modifier = if (index == 0) Modifier.focusRequester(firstRow) else Modifier,
+        if (query.isNotEmpty()) {
+            // The trailing underscore marks it as typed text rather than another app.
+            Text(
+                text = "${query}_",
+                color = MaterialTheme.colorScheme.onBackground,
+                style = MaterialTheme.typography.titleLarge,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
             )
+        }
+        LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
+            itemsIndexed(apps, key = { _, app -> "${app.packageName}/${app.activityName}" }) { index, app ->
+                AppRow(
+                    app = app,
+                    onOpen = onOpen,
+                    modifier = if (index == 0) Modifier.focusRequester(firstRow) else Modifier,
+                )
+            }
         }
     }
 }
