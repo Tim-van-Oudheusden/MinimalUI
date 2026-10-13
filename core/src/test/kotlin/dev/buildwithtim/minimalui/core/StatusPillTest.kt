@@ -93,4 +93,41 @@ class StatusPillTest {
         assertNull(pill.battery)
         assertEquals("9:41 AM", pill.clock)
     }
+
+    private val full = StatusPill(wifi = true, battery = Battery(57, charging = false), clock = "9:41")
+
+    @Test
+    fun `with the default settings the pill shows everything`() {
+        val pill = full.shownWith(Settings())
+
+        assertEquals(full, pill)
+        assertTrue(pill.percentage)
+    }
+
+    @Test
+    fun `the Clock setting turned off leaves the clock out`() {
+        val pill = full.shownWith(Settings().cycled(Setting.Clock, 1))
+
+        assertNull(pill.clock)
+        assertTrue(pill.percentage)
+    }
+
+    @Test
+    fun `the Battery percentage setting turned off keeps the glyph and drops the percentage`() {
+        val pill = full.shownWith(Settings().cycled(Setting.BatteryPercentage, 1))
+
+        assertEquals(full.battery, pill.battery)
+        assertFalse(pill.percentage)
+        assertEquals("9:41", pill.clock)
+    }
+
+    @Test
+    fun `a pill with no item left is empty`() {
+        val noClock = Settings().cycled(Setting.Clock, 1)
+
+        assertTrue(StatusPill(wifi = false, battery = null, clock = "9:41").shownWith(noClock).isEmpty)
+        assertFalse(StatusPill(wifi = true, battery = null, clock = null).isEmpty)
+        assertFalse(StatusPill(wifi = false, battery = Battery(5, charging = false), clock = null).isEmpty)
+        assertFalse(full.isEmpty)
+    }
 }

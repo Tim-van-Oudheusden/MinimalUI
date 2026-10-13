@@ -1,13 +1,21 @@
 package dev.buildwithtim.minimalui.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -33,11 +41,14 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import dev.buildwithtim.minimalui.core.ListPosition
+import dev.buildwithtim.minimalui.core.StatusPill
+import dev.buildwithtim.minimalui.core.listRhythm
 import dev.buildwithtim.minimalui.core.paged
 import dev.buildwithtim.minimalui.core.selecting
 import dev.buildwithtim.minimalui.core.stepped
@@ -67,11 +78,12 @@ class PillListState {
 
 /**
  * The list every screen uses: one row per item, paged a whole screenful of [rowsPerPage] rows at a time, the selected
- * row's label in an inverted pill that hugs it (see BRANDING.md) and holds focus. Up/Down move one row and wrap around
- * at the ends, except while held. Left/Right turn a page, stopping at the ends. Enter, D-pad centre or a tap confirms
- * a row; a disabled row is drawn dim and confirms nothing. Holding Enter or D-pad centre until it repeats, or a touch
- * long-press, calls [onLongPress] instead, and the release that ends it confirms nothing. [onKey] sees every other key
- * press first, with the selected item. Touch scrolling snaps to whole rows.
+ * row's label in an inverted pill that hugs it (see BRANDING.md) and holds focus; a row's [value], when it has one,
+ * sits at its right end. Up/Down move one row and wrap around at the ends, except while held. Left/Right turn a page,
+ * stopping at the ends. Enter, D-pad centre or a tap confirms a row; a disabled row is drawn dim and confirms nothing.
+ * Holding Enter or D-pad centre until it repeats, or a touch long-press, calls [onLongPress] instead, and the release
+ * that ends it confirms nothing. [onKey] sees every other key press first, arrows included, with the selected item; a
+ * key it takes does nothing else. Touch scrolling snaps to whole rows.
  */
 @Composable
 internal fun <T> PillList(
@@ -86,6 +98,7 @@ internal fun <T> PillList(
     enabled: (T) -> Boolean = { true },
     onLongPress: ((T) -> Unit)? = null,
     onKey: (Key, T) -> Boolean = { _, _ -> false },
+    value: (T) -> String? = { null },
 ) {
     val count = items.size
     // Confirm keys pressed down while this list was on screen. A release counts only after such a press, so the end
@@ -127,6 +140,7 @@ internal fun <T> PillList(
                     }
                 }
                 if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                if (onKey(event.key, item)) return@onPreviewKeyEvent true
                 // Start from the screen as it is now, which touch scrolling may have moved.
                 val now = state.position.copy(first = state.scroll.firstVisibleItemIndex)
                 val next = when (event.key) {
@@ -134,7 +148,7 @@ internal fun <T> PillList(
                     Key.DirectionDown -> now.stepped(1, held, count, rowsPerPage)
                     Key.DirectionLeft -> now.paged(-1, count, rowsPerPage)
                     Key.DirectionRight -> now.paged(1, count, rowsPerPage)
-                    else -> return@onPreviewKeyEvent onKey(event.key, item)
+                    else -> return@onPreviewKeyEvent false
                 }
                 state.select(next)
                 true
@@ -143,6 +157,7 @@ internal fun <T> PillList(
         itemsIndexed(items, key = { _, item -> key(item) }) { index, item ->
             PillRow(
                 label = label(item),
+                value = value(item),
                 height = rowHeight,
                 enabled = enabled(item),
                 onConfirm = { onConfirm(item) },
@@ -160,6 +175,38 @@ internal fun <T> PillList(
 
 /** The keys that confirm a row, as Compose's clickable reads them. */
 private val ConfirmKeys = setOf(Key.Enter, Key.NumPadEnter, Key.DirectionCenter)
+
+/**
+ * A list screen that takes the app list's place for a while: the [status] pill on top, the [title] in a dark-grey
+ * pill below it, then the [list], given the row height and the rows left for it per page. Back calls [onClose]; the
+ * list handles Esc itself, through its `onKey`.
+ */
+@Composable
+internal fun TitledList(
+    title: String,
+    status: StatusPill?,
+    onClose: () -> Unit,
+    modifier: Modifier = Modifier,
+    list: @Composable (rowHeight: Dp, rowsPerPage: Int) -> Unit,
+) {
+    BackHandler(onBack = onClose)
+    BoxWithConstraints(
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .windowInsetsPadding(WindowInsets.safeDrawing),
+    ) {
+        val density = LocalDensity.current
+        val rhythm = listRhythm(constraints.maxHeight, with(density) { RowMetrics.rowHeight().roundToPx() })
+        val rowHeight = with(density) { rhythm.rowHeight.toDp() }
+        val reserved = (if (status != null) 1 else 0) + 1
+        Column {
+            if (status != null) StatusLine(status, rowHeight)
+            HeaderLine(title, rowHeight, pill = true)
+            list(rowHeight, maxOf(1, rhythm.rows - reserved))
+        }
+    }
+}
 
 /**
  * One row of text above a list, not selectable, aligned with the labels of the rows below it: the typed query, or a
@@ -191,6 +238,7 @@ internal fun HeaderLine(text: String, height: Dp, pill: Boolean = false) {
 @Composable
 private fun PillRow(
     label: String,
+    value: String?,
     height: Dp,
     enabled: Boolean,
     onConfirm: () -> Unit,
@@ -209,9 +257,10 @@ private fun PillRow(
         if (focusRequest != null && isSelected()) requester.requestFocus()
     }
 
-    // The whole row is the focus and touch target; only the drawn pill hugs the label.
-    Box(
-        contentAlignment = Alignment.CenterStart,
+    // The whole row is the focus and touch target; only the drawn pill hugs the label. A value sits at the right end,
+    // outside the pill, as in MinUI's and Cannoli's settings.
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
             .height(height)
@@ -233,19 +282,30 @@ private fun PillRow(
             .semantics { if (!enabled) disabled() }
             .padding(horizontal = RowMetrics.ListPaddingHorizontal),
     ) {
-        Text(
-            text = label,
-            color = when {
-                !enabled -> DimText
-                focused -> colors.onPrimary
-                else -> colors.onBackground
-            },
-            style = RowMetrics.TextStyle,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier
-                .background(if (focused) colors.primary else Color.Transparent, RowMetrics.PillShape)
-                .padding(horizontal = RowMetrics.PillPaddingHorizontal, vertical = RowMetrics.PillPaddingVertical),
-        )
+        Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
+            Text(
+                text = label,
+                color = when {
+                    !enabled -> DimText
+                    focused -> colors.onPrimary
+                    else -> colors.onBackground
+                },
+                style = RowMetrics.TextStyle,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier
+                    .background(if (focused) colors.primary else Color.Transparent, RowMetrics.PillShape)
+                    .padding(horizontal = RowMetrics.PillPaddingHorizontal, vertical = RowMetrics.PillPaddingVertical),
+            )
+        }
+        if (value != null) {
+            Text(
+                text = value,
+                color = if (enabled) colors.onBackground else DimText,
+                style = RowMetrics.TextStyle,
+                maxLines = 1,
+                modifier = Modifier.padding(horizontal = RowMetrics.PillPaddingHorizontal),
+            )
+        }
     }
 }

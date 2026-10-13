@@ -2,9 +2,19 @@ package dev.buildwithtim.minimalui.core
 
 /**
  * What the status pill in the top-right corner shows (#65): a Wi-Fi glyph only while the default network is Wi-Fi,
- * the [battery] when its charge is known, and always the [clock].
+ * the [battery] when its charge is known, with its [percentage] beside it unless turned off, and the [clock] unless
+ * turned off (#73).
  */
-data class StatusPill(val wifi: Boolean, val battery: Battery?, val clock: String)
+data class StatusPill(val wifi: Boolean, val battery: Battery?, val clock: String?, val percentage: Boolean = true) {
+    /** Nothing left to show: the status row stays, but without a pill. */
+    val isEmpty: Boolean get() = !wifi && battery == null && clock == null
+
+    /** The pill as the user's [settings] trim it: no clock with Clock off, no percentage with Battery percentage off. */
+    fun shownWith(settings: Settings): StatusPill = copy(
+        clock = clock.takeIf { settings.isOn(Setting.Clock) },
+        percentage = percentage && settings.isOn(Setting.BatteryPercentage),
+    )
+}
 
 /** A battery at [percent] (0–100) charge, [charging] or not. Drawn MinUI-style: a glyph plus the percentage. */
 data class Battery(val percent: Int, val charging: Boolean) {

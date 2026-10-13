@@ -20,8 +20,11 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -328,11 +331,10 @@ class MainActivityTest {
         launch()
         awaitListed("Alarm")
 
-        press(Key.DirectionDown)
-        press(Key.DirectionDown)
+        // Zebra is the last row (after MinimalUI and its settings row): Up wraps to it, Down wraps back to Alarm.
+        press(Key.DirectionUp)
         press(Key.Enter)
-        press(Key.DirectionUp)
-        press(Key.DirectionUp)
+        press(Key.DirectionDown)
         press(Key.Enter)
         assertEquals(listOf("Alarm", "Zebra"), controller!!.get().recentApps.map { it.label })
 
@@ -712,6 +714,195 @@ class MainActivityTest {
         assertEquals(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE, controller.systemBarsBehavior)
         val insets = ViewCompat.getRootWindowInsets(activity.get().window.decorView)!!
         assertFalse(insets.isVisible(WindowInsetsCompat.Type.statusBars()))
+    }
+
+    /** Android's Settings app, which the list always keeps, as a device that has one resolves it. */
+    private fun installSystemSettings() {
+        val settings = ResolveInfo().apply {
+            activityInfo = ActivityInfo().apply {
+                nonLocalizedLabel = "Settings"
+                packageName = "com.example.settings"
+                name = "com.example.settings.Main"
+                applicationInfo = ApplicationInfo().apply { packageName = "com.example.settings" }
+            }
+        }
+        shadowOf(application.packageManager).addResolveInfoForIntent(Intent(Settings.ACTION_SETTINGS), settings)
+    }
+
+    /** The labels of the list's rows, top to bottom, as filtered by the [query] typed into [activity]. */
+    private fun rowsMatching(activity: ActivityController<MainActivity>, query: String): List<String> {
+        query.forEach { type(activity, KeyEvent.keyCodeFromString("KEYCODE_${it.uppercaseChar()}")) }
+        rule.waitForIdle()
+        return rule.onAllNodes(hasClickAction())
+            .fetchSemanticsNodes()
+            .map { node -> node.config[SemanticsProperties.Text].joinToString { it.text } }
+    }
+
+    /** Opens MinimalUI's settings from its row: the last row while no test app sorts after it and Settings is absent. */
+    private fun openSettings() {
+        awaitListed("MinimalUI settings")
+        press(Key.DirectionUp)
+        rule.onNodeWithText("MinimalUI settings").assertIsFocused()
+        press(Key.Enter)
+        awaitListed("Clock")
+    }
+
+    private fun assertValue(setting: String, value: String) = rule.onNodeWithText(setting).assert(hasText(value))
+
+    @Test
+    fun `the MinimalUI settings row sits right after Android's Settings, and typing finds it`() {
+        installSystemSettings()
+        install("Alarm", "com.example.alarm")
+        val activity = launch()
+        awaitListed("MinimalUI settings")
+
+        assertEquals(listOf("Settings", "MinimalUI settings"), rowsMatching(activity, "se"))
+        type(activity, KeyEvent.KEYCODE_DEL)
+        type(activity, KeyEvent.KEYCODE_DEL)
+        assertEquals(listOf("MinimalUI", "MinimalUI settings"), rowsMatching(activity, "min"))
+    }
+
+    @Test
+    fun `the settings row opens the settings list, and Esc brings the list back on that row`() {
+        install("Alarm", "com.example.alarm")
+        val activity = launch()
+
+        openSettings()
+        rule.onNodeWithText("Alarm").assertDoesNotExist()
+        rule.onNodeWithText("Clock").assertIsFocused()
+        assertValue("Clock", "On")
+        assertValue("Battery percentage", "On")
+        assertNull(shadowOf(application).nextStartedActivity)
+
+        type(activity, KeyEvent.KEYCODE_ESCAPE)
+
+        awaitListed("Alarm")
+        rule.onNodeWithText("Clock").assertDoesNotExist()
+        rule.onNodeWithText("MinimalUI settings").assertIsFocused()
+        assertEquals(emptyList<String>(), activity.get().recentApps)
+    }
+
+    @Test
+    fun `Left and Right cycle the selected setting, and Enter toggles it`() {
+        launch()
+        openSettings()
+
+        press(Key.DirectionRight)
+        assertValue("Clock", "Off")
+        press(Key.DirectionRight)
+        assertValue("Clock", "On")
+        press(Key.DirectionLeft)
+        assertValue("Clock", "Off")
+        press(Key.Enter)
+        assertValue("Clock", "On")
+
+        press(Key.DirectionDown)
+        press(Key.Enter)
+        assertValue("Battery percentage", "Off")
+        assertValue("Clock", "On")
+    }
+
+    @Test
+    fun `a changed setting is kept when the launcher starts again`() {
+        launch()
+        openSettings()
+        press(Key.DirectionDown)
+        press(Key.DirectionRight)
+
+        // A new instance reads the settings back from storage, as after the process was killed.
+        closeActivity()
+        launch()
+        openSettings()
+
+        assertValue("Battery percentage", "Off")
+        assertValue("Clock", "On")
+    }
+
+    @Test
+    fun `the status pill follows the settings at once`() {
+        batteryAt(42)
+        Settings.System.putString(application.contentResolver, Settings.System.TIME_12_24, "24")
+        launch()
+        openSettings()
+        val clock = Regex("\\d\\d:\\d\\d")
+        assertTrue(texts().any { it.matches(clock) })
+        rule.onNodeWithText("42%").assertExists()
+
+        press(Key.Enter)
+        rule.waitForIdle()
+        assertFalse(texts().toString(), texts().any { it.matches(clock) })
+
+        press(Key.DirectionDown)
+        press(Key.Enter)
+        rule.onNodeWithText("42%").assertDoesNotExist()
+
+        type(controller!!, KeyEvent.KEYCODE_ESCAPE)
+        awaitListed("MinimalUI")
+        rule.onNodeWithText("42%").assertDoesNotExist()
+        assertFalse(texts().any { it.matches(clock) })
+    }
+
+    @Test
+    fun `About, the last row, shows the version and build commit, and Esc goes back one list at a time`() {
+        val activity = launch()
+        openSettings()
+
+        press(Key.DirectionUp)
+        rule.onNodeWithText("About").assertIsFocused()
+        press(Key.Enter)
+
+        awaitListed("Version ${BuildConfig.VERSION_NAME}")
+        rule.onNodeWithText("Commit ${BuildConfig.BUILD_COMMIT}").assertExists()
+        assertTrue(BuildConfig.BUILD_COMMIT.isNotBlank())
+        rule.onNodeWithText("Clock").assertDoesNotExist()
+
+        type(activity, KeyEvent.KEYCODE_ESCAPE)
+        awaitListed("Clock")
+        rule.onNodeWithText("About").assertIsFocused()
+
+        activity.get().onBackPressedDispatcher.onBackPressed()
+        awaitListed("MinimalUI")
+        rule.onNodeWithText("MinimalUI settings").assertIsFocused()
+    }
+
+    @Test
+    fun `typing in the settings list does not filter the app list`() {
+        val activity = launch()
+        openSettings()
+
+        type(activity, KeyEvent.KEYCODE_Z)
+        type(activity, KeyEvent.KEYCODE_ESCAPE)
+
+        awaitListed("MinimalUI")
+        rule.onNodeWithText("z_").assertDoesNotExist()
+    }
+
+    @Test
+    fun `Home closes the settings and returns to the top of the list`() {
+        install("Alarm", "com.example.alarm")
+        val activity = launch()
+        openSettings()
+        press(Key.DirectionUp)
+        press(Key.Enter)
+        awaitListed("Version ${BuildConfig.VERSION_NAME}")
+
+        activity.newIntent(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME))
+
+        awaitListed("Alarm")
+        rule.onNodeWithText("Clock").assertDoesNotExist()
+        rule.onNodeWithText("Alarm").assertIsFocused()
+    }
+
+    @Test
+    fun `Uninstall is disabled for the MinimalUI settings row`() {
+        val activity = launch()
+        awaitListed("MinimalUI settings")
+        press(Key.DirectionUp)
+        openMenu(activity)
+
+        press(Key.DirectionDown)
+
+        rule.onNodeWithText("Uninstall").assertIsNotEnabled()
     }
 }
 
