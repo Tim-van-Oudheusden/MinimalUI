@@ -8,13 +8,19 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.pm.ApplicationInfo
+import android.content.pm.LauncherActivityInfo
+import android.content.pm.LauncherApps
 import android.content.pm.PackageInfo
 import android.content.pm.ResolveInfo
+import android.graphics.Paint
+import android.graphics.Rect
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.BatteryManager
 import android.os.Bundle
 import android.os.Looper
+import android.os.UserHandle
+import android.os.UserManager
 import android.provider.Settings
 import android.view.KeyEvent
 import androidx.compose.ui.graphics.Color
@@ -50,6 +56,7 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -63,8 +70,13 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.Implementation
 import org.robolectric.annotation.Implements
 import org.robolectric.shadows.ShadowActivity
+import org.robolectric.shadows.ShadowLauncherApps
 import org.robolectric.shadows.ShadowNetwork
 import org.robolectric.shadows.ShadowNetworkCapabilities
+import org.robolectric.shadows.ShadowPaint
+import org.robolectric.shadows.ShadowUserManager
+import org.robolectric.util.ReflectionHelpers
+import org.robolectric.util.ReflectionHelpers.ClassParameter
 
 @OptIn(ExperimentalTestApi::class)
 @RunWith(RobolectricTestRunner::class)
@@ -1863,6 +1875,217 @@ class MainActivityTest {
         rule.onNodeWithText("Chess").assertIsFocused()
         rule.onNodeWithText("Alarm").assertDoesNotExist()
     }
+
+    private val userManager: UserManager get() = application.getSystemService(UserManager::class.java)
+    private val launcherApps: LauncherApps get() = application.getSystemService(LauncherApps::class.java)
+    // UserHandle.of is not public API; an app uid of the profile names the same user.
+    private val work: UserHandle = UserHandle.getUserHandleForUid(WORK_USER * PER_USER_RANGE)
+
+    /** A managed (work) profile of the user, as `pm create-user --profileOf 0 --managed` makes one. */
+    private fun addWorkProfile() {
+        shadowOf(userManager).addProfile(0, WORK_USER, "Work", ShadowUserManager.FLAG_MANAGED_PROFILE)
+        shadowOf(userManager).setSerialNumberForUser(work, WORK_SERIAL)
+    }
+
+    /** [label]'s launcher activity, installed in the work profile. */
+    private fun installWork(label: String, packageName: String) {
+        val info = ActivityInfo().apply {
+            this.packageName = packageName
+            name = "$packageName.Main"
+            nonLocalizedLabel = label
+            applicationInfo = ApplicationInfo().apply { this.packageName = packageName }
+        }
+        shadowOf(launcherApps).addActivity(work, launcherActivity(info, work))
+    }
+
+    /** The framework's own [LauncherActivityInfo] for [info] in [user]; its constructors are hidden. */
+    private fun launcherActivity(info: ActivityInfo, user: UserHandle): LauncherActivityInfo {
+        val internalClass = Class.forName("android.content.pm.LauncherActivityInfoInternal")
+        val internalConstructor =
+            internalClass.constructors.first { it.parameterTypes.firstOrNull() == ActivityInfo::class.java }
+        val arguments = internalConstructor.parameterTypes.map { type ->
+            when (type) {
+                ActivityInfo::class.java -> info
+                UserHandle::class.java -> user
+                else -> null
+            }
+        }
+        val internal = internalConstructor.newInstance(*arguments.toTypedArray())
+        return LauncherActivityInfo::class.java.getDeclaredConstructor(Context::class.java, internalClass)
+            .apply { isAccessible = true }
+            .newInstance(application, internal)
+    }
+
+    @Test
+    @Config(shadows = [GlyphsFound::class])
+    fun `a work app is listed only under Groups, in Work, not in the root's full list`() {
+        install("Alarm", "com.example.alarm")
+        addWorkProfile()
+        installWork("Mail", "com.example.mail")
+        launch()
+        awaitListed("Alarm")
+        assertEquals(listOf("Alarm", "MinimalUI", "MinimalUI settings", "Groups"), shownRows())
+
+        openGroups()
+        assertEquals(listOf("Work", "Other"), shownRows())
+        rule.onNodeWithText("Work").assertIsFocused()
+        press(Key.Enter)
+        awaitListed("Other", listed = false)
+        assertEquals(listOf("Mail"), shownRows())
+    }
+
+    /** From the root, by keyboard: Groups, then the Work group, which lists [label]. */
+    private fun openWorkGroup(label: String) {
+        openGroups()
+        press(Key.Enter)
+        awaitListed(label)
+    }
+
+    @Test
+    @Config(shadows = [GlyphsFound::class, LauncherAppsRecorder::class])
+    fun `a work app opens through LauncherApps in its profile, without animation, and becomes recent`() {
+        LauncherAppsRecorder.started.clear()
+        install("Alarm", "com.example.alarm")
+        addWorkProfile()
+        installWork("Mail", "com.example.mail")
+        val activity = launch()
+        awaitListed("Alarm")
+        openWorkGroup("Mail")
+
+        press(Key.Enter)
+
+        val started = LauncherAppsRecorder.started.single()
+        assertEquals(LauncherAppsRecorder.MAIN, started.kind)
+        assertEquals(ComponentName("com.example.mail", "com.example.mail.Main"), started.component)
+        assertEquals(work, started.user)
+        assertNotNull(started.options)
+        assertNull(shadowOf(application).nextStartedActivity)
+        assertEquals(listOf(WORK_SERIAL), activity.get().recentApps.map { it.profile })
+    }
+
+    @Test
+    @Config(shadows = [GlyphsFound::class, LauncherAppsRecorder::class])
+    fun `a work app's menu opens its App info in its profile, and cannot uninstall it`() {
+        LauncherAppsRecorder.started.clear()
+        install("Alarm", "com.example.alarm")
+        addWorkProfile()
+        installWork("Mail", "com.example.mail")
+        val activity = launch()
+        awaitListed("Alarm")
+        openWorkGroup("Mail")
+        openMenu(activity)
+
+        rule.onNodeWithText("Uninstall").assertIsNotEnabled()
+        chooseRow("App info")
+
+        val started = LauncherAppsRecorder.started.single()
+        assertEquals(LauncherAppsRecorder.DETAILS, started.kind)
+        assertEquals(ComponentName("com.example.mail", "com.example.mail.Main"), started.component)
+        assertEquals(work, started.user)
+        assertNull(shadowOf(application).nextStartedActivity)
+    }
+
+    @Test
+    @Config(shadows = [GlyphsFound::class])
+    fun `a work copy of a personal app is told apart by Work, and the filter finds both`() {
+        install("Mail", "com.example.mail")
+        addWorkProfile()
+        installWork("Mail", "com.example.mail")
+        val activity = launch()
+        awaitListed("Mail")
+
+        assertEquals(listOf("Mail", "Mail Work"), rowsMatching(activity, "mail"))
+    }
+
+    @Test
+    @Config(shadows = [GlyphsFound::class])
+    fun `renaming a work app leaves its personal copy's name alone`() {
+        install("Mail", "com.example.mail")
+        addWorkProfile()
+        installWork("Mail", "com.example.mail")
+        val activity = launch()
+        awaitListed("Mail")
+        openWorkGroup("Mail Work")
+
+        rename(activity, "Mail", "Office")
+        awaitListed("Office")
+        type(activity, KeyEvent.KEYCODE_ESCAPE)
+        type(activity, KeyEvent.KEYCODE_ESCAPE)
+
+        awaitListed("Groups")
+        assertEquals(listOf("Mail", "MinimalUI", "MinimalUI settings", "Groups"), shownRows())
+    }
+
+    @Test
+    @Config(shadows = [GlyphsFound::class])
+    fun `a work profile added or removed reloads the list`() {
+        install("Alarm", "com.example.alarm")
+        launch()
+        awaitListed("Alarm")
+        openGroups()
+        assertEquals(listOf("Other"), shownRows())
+
+        addWorkProfile()
+        installWork("Mail", "com.example.mail")
+        application.sendBroadcast(Intent(Intent.ACTION_MANAGED_PROFILE_ADDED))
+        awaitListed("Work")
+        assertEquals(listOf("Work", "Other"), shownRows())
+
+        ReflectionHelpers.callInstanceMethod<Boolean>(
+            userManager,
+            "removeUser",
+            ClassParameter.from(Int::class.javaPrimitiveType, WORK_USER),
+        )
+        application.sendBroadcast(Intent(Intent.ACTION_MANAGED_PROFILE_REMOVED))
+        awaitListed("Work", listed = false)
+        assertEquals(listOf("Other"), shownRows())
+    }
+
+    @Test
+    @Config(shadows = [GlyphsFound::class])
+    fun `a package change in the work profile reloads the list, whichever LauncherApps reports`() {
+        install("Alarm", "com.example.alarm")
+        addWorkProfile()
+        installWork("Mail", "com.example.mail")
+        launch()
+        awaitListed("Alarm")
+        openWorkGroup("Mail")
+        val callbacks: List<android.util.Pair<LauncherApps.Callback, *>> =
+            ReflectionHelpers.getStaticField(ShadowLauncherApps::class.java, "callbacks")
+        val callback = callbacks.single().first
+        val reports = listOf<(String) -> Unit>(
+            { callback.onPackageAdded(it, work) },
+            { callback.onPackageChanged(it, work) },
+            { callback.onPackageRemoved(it, work) },
+            { callback.onPackagesAvailable(arrayOf(it), work, false) },
+            { callback.onPackagesUnavailable(arrayOf(it), work, false) },
+        )
+
+        reports.forEachIndexed { index, report ->
+            val label = "Mail$index"
+            installWork(label, "com.example.mail$index")
+            rule.runOnUiThread { report("com.example.mail$index") }
+            awaitListed(label)
+        }
+    }
+
+    @Test
+    @Config(shadows = [GlyphsFound::class])
+    fun `while work apps are turned off they stay listed, dim, and turning them on again brightens them`() {
+        install("Alarm", "com.example.alarm")
+        addWorkProfile()
+        installWork("Mail", "com.example.mail")
+        launch()
+        awaitListed("Alarm")
+        openWorkGroup("Mail")
+        assertNotEquals(DimText, textColor("Mail"))
+
+        userManager.requestQuietModeEnabled(true, work)
+        rule.waitUntil(timeoutMillis = 5_000) { textColor("Mail") == DimText }
+
+        userManager.requestQuietModeEnabled(false, work)
+        rule.waitUntil(timeoutMillis = 5_000) { textColor("Mail") != DimText }
+    }
 }
 
 /** Every activity start fails the way an unexported or permission-guarded activity does. */
@@ -1871,3 +2094,41 @@ class StartActivityDenied : ShadowActivity() {
     @Implementation
     protected fun startActivity(intent: Intent, options: Bundle?): Unit = throw SecurityException("Permission Denial")
 }
+
+/**
+ * The font has a glyph for every character, as a device's has for an app's name. LauncherActivityInfo drops the
+ * characters it has none for from a label, and Robolectric's own Paint has none at all.
+ */
+@Implements(Paint::class)
+class GlyphsFound : ShadowPaint() {
+    @Implementation
+    protected fun hasGlyph(string: String): Boolean = true
+}
+
+/** Records what the launcher starts through LauncherApps, which Robolectric cannot start. */
+@Implements(LauncherApps::class)
+class LauncherAppsRecorder : ShadowLauncherApps() {
+    /** One start: its [kind] ([MAIN] or [DETAILS]), the [component] in the [user]'s profile, with its [options]. */
+    data class Started(val kind: String, val component: ComponentName, val user: UserHandle, val options: Bundle?)
+
+    @Implementation
+    protected fun startMainActivity(component: ComponentName, user: UserHandle, bounds: Rect?, options: Bundle?) {
+        started += Started(MAIN, component, user, options)
+    }
+
+    @Implementation
+    override fun startAppDetailsActivity(component: ComponentName, user: UserHandle, bounds: Rect?, options: Bundle?) {
+        started += Started(DETAILS, component, user, options)
+    }
+
+    companion object {
+        const val MAIN = "main"
+        const val DETAILS = "details"
+        val started = mutableListOf<Started>()
+    }
+}
+
+// The work profile's user id and serial number in the tests, as the emulator's first created profile has.
+private const val WORK_USER = 10
+private const val WORK_SERIAL = 10L
+private const val PER_USER_RANGE = 100_000

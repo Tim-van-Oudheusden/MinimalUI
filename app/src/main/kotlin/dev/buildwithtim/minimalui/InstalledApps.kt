@@ -2,10 +2,14 @@ package dev.buildwithtim.minimalui
 
 import android.content.Intent
 import android.content.pm.ApplicationInfo
+import android.content.pm.LauncherApps
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
 import android.net.Uri
 import android.os.Build
+import android.os.Process
+import android.os.UserHandle
+import android.os.UserManager
 import android.provider.Settings
 import dev.buildwithtim.minimalui.core.LauncherApp
 import dev.buildwithtim.minimalui.core.appCategory
@@ -36,6 +40,33 @@ fun PackageManager.systemSettings(): LauncherApp? =
             category = info.applicationInfo.groupCategory(),
         )
     }
+
+/**
+ * The profiles of the launcher's user other than its own, such as a work profile (#78), as [UserManager] lists them;
+ * [LauncherApps] lists their apps.
+ */
+fun UserManager.otherProfiles(): List<UserHandle> = userProfiles.filter { it != Process.myUserHandle() }
+
+/**
+ * Every launcher activity of the [users]' profiles other than the launcher's own (#78), each marked with its profile's
+ * serial number, the id the launcher stores it by. They take no category: a work app's only group is Work.
+ */
+fun LauncherApps.otherProfileApps(users: UserManager): List<LauncherApp> =
+    users.otherProfiles().flatMap { user ->
+        val serial = users.getSerialNumberForUser(user)
+        getActivityList(null, user).map { info ->
+            LauncherApp(
+                label = info.label.toString(),
+                packageName = info.componentName.packageName,
+                activityName = info.componentName.className,
+                profile = serial,
+            )
+        }
+    }
+
+/** The serial numbers of the other profiles whose apps are turned off (work mode paused, #78). */
+fun UserManager.pausedProfiles(): Set<Long> =
+    otherProfiles().filter(::isQuietModeEnabled).mapTo(HashSet(), ::getSerialNumberForUser)
 
 /** The automatic group (#69) of the app [this] describes, from the category its developer declared. */
 private fun ApplicationInfo.groupCategory() = appCategory(category, Build.VERSION.SDK_INT)

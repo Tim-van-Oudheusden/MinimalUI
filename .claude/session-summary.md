@@ -10,18 +10,18 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 ## Latest session
 
 - **Date:** 2026-10-13
-- **Worked:** #69 — app groups (stack row 10 of the #60 interface stack, on `feat/72-rename-apps`, PR #104).
-- **Outcome:** D2 (d) automatic + user groups. Core `AppCategory` + `appCategory(code, sdk)` (Accessibility only from
-  API 31), `LauncherApp.category` (null = no automatic group: the MinimalUI settings row), `UserGroups` (by name,
-  members by component, unordered; last app out deletes; rename merges; stored), `appGroups(apps, user)` (alphabetical,
-  Other last, same-name user/automatic merged, empty hidden), `RootEntry.Groups` + keyed `RootEntry.Blank(key)` (the
-  Groups row ends the root after its own blank row, so the first row stays an app), `MenuAction` AddToGroup,
-  RemoveFromGroup, RenameGroup, DeleteGroup, `AppFacts.isGroupMember`, `groupMenu(isUserGroup)`. App: `GroupsStore`
-  (prefs "groups"), categories read in `launchableApps()`/`systemSettings()`, group screens reuse `CollectionsList`
-  (now with `onMenu`), `CollectionApps`, `CollectionChoice` (now `newLabel`), `ContextMenu` and `TextEntry`.
-- **Open follow-ups:** #78 adds the work-profile automatic group: extend `LauncherApp.automaticGroups` (AppGroups.kt).
+- **Worked:** #78 — work-profile apps (stack row 11 of the #60 interface stack, on `feat/69-app-groups`, PR #105).
+- **Outcome:** D22 (c) work apps in their own group. Core `LauncherApp.profile` (profile serial, null = own user),
+  `isWorkApp`, public `component` (`<serial>:pkg/activity` for profile apps, unchanged for own-user apps, so stored
+  keys stay valid), `WORK_GROUP` ("Work", the only automatic group of a work app), root full list without work apps
+  (blocks keep them; Groups row alone when only work apps), duplicate suffix `Work`, `AppFacts.isWorkApp` disables
+  Uninstall, profile tie-break in `sortedForDisplay`. App: `LauncherApps.otherProfileApps(userManager)`,
+  `UserManager.pausedProfiles()`; work apps start via `LauncherApps.startMainActivity`/`startAppDetailsActivity`;
+  managed-profile broadcasts + a `LauncherApps.Callback` reload; paused profiles dim rows (`paused` on AppList and
+  CollectionApps).
+- **Open follow-ups:** none for #78.
 - **Notes for next session:**
-  - Every Robolectric app has category -1 (Other), so every root list ends with a blank row and `Groups`: Up from the
-    first row lands on Groups, not the last app (`openSettings()` presses Up twice); `rowsMatching(…, "")` lists end
-    with "Groups" unless the list is longer than a page.
+  - Robolectric: `LauncherActivityInfo.getLabel()` trims glyphless characters and Robolectric's Paint has none, so work
+    tests need `@Config(shadows = [GlyphsFound::class])`; `startMainActivity` is unshadowed and
+    `startAppDetailsActivity` throws, so tests record them with `LauncherAppsRecorder`.
   - No JDK on the host: run Gradle via the podman sandbox (`/tmp/gates.sh`).

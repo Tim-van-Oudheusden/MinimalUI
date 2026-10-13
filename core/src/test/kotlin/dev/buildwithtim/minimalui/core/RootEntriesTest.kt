@@ -151,6 +151,39 @@ class RootEntriesTest {
         assertEquals(all.drop(2), rootEntries(apps.drop(2), RecentApps(), Settings(), groups = work))
     }
 
+    private val workBell = app("Bell").copy(profile = 10L)
+
+    @Test
+    fun `a work app is not in the full list, only in the block where the user put it, and makes the Groups row`() {
+        val withWork = apps + workBell
+        val recents = RecentApps().opened(workBell, withWork)
+        val entries = rootEntries(withWork, recents, Settings(), favourites("Bell"))
+        val groupsRow = listOf(RootEntry.Blank("groups-blank"), RootEntry.Groups)
+
+        assertEquals(
+            listOf(favourite("Bell"), RootEntry.App(workBell, RootSection.Recent), RootEntry.Blank()) +
+                allStarred(setOf("Bell")) + groupsRow,
+            entries,
+        )
+        assertEquals(all + groupsRow, rootEntries(withWork, RecentApps(), Settings()))
+        val bothStarred = rootEntries(withWork, recents, Settings(), favourites("Bell").toggled(workBell))
+        assertEquals(bothStarred.size, bothStarred.map { it.key }.toSet().size)
+    }
+
+    @Test
+    fun `with only work apps the root is the Groups row alone`() {
+        assertEquals(listOf(RootEntry.Groups), rootEntries(listOf(workBell), RecentApps(), Settings()))
+    }
+
+    @Test
+    fun `the selection follows the very app, not its copy in another profile`() {
+        val withWork = listOf(app("Alarm"), app("Bell"), workBell)
+        val before = listOf(RootEntry.App(workBell, RootSection.Recent), RootEntry.Blank()) + RootEntry.App(app("Bell"))
+        val now = withWork.map { RootEntry.App(it) }
+
+        assertEquals(2, followedRow(before, 0, now))
+    }
+
     @Test
     fun `only the blank row cannot be selected`() {
         assertFalse(RootEntry.Blank().selectable)

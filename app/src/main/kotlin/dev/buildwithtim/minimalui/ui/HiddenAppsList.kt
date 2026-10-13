@@ -17,6 +17,7 @@ import dev.buildwithtim.minimalui.R
 import dev.buildwithtim.minimalui.core.LauncherApp
 import dev.buildwithtim.minimalui.core.ListPosition
 import dev.buildwithtim.minimalui.core.StatusPill
+import dev.buildwithtim.minimalui.core.component
 import dev.buildwithtim.minimalui.core.selecting
 
 /**
@@ -60,7 +61,7 @@ internal fun HiddenAppsList(
             PillList(
                 state = state,
                 items = apps,
-                key = { "${it.packageName}/${it.activityName}" },
+                key = { it.component },
                 label = { it.label },
                 suffix = suffix,
                 rowHeight = rowHeight,

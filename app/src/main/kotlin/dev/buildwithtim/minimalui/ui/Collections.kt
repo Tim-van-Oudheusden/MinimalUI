@@ -7,6 +7,7 @@ import androidx.compose.ui.input.key.Key
 import dev.buildwithtim.minimalui.core.LauncherApp
 import dev.buildwithtim.minimalui.core.ListPosition
 import dev.buildwithtim.minimalui.core.StatusPill
+import dev.buildwithtim.minimalui.core.component
 import dev.buildwithtim.minimalui.core.selecting
 
 /**
@@ -57,9 +58,11 @@ class CollectionState {
 }
 
 /**
- * One collection called [name]: its [apps] in the user's order (or one group, #69, its apps in the main list's order), a favourite with its `★` ([isFavourite]), an app whose
- * name another shares with its [suffix] (#72). Enter opens an app ([onOpen]); the Menu key, holding Enter or a
- * long-press asks for its menu ([onMenu]); Back or Esc calls [onClose]. When an app moves, the selection moves with it.
+ * One collection called [name]: its [apps] in the user's order (or one group, #69, its apps in the main list's order),
+ * a favourite with its `★` ([isFavourite]), an app whose name another shares with its [suffix] (#72), a [paused] app,
+ * of a work profile whose apps are turned off (#78), dim. Enter opens an app ([onOpen]); the Menu key, holding Enter
+ * or a long-press asks for its menu ([onMenu]); Back or Esc calls [onClose]. When an app moves, the selection moves
+ * with it.
  */
 @Composable
 internal fun CollectionApps(
@@ -72,6 +75,7 @@ internal fun CollectionApps(
     state: CollectionState,
     status: StatusPill? = null,
     suffix: (LauncherApp) -> String? = { null },
+    paused: (LauncherApp) -> Boolean = { false },
 ) {
     TitledList(name, status, onClose) { rowHeight, rowsPerPage ->
         LaunchedEffect(apps) {
@@ -87,9 +91,10 @@ internal fun CollectionApps(
         PillList(
             state = state.list,
             items = apps,
-            key = { "${it.packageName}/${it.activityName}" },
+            key = { it.component },
             label = { shownLabel(it, isFavourite(it)) },
             suffix = suffix,
+            dim = paused,
             rowHeight = rowHeight,
             rowsPerPage = rowsPerPage,
             onConfirm = onOpen,

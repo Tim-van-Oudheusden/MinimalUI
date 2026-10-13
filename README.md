@@ -64,11 +64,12 @@ The list updates on its own when apps are installed or removed. Apps open withou
 back from an app by Back, Recents or the app closing selects that app again, so one press reopens it; the filter
 stays. Home instead clears the filter and returns to the top.
 
-The app menu replaces the list until it is closed: App info, Uninstall (dim and inactive for system apps and the
-Settings entry), Add to favourites or Remove from favourites, Add to collection, Add to group, Rename (dim and inactive
-for the MinimalUI settings row), Hide or Unhide (dim and inactive for Android's Settings and the MinimalUI settings
-row, so the way back to another home app always stays listed), and, when there are recently used apps, Remove from
-recently used and Clear recently used. After an action, Back or Esc, the list comes back with the same app highlighted.
+The app menu replaces the list until it is closed: App info, Uninstall (dim and inactive for system apps, work apps and
+the Settings entry), Add to favourites or Remove from favourites, Add to collection, Add to group, Rename (dim and
+inactive for the MinimalUI settings row), Hide or Unhide (dim and inactive for Android's Settings and the MinimalUI
+settings row, so the way back to another home app always stays listed), and, when there are recently used apps, Remove
+from recently used and Clear recently used. After an action, Back or Esc, the list comes back with the same app
+highlighted.
 
 **Rename** opens the text editor on the app's current name, the cursor at its end: type the new one (any characters,
 spaces included) and press Enter, or Esc to cancel and return to the menu. The app is then listed, sorted, filtered
@@ -76,7 +77,8 @@ and shown in the recently used block, favourites, collections and Hidden apps by
 its new place. An empty name, or the app's own, gives it back its own name. Names are kept by app in the app's private
 storage, so they survive app updates and reinstalls. When two apps are listed under the same name (letter case
 ignored), each shows its package name after it, smaller and in grey (or its activity's name when both come from one
-package); typing never matches that part.
+package); a work app shows `Work` there instead, and an app whose name only work apps share shows nothing. Typing
+never matches that part.
 
 **Hide** takes an app off the home screen, its favourites and recently used block, every collection and every group;
 it stays a favourite, recent and in its collections and groups, so **Unhide** brings it back where it was. Two ways
@@ -104,6 +106,15 @@ on a group in the list opens its menu: **Rename group** (the text editor, prefil
 merges the two) and **Delete group**, which forgets only your group, never the apps or an automatic group. For an
 automatic group both rows show grey and do nothing. A group whose apps are all hidden or uninstalled is not listed but
 kept until you delete it. Your groups are kept in the app's private storage.
+
+Apps of a work profile are listed in one more automatic group, **Work**, and nowhere else on their own: not in the
+home screen's full list nor in their category's group. They still show in the favourites and recently used block when
+you make one a favourite or open it, typing finds them like any app, and you can add them to collections and your own
+groups, rename or hide them. A work app opens in its profile; App info shows its profile's details, and Uninstall is
+inactive (remove work apps from the work profile's own settings). A work app and the personal app it copies are two
+apps everywhere. While work apps are turned off (work mode paused), the Work group still lists them in grey; opening
+one lets Android offer to turn work apps back on. The list updates when a work profile is added or removed, work mode
+is paused or resumed, or an app is installed or removed in the profile.
 
 MinimalUI's own settings open from the **MinimalUI settings** row, listed right after Android's Settings (type `min`
 to find it). They replace the list until closed, the way the app menu does: Clock and Battery percentage show or hide

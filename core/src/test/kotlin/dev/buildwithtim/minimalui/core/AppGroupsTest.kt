@@ -75,6 +75,19 @@ class AppGroupsTest {
     }
 
     @Test
+    fun `a work-profile app is in the Work group only, not in its category's, and a user group can hold it`() {
+        val workChess = chess.copy(profile = 10L)
+        val user = UserGroups().added("Board", workChess)
+        val groups = appGroups(listOf(chess, workChess, notes), user)
+
+        assertEquals(listOf("Board", "Games", WORK_GROUP, "Other"), groups.names())
+        assertEquals(listOf(workChess), groups.single { it.name == WORK_GROUP }.apps)
+        assertEquals(listOf(chess), groups.single { it.name == "Games" }.apps)
+        assertEquals(listOf(workChess), groups.single { it.name == "Board" }.apps)
+        assertEquals("Work", WORK_GROUP)
+    }
+
+    @Test
     fun `Android's category codes map to their automatic groups, anything else to Other`() {
         val codes = (-1..9).associateWith { appCategory(it, sdk = 35) }
 

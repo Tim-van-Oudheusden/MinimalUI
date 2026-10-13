@@ -65,7 +65,8 @@ data class CollectionPlace(val row: Int, val count: Int)
  * entry the list always keeps ([isSettingsEntry]), MinimalUI's own settings row ([isLauncherSettings], one of the two),
  * one of the recently used apps ([isRecent]), whether there are any recently used apps at all ([hasRecents]), whether
  * it is a favourite ([isFavourite]), its [place] when the menu was opened inside a collection, and whether it is
- * hidden ([isHidden]), and whether the menu was opened inside a user group that holds it ([isGroupMember], #69).
+ * hidden ([isHidden]), whether the menu was opened inside a user group that holds it ([isGroupMember], #69), and
+ * whether it belongs to a work profile ([isWorkApp], #78).
  */
 data class AppFacts(
     val isSystem: Boolean,
@@ -77,20 +78,22 @@ data class AppFacts(
     val isHidden: Boolean = false,
     val isLauncherSettings: Boolean = false,
     val isGroupMember: Boolean = false,
+    val isWorkApp: Boolean = false,
 )
 
 /**
  * The context menu for an app, top to bottom. Uninstall stays listed but disabled for a system app, which cannot be
- * removed, and for the Settings entry, which keeps the way back to another home app open. One row adds the app to the
- * favourites or removes it, by its state. Inside a collection the app can leave it or move, though not past either
- * end. Any app can be added to a user group (#69), and taken out of the one the menu was opened in. Rename is disabled
+ * removed, for a work app, which the launcher cannot remove from its profile, and for the Settings entry, which keeps
+ * the way back to another home app open. One row adds the app to the favourites or removes it, by its state. Inside a
+ * collection the app can leave it or move, though not past either end. Any app can be added to a user group (#69),
+ * and taken out of the one the menu was opened in. Rename is disabled
  * for MinimalUI's own settings row, which is the launcher's, not an app; Android's Settings can be renamed. One row
  * hides the app or shows it again, by its state; disabled for the Settings entry, which is never hidden.
  * The recents rows show only when they would change something.
  */
 fun contextMenu(facts: AppFacts): List<MenuItem> = buildList {
     add(MenuItem(MenuAction.AppInfo))
-    add(MenuItem(MenuAction.Uninstall, enabled = !facts.isSystem && !facts.isSettingsEntry))
+    add(MenuItem(MenuAction.Uninstall, enabled = !facts.isSystem && !facts.isSettingsEntry && !facts.isWorkApp))
     add(MenuItem(if (facts.isFavourite) MenuAction.RemoveFromFavourites else MenuAction.AddToFavourites))
     add(MenuItem(MenuAction.AddToCollection))
     add(MenuItem(MenuAction.AddToGroup))

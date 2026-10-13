@@ -30,7 +30,7 @@ sealed interface RootEntry {
         val isFavourite: Boolean = false,
         val isHidden: Boolean = false,
     ) : RootEntry {
-        override val key: String get() = "$section/${app.packageName}/${app.activityName}"
+        override val key: String get() = "$section/${app.component}"
         override val selectable: Boolean get() = true
     }
 
@@ -62,9 +62,11 @@ sealed interface RootEntry {
  * The root list, top to bottom (#70, the hybrid of MinUI's root and a flat list): the [favourites] among [apps] in
  * their order (#68), then the newest of the [recents] that are not favourites, as many as the Recently used setting
  * allows, then a Collections row when any of the [collections] is shown, then one blank row, then all [apps] in their
- * order, which still lists those apps too. With none of these at the top there is no block and no blank row. When any
- * group is shown ([appGroups] of [apps] and the user's [groups], #69), one more blank row and the Groups row end it, so
- * the first row stays an app and Up from it reaches the groups at once.
+ * order, which still lists those apps too, but for the work apps (#78): they show in the block when the user made one
+ * a favourite or opened it, and else only in their Work group. With none of these at the top there is no block and no
+ * blank row. When any group is shown ([appGroups] of [apps] and the user's [groups], #69), one more blank row and the
+ * Groups row end it, so the first row stays an app and Up from it reaches the groups at once; with nothing above it,
+ * the Groups row stands alone.
  */
 fun rootEntries(
     apps: List<LauncherApp>,
@@ -74,13 +76,14 @@ fun rootEntries(
     collections: AppCollections = AppCollections(),
     groups: UserGroups = UserGroups(),
 ): List<RootEntry> {
-    val all = apps.map { RootEntry.App(it, isFavourite = it in favourites) }
+    val all = apps.filterNot { it.isWorkApp }.map { RootEntry.App(it, isFavourite = it in favourites) }
     val recent = recents.shownFrom(apps).filterNot { it in favourites }.take(settings.recentlyUsed)
     val block = favourites.shownFrom(apps).map { RootEntry.App(it, RootSection.Favourite, isFavourite = true) } +
         recent.map { RootEntry.App(it, RootSection.Recent) } +
         listOfNotNull(RootEntry.Collections.takeIf { collections.names(apps).isNotEmpty() })
     val top = if (block.isEmpty()) all else block + RootEntry.Blank() + all
     if (appGroups(apps, groups).isEmpty()) return top
+    if (top.isEmpty()) return listOf(RootEntry.Groups)
     return top + RootEntry.Blank(GROUPS_BLANK) + RootEntry.Groups
 }
 
@@ -96,8 +99,6 @@ fun followedRow(before: List<RootEntry>, selected: Int, now: List<RootEntry>): I
     val same = now.indexOfFirst { it.key == entry.key }
     if (same >= 0) return same
     val app = entry.app ?: return selected
-    val sameApp = now.indexOfFirst { row ->
-        row.app.let { it != null && it.packageName == app.packageName && it.activityName == app.activityName }
-    }
+    val sameApp = now.indexOfFirst { it.app?.component == app.component }
     return if (sameApp >= 0) sameApp else selected
 }

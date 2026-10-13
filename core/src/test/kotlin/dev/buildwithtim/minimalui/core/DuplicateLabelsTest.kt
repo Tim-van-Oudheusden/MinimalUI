@@ -47,6 +47,27 @@ class DuplicateLabelsTest {
     }
 
     @Test
+    fun `a work app is told apart by Work, so a personal app whose name only work apps share needs no suffix`() {
+        val workPhone = phone.copy(profile = 10L)
+        val workContacts = LauncherApp("Phone", "com.android.dialer", "com.android.dialer.ContactsActivity", profile = 10L)
+        val workOther = otherPhone.copy(profile = 10L)
+
+        assertEquals(mapOf(workPhone to WORK_GROUP), duplicateSuffixes(listOf(phone, workPhone, camera)))
+        assertEquals(
+            mapOf(
+                workPhone to "$WORK_GROUP Main",
+                workContacts to "$WORK_GROUP ContactsActivity",
+                workOther to "$WORK_GROUP org.fossify.phone",
+            ),
+            duplicateSuffixes(listOf(phone, workPhone, workContacts, workOther)),
+        )
+        assertEquals(
+            mapOf(phone to "com.android.dialer", otherPhone to "org.fossify.phone", workPhone to WORK_GROUP),
+            duplicateSuffixes(listOf(phone, otherPhone, workPhone)),
+        )
+    }
+
+    @Test
     fun `the suffix is never matched by the filter`() {
         val shown = listOf(phone, otherPhone)
 

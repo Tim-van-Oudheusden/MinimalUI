@@ -33,7 +33,8 @@ import dev.buildwithtim.minimalui.core.selecting
  * The root list (#70), in a [PillList]: one row per entry of [content], an app's row opening it ([onOpen]) on Enter,
  * D-pad centre or a tap; the Menu key, holding Enter or D-pad centre, or a touch long-press asks for its context menu
  * ([onMenu]). A favourite's name has a `★` before it (#68); a hidden app, listed only when the query finds it (#71), is
- * drawn dim. An app whose name another app shares has its [suffix] after it, small and dim (#72). The Collections row
+ * drawn dim, and so is a [paused] app, of a work profile whose apps are turned off (#78). An app whose name another app
+ * shares has its [suffix] after it, small and dim (#72). The Collections row
  * opens the collections ([onCollections]) and the Groups row at the end the groups ([onGroups], #69); neither has a
  * menu. The blank rows below the block at the top and above the Groups row are empty, and the selection skips them.
  *
@@ -60,6 +61,7 @@ fun AppList(
     returned: Returned? = null,
     status: StatusPill? = null,
     suffix: (LauncherApp) -> String? = { null },
+    paused: (LauncherApp) -> Boolean = { false },
 ) {
     val entries = (content as? ListContent.Apps)?.entries.orEmpty()
     val list = state.list
@@ -150,7 +152,7 @@ fun AppList(
                         false
                     }
                 },
-                dim = { (it as? RootEntry.App)?.isHidden == true },
+                dim = { entry -> (entry as? RootEntry.App)?.isHidden == true || entry.app?.let(paused) == true },
                 suffix = { entry -> entry.app?.let(suffix) },
             )
         }
