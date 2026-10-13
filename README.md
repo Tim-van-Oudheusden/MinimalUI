@@ -9,9 +9,9 @@ apps, driven entirely by keys.
 ## Status
 
 Early development (version 0.1.0). There are no releases yet, and no phone is listed as supported until it has been
-tested on one. Today the launcher shows every installed app in one alphabetical list and opens the one you pick. It
-hides Android's status bar and shows its own pill in the top-right corner instead: Wi-Fi (when connected), battery
-level and the time.
+tested on one: [`DEVICES.md`](DEVICES.md) lists the phones reported so far and how to report yours. Today the launcher
+shows every installed app in one alphabetical list and opens the one you pick. It hides Android's status bar and shows
+its own pill in the top-right corner instead: Wi-Fi (when connected), battery level and the time.
 
 ## Requirements
 
