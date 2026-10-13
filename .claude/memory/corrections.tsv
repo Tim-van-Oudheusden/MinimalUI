@@ -1,0 +1,11 @@
+# Corrections
+
+Correction log for agent work in this repository. Append one line per
+correction round (tab-separated): ISO date | what went wrong | correction +
+where it is encoded.
+
+Format: `YYYY-MM-DD\t<behaviour>\t<correction (file:rule)>`
+
+## 2026
+
+- 2026-10-12	Tooling tests: planned to skip jq-based script tests with JUnit Assume when the local Gradle container lacked jq, which would pass silently.	Never skip on a missing tool; give the build environment the tool (CI ubuntu runners ship jq) (`AGENTS.md`: never weaken tests).

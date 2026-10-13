@@ -63,7 +63,11 @@ Work is NOT complete until the issue branch is pushed and its pull request is op
    gh pr create --title "type(scope): summary (#<number>)" --body-file <file>  # follow .github/pull_request_template.md
    git status  # MUST show "up to date with 'origin/<branch>'"
    ```
-5. **Hand off** — provide context for the next session, including the PR URL
+5. **Clean up** — clear stashes, remove finished worktrees, prune merged branches (`git fetch --prune`)
+6. **Verify** — all changes committed, branch pushed, PR open with CI running
+7. **Hand off** — overwrite the "Latest session" section of `.claude/session-summary.md` (in the issue's commit) and
+   give the PR URL. Log a correction round in `.claude/memory/corrections.tsv`; write the *why* behind a non-obvious
+   lesson in `docs/reflections/` (see its README)
 
 Never push to `main`, never force-push, and never say "ready to push when you are" — push the branch and open the PR.
 
