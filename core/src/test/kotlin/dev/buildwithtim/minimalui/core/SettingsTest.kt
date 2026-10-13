@@ -73,6 +73,14 @@ class SettingsTest {
     }
 
     @Test
+    fun `the Hidden apps link sits just before About`() {
+        assertEquals(
+            listOf(SettingsRow.Link(SettingsLink.HiddenApps), SettingsRow.Link(SettingsLink.About)),
+            settingsRows.takeLast(2),
+        )
+    }
+
+    @Test
     fun `Recently used offers Off, 3, 5 and 15 rows, 3 by default`() {
         assertEquals(listOf(Choice.Off, Choice.Three, Choice.Five, Choice.Fifteen), Setting.RecentlyUsed.choices)
         assertEquals(3, Settings().recentlyUsed)

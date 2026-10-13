@@ -17,7 +17,9 @@ import android.os.Bundle
 import android.os.Looper
 import android.provider.Settings
 import android.view.KeyEvent
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
@@ -36,14 +38,17 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.pressKey
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.test.core.app.ApplicationProvider
+import dev.buildwithtim.minimalui.ui.DimText
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -1237,6 +1242,222 @@ class MainActivityTest {
         restarted.newIntent(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME))
         awaitListed("Alarm")
         rule.onAllNodesWithText("Bell")[0].assertIsFocused()
+    }
+
+    /** From the selected app's menu, by keyboard: [action] (Hide or Unhide), back on the list it was opened from. */
+    private fun fromMenu(activity: ActivityController<MainActivity>, action: String) {
+        openMenu(activity)
+        chooseRow(action)
+        awaitListed("App info", listed = false)
+    }
+
+    /** The colour [label]'s text is drawn in. */
+    private fun textColor(label: String): Color {
+        val layouts = mutableListOf<TextLayoutResult>()
+        rule.onNodeWithText(label, useUnmergedTree = true).fetchSemanticsNode()
+            .config[SemanticsActions.GetTextLayoutResult].action!!.invoke(layouts)
+        return layouts.single().layoutInput.style.color
+    }
+
+    @Test
+    fun `Hide takes the app off the list and off the favourites and recently used blocks`() {
+        install("Alarm", "com.example.alarm")
+        install("Bell", "com.example.bell")
+        install("Cello", "com.example.cello")
+        val activity = launch()
+        awaitListed("Bell")
+        press(Key.DirectionDown)
+        openMenu(activity)
+        chooseRow("Add to favourites")
+        awaitListed("★ Bell")
+        openInTurn(activity, "Cello")
+        val before = listOf("★ Bell", "Cello", "Alarm", "★ Bell", "Cello", "MinimalUI", "MinimalUI settings")
+        assertEquals(before, rowsMatching(activity, ""))
+        rule.onAllNodesWithText("Cello")[0].assertIsFocused()
+
+        fromMenu(activity, "Hide")
+        awaitListed("Cello", listed = false)
+        press(Key.DirectionUp)
+        rule.onAllNodesWithText("★ Bell")[0].assertIsFocused()
+        fromMenu(activity, "Hide")
+
+        awaitListed("★ Bell", listed = false)
+        assertEquals(listOf("Alarm", "MinimalUI", "MinimalUI settings"), rowsMatching(activity, ""))
+        rule.onNodeWithText("Alarm").assertIsFocused()
+    }
+
+    @Test
+    fun `Hide inside a collection takes the app off its list, and unhiding brings it back in its place`() {
+        install("Alarm", "com.example.alarm")
+        install("Bell", "com.example.bell")
+        val activity = launch()
+        awaitListed("Bell")
+        press(Key.DirectionDown)
+        addToCollection(activity, "games", new = true)
+        press(Key.DirectionUp)
+        addToCollection(activity, "games", new = false)
+        press(Key.DirectionUp)
+        press(Key.Enter)
+        awaitListed("games")
+        press(Key.Enter)
+        awaitListed("Alarm")
+        fun rows() = rule.onAllNodes(hasClickAction()).fetchSemanticsNodes().map {
+            it.config[SemanticsProperties.Text].joinToString()
+        }
+        assertEquals(listOf("Bell", "Alarm"), rows())
+
+        fromMenu(activity, "Hide")
+        assertEquals(listOf("Alarm"), rows())
+        rule.onNodeWithText("Alarm").assertIsFocused()
+        fromMenu(activity, "Hide")
+
+        awaitListed("MinimalUI")
+        rule.onNodeWithText("Collections").assertDoesNotExist()
+        assertEquals(listOf("MinimalUI", "MinimalUI settings"), rowsMatching(activity, ""))
+        openHiddenApps()
+        rule.onNodeWithText("Alarm").assertIsFocused()
+        press(Key.Enter)
+        rule.onNodeWithText("Bell").assertIsFocused()
+        press(Key.Enter)
+        awaitListed("No hidden apps")
+        activity.newIntent(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME))
+        awaitListed("Collections")
+        press(Key.Enter)
+        awaitListed("games")
+        press(Key.Enter)
+        awaitListed("Alarm")
+        assertEquals(listOf("Bell", "Alarm"), rows())
+    }
+
+    @Test
+    fun `Hide is disabled for Android's Settings and for the MinimalUI settings row`() {
+        installSystemSettings()
+        val activity = launch()
+        awaitListed("Settings")
+        assertEquals(listOf("Settings", "MinimalUI settings"), rowsMatching(activity, "se"))
+        rule.onNodeWithText("Settings").assertIsFocused()
+
+        openMenu(activity)
+        chooseRow("Hide")
+        rule.onNodeWithText("Hide").assertIsFocused().assertIsNotEnabled()
+        type(activity, KeyEvent.KEYCODE_ESCAPE)
+        awaitListed("App info", listed = false)
+        press(Key.DirectionDown)
+        rule.onNodeWithText("MinimalUI settings").assertIsFocused()
+        openMenu(activity)
+        chooseRow("Hide")
+        rule.onNodeWithText("Hide").assertIsFocused().assertIsNotEnabled()
+        type(activity, KeyEvent.KEYCODE_ESCAPE)
+
+        awaitListed("App info", listed = false)
+        assertEquals(listOf("Settings", "MinimalUI settings"), rowsMatching(activity, ""))
+    }
+
+    @Test
+    fun `typing still finds a hidden app, after the others and dim, and it opens and unhides from its menu`() {
+        install("Bell", "com.example.bell")
+        install("Bike", "com.example.bike")
+        val activity = launch()
+        awaitListed("Bell")
+        fromMenu(activity, "Hide")
+        awaitListed("Bell", listed = false)
+
+        assertEquals(listOf("Bike", "Bell"), rowsMatching(activity, "b"))
+        assertEquals(DimText, textColor("Bell"))
+        assertNotEquals(DimText, textColor("Bike"))
+        press(Key.DirectionDown)
+        rule.onNodeWithText("Bell").assertIsFocused()
+        assertEquals(DimText, textColor("Bell"))
+        press(Key.Enter)
+        val started = shadowOf(application).nextStartedActivity
+        assertEquals(ComponentName("com.example.bell", "com.example.bell.Main"), started.component)
+        leaveAndComeBack(activity)
+        rule.onNodeWithText("Bell").assertIsFocused()
+
+        fromMenu(activity, "Unhide")
+
+        assertEquals(listOf("Bell", "Bike"), rowsMatching(activity, ""))
+        assertNotEquals(DimText, textColor("Bike"))
+        activity.newIntent(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME))
+        awaitListed("b_", listed = false)
+        assertEquals(listOf("Bell", "Bell", "Bike", "MinimalUI", "MinimalUI settings"), rowsMatching(activity, ""))
+    }
+
+    /** Opens MinimalUI's settings, then its Hidden apps list. */
+    private fun openHiddenApps() {
+        openSettings()
+        chooseRow("Hidden apps")
+        awaitListed("Clock", listed = false)
+    }
+
+    @Test
+    fun `Enter in the Hidden apps list unhides the app, and the selection stays on its row number`() {
+        install("Alarm", "com.example.alarm")
+        install("Bell", "com.example.bell")
+        install("Cello", "com.example.cello")
+        val activity = launch()
+        repeat(3) {
+            awaitListed("MinimalUI")
+            fromMenu(activity, "Hide")
+        }
+        awaitListed("Cello", listed = false)
+        openHiddenApps()
+        fun rows() = rule.onAllNodes(hasClickAction()).fetchSemanticsNodes().map {
+            it.config[SemanticsProperties.Text].joinToString()
+        }
+        assertEquals(listOf("Alarm", "Bell", "Cello"), rows())
+        rule.onNodeWithText("Alarm").assertIsFocused()
+
+        press(Key.DirectionDown)
+        press(Key.Enter)
+        awaitListed("Bell", listed = false)
+        assertEquals(listOf("Alarm", "Cello"), rows())
+        rule.onNodeWithText("Cello").assertIsFocused()
+        press(Key.Enter)
+        awaitListed("Cello", listed = false)
+        rule.onNodeWithText("Alarm").assertIsFocused()
+        press(Key.Enter)
+
+        awaitListed("No hidden apps")
+        assertEquals(emptyList<String>(), rows())
+        type(activity, KeyEvent.KEYCODE_ESCAPE)
+        awaitListed("Clock")
+        rule.onNodeWithText("Hidden apps").assertIsFocused()
+        activity.newIntent(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME))
+        awaitListed("Alarm")
+        assertEquals(listOf("Alarm", "Bell", "Cello", "MinimalUI", "MinimalUI settings"), rowsMatching(activity, ""))
+        rule.onNodeWithText("Alarm").assertIsFocused()
+    }
+
+    @Test
+    fun `with no hidden apps the Hidden apps list says so, and Back returns to its settings row`() {
+        val activity = launch()
+        openHiddenApps()
+
+        awaitListed("No hidden apps")
+        activity.get().onBackPressedDispatcher.onBackPressed()
+
+        awaitListed("Clock")
+        rule.onNodeWithText("Hidden apps").assertIsFocused()
+    }
+
+    @Test
+    fun `hidden apps stay hidden when the launcher starts again, and are listed under Hidden apps`() {
+        install("Alarm", "com.example.alarm")
+        install("Bell", "com.example.bell")
+        val activity = launch()
+        awaitListed("Alarm")
+        fromMenu(activity, "Hide")
+        awaitListed("Alarm", listed = false)
+
+        closeActivity()
+        val restarted = launch()
+        awaitListed("Bell")
+
+        assertEquals(listOf("Bell", "MinimalUI", "MinimalUI settings"), rowsMatching(restarted, ""))
+        openHiddenApps()
+        awaitListed("Alarm")
+        rule.onNodeWithText("Alarm").assertIsFocused()
     }
 }
 

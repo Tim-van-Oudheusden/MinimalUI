@@ -110,6 +110,7 @@ private val Setting.label: Int
 
 private val SettingsLink.label: Int
     get() = when (this) {
+        SettingsLink.HiddenApps -> R.string.settings_hidden_apps
         SettingsLink.About -> R.string.settings_about
     }
 

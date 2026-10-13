@@ -32,8 +32,9 @@ import dev.buildwithtim.minimalui.core.selecting
 /**
  * The root list (#70), in a [PillList]: one row per entry of [content], an app's row opening it ([onOpen]) on Enter,
  * D-pad centre or a tap; the Menu key, holding Enter or D-pad centre, or a touch long-press asks for its context menu
- * ([onMenu]). A favourite's name has a `★` before it (#68). The Collections row opens the collections
- * ([onCollections]) and has no menu. The blank row below the block at the top is empty, and the selection skips it.
+ * ([onMenu]). A favourite's name has a `★` before it (#68); a hidden app, listed only when the query finds it (#71), is
+ * drawn dim. The Collections row opens the collections ([onCollections]) and has no menu. The blank row below the block
+ * at the top is empty, and the selection skips it.
  *
  * The first row is selected when the apps first arrive, so the keyboard works without touching the screen, and again
  * whenever [homePresses] or the type-to-filter [query] changes. Each new [returned] selects its row instead, keeping
@@ -143,6 +144,7 @@ fun AppList(
                         false
                     }
                 },
+                dim = { (it as? RootEntry.App)?.isHidden == true },
             )
         }
         // Centred on the whole screen, as MinUI does, whether or not the query line is showing above it.
@@ -180,10 +182,10 @@ data class Returned(val row: Int, val count: Int)
 internal fun shownLabel(app: LauncherApp, isFavourite: Boolean): String =
     if (isFavourite) "★ ${app.label}" else app.label
 
-/** Centred on the screen, in the rows' text style. */
+/** Centred on the space it is given (the whole screen for the root list), in the rows' text style. */
 @Composable
-private fun Message(text: String) {
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+internal fun Message(text: String, modifier: Modifier = Modifier) {
+    Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Text(text = text, color = MaterialTheme.colorScheme.onBackground, style = RowMetrics.TextStyle)
     }
 }

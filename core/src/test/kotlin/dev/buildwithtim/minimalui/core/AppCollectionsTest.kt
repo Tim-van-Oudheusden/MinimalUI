@@ -85,6 +85,14 @@ class AppCollectionsTest {
     }
 
     @Test
+    fun `moving past an app not shown keeps that app in the collection, in its place`() {
+        val withoutAlarm = installed - app("Alarm")
+
+        val moved = games.moved("Games", app("Drums"), -1, withoutAlarm)
+        assertEquals(listOf("Drums", "Alarm", "Camera"), moved.labelsIn("Games"))
+    }
+
+    @Test
     fun `a collection with no installed app is not named`() {
         val collections = games.added("Work", app("Bell"))
 

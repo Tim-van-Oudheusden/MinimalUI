@@ -20,11 +20,15 @@ sealed interface RootEntry {
     /** The app the row opens, if it is an app's row. */
     val app: LauncherApp?
 
-    /** An app's row; [isFavourite] wherever a favourite is listed, so it shows with its `★` (#68). */
+    /**
+     * An app's row; [isFavourite] wherever a favourite is listed, so it shows with its `★` (#68), and [isHidden] for a
+     * hidden app that type-to-filter found (#71), drawn dim.
+     */
     data class App(
         override val app: LauncherApp,
         val section: RootSection = RootSection.All,
         val isFavourite: Boolean = false,
+        val isHidden: Boolean = false,
     ) : RootEntry {
         override val key: String get() = "$section/${app.packageName}/${app.activityName}"
         override val selectable: Boolean get() = true

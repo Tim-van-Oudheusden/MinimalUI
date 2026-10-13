@@ -44,7 +44,8 @@ another home app in the same place.
 | Left / Right (arrows, D-pad) | Turn a page, stopping at the first or last app                                |
 | Left / Right in settings     | Change the highlighted setting to its previous / next value, wrapping around  |
 | Enter or D-pad centre        | Open the highlighted app, collection or list; in the app menu, do the action  |
-| Enter in settings            | Change the highlighted setting to its next value, or open About               |
+| Enter in settings            | Change the highlighted setting to its next value, or open the linked list     |
+| Enter in Hidden apps         | Unhide the highlighted app                                                    |
 | Menu, or hold Enter / centre | Open the highlighted app's menu (touch: long-press the app)                   |
 | Letters, digits, Backspace   | Filter the home screen; on New collection, type the collection's name         |
 | Back or Esc                  | Close the open list, one at a time; does nothing on the home screen           |
@@ -55,15 +56,23 @@ last from MinimalUI, newest first (leaving out favourites); then a **Collections
 then one blank row, then every app in alphabetical order (those at the top too). Up and Down skip the blank row. The
 **Recently used** setting picks how many recent apps show there: Off, 3 (the default), 5 or 15. Typing filters all
 apps by their name (the `★` is not part of it), favourites first, and hides the block until the filter is cleared.
+Hidden apps still match, listed in grey after the others; Enter opens them as usual.
 
 The list updates on its own when apps are installed or removed. Apps open without a transition animation. Coming
 back from an app by Back, Recents or the app closing selects that app again, so one press reopens it; the filter
 stays. Home instead clears the filter and returns to the top.
 
 The app menu replaces the list until it is closed: App info, Uninstall (dim and inactive for system apps and the
-Settings entry), Add to favourites or Remove from favourites, Add to collection, and, when there are recently used
-apps, Remove from recently used and Clear recently used. After an action, Back or Esc, the list comes back with the
-same app highlighted.
+Settings entry), Add to favourites or Remove from favourites, Add to collection, Hide or Unhide (dim and inactive for
+Android's Settings and the MinimalUI settings row, so the way back to another home app always stays listed), and,
+when there are recently used apps, Remove from recently used and Clear recently used. After an action, Back or Esc,
+the list comes back with the same app highlighted.
+
+**Hide** takes an app off the home screen, its favourites and recently used block and every collection; it stays a
+favourite, recent and in its collections, so **Unhide** brings it back where it was. Two ways lead back to a hidden
+app: type its name and open its menu, or open **MinimalUI settings → Hidden apps**, which lists the hidden apps
+alphabetically (or says `No hidden apps`) and unhides the highlighted one with Enter. Uninstalling a hidden app does
+not forget it: reinstalled, it stays hidden until you unhide it. Hidden apps are kept in the app's private storage.
 
 Collections are named lists of apps in your own order, as in MinUI. **Add to collection** lists the collections that
 do not hold the app yet and a last row, **New collection**: type a name (letters and digits, Backspace to correct) and
@@ -74,9 +83,9 @@ in the app's private storage.
 
 MinimalUI's own settings open from the **MinimalUI settings** row, listed right after Android's Settings (type `min`
 to find it). They replace the list until closed, the way the app menu does: Clock and Battery percentage show or hide
-those items in the status pill (both on by default), Recently used sizes the block at the top of the list, and About
-at the bottom shows the version and the commit the app was built from. Settings are kept in the app's private
-storage.
+those items in the status pill (both on by default), Recently used sizes the block at the top of the list, Hidden apps
+lists the apps you hid, and About at the bottom shows the version and the commit the app was built from. Settings are
+kept in the app's private storage.
 
 ## Contributing
 

@@ -53,6 +53,8 @@ private val MenuAction.label: Int
         MenuAction.RemoveFromCollection -> R.string.menu_remove_collection
         MenuAction.MoveUp -> R.string.menu_move_up
         MenuAction.MoveDown -> R.string.menu_move_down
+        MenuAction.Hide -> R.string.menu_hide
+        MenuAction.Unhide -> R.string.menu_unhide
         MenuAction.RemoveFromRecents -> R.string.menu_remove_recent
         MenuAction.ClearRecents -> R.string.menu_clear_recents
     }
