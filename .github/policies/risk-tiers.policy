@@ -7,6 +7,9 @@
 # *.md is low; app/build.gradle.kts is high even though app/* is medium).
 # `*` matches across `/`. A path matching no rule is medium. Blank lines and
 # lines starting with `#` are ignored.
+#
+# A path has a rule here exactly when .github/labeler.yml gives it a label;
+# tooling's PolicyLabelParityTest fails when the two files drift apart.
 
 # CI gates, review rubric, rulesets, and this policy itself.
 high    .github/*
@@ -40,6 +43,7 @@ high    prompts/*
 high    .devcontainer/*
 high    Dockerfile*
 high    */Dockerfile
+high    .dockerignore
 
 # Application code.
 medium  app/*

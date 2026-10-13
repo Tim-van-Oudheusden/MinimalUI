@@ -37,7 +37,7 @@ behave. A mistake here can bypass every other check or ship to every device.
 | `app/src/main/AndroidManifest.xml`                                                   | App permissions and the HOME intent filter           |
 | `AGENTS.md`, `CLAUDE.md`, `.claude/*`, `.cursor/*`, `.beads/*`, `prompts/*`          | Agent instructions and governance                    |
 | `.gitattributes`                                                                     | Line endings, binary handling, diff/merge drivers    |
-| `.devcontainer/*`, `Dockerfile*`, `*/Dockerfile`                                     | Development container and image configuration        |
+| `.devcontainer/*`, `Dockerfile*`, `*/Dockerfile`, `.dockerignore`                    | Development container and image configuration        |
 
 Review: a human reviews the full diff line by line. Dependency changes follow
 the rules in `AGENTS.md` (approved, exact version, only in
