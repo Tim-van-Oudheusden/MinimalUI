@@ -14,7 +14,7 @@ build:
 
 ci:
   - changed-files:
-      - any-glob-to-any-file: ['.github/**', 'scripts/**']
+      - any-glob-to-any-file: ['.github/**', 'scripts/**', 'tooling/**']
 
 documentation:
   - changed-files:

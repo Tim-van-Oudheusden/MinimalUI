@@ -51,6 +51,7 @@ core/                       pure Kotlin/JVM logic (no Android dependencies), pac
 gradle/libs.versions.toml   every dependency and plugin version
 gradle/wrapper/             Gradle wrapper (pinned version and checksum)
 scripts/                    CI helper scripts
+tooling/                    JUnit tests over .github/ and scripts/ (workflow invariants, CI script behaviour)
 ```
 
 **Where code goes.** Anything that can be expressed without the Android framework (sorting, filtering, key-to-action
@@ -59,6 +60,13 @@ reads from Android APIs and renders with Compose.
 
 **Where a test goes.** Next to the module it covers, in the same package: a test for
 `core/src/main/kotlin/dev/buildwithtim/minimalui/core/Foo.kt` goes in `core/src/test/kotlin/dev/buildwithtim/minimalui/core/FooTest.kt`.
+
+**Tests for CI and scripts.** `tooling` has no main sources: its tests read `.github/` and run `scripts/` the way CI
+does, so they run with `./gradlew test`. `WorkflowInvariantsTest` holds the reviewed `GITHUB_TOKEN` scopes of every
+workflow and checks that every job has `timeout-minutes`, every action is pinned to a commit SHA, no `run:` interpolates
+event payload (pass it through `env:`), and no `pull_request_target` workflow checks out code. Adding a workflow means
+adding its scopes there. A test for `scripts/foo.sh` goes in `tooling/src/test/kotlin/dev/buildwithtim/minimalui/tooling/`
+and runs it with `runScript`.
 
 ## Finding and claiming work
 
