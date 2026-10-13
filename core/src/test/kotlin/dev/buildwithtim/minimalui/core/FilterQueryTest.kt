@@ -14,11 +14,19 @@ class FilterQueryTest {
     }
 
     @Test
+    fun `typing a combining mark adds it to the letter before it`() {
+        // Devanagari vowel sign ि (spacing) and anusvara ं (non-spacing): without them no Hindi word can be typed.
+        assertEquals("हि", "ह".plusTyped(0x093F))
+        assertEquals("हिं", "हि".plusTyped(0x0902))
+    }
+
+    @Test
     fun `keys that cannot be part of a query leave it to their usual job`() {
         assertNull("ma".plusTyped(' '.code))
         assertNull("ma".plusTyped('\n'.code))
         assertNull("ma".plusTyped('.'.code))
         assertNull("ma".plusTyped(0))
+        assertNull("".plusTyped(0x093F))
     }
 
     @Test
