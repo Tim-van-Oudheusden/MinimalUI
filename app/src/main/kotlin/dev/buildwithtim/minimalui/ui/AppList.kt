@@ -38,9 +38,12 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import dev.buildwithtim.minimalui.R
 import dev.buildwithtim.minimalui.core.LauncherApp
+import dev.buildwithtim.minimalui.core.ListContent
 import dev.buildwithtim.minimalui.core.ListPosition
 import dev.buildwithtim.minimalui.core.listRhythm
 import dev.buildwithtim.minimalui.core.paged
@@ -54,16 +57,18 @@ import dev.buildwithtim.minimalui.core.stepped
  *
  * The first row is selected when the apps first arrive, so the keyboard works without touching the screen, and again
  * whenever [homePresses] or the type-to-filter [query] changes. A non-empty [query] is shown in the top row, so the
- * user never filters blind.
+ * user never filters blind. Without apps to list, the rest of the screen stays blank while they load, or shows a
+ * centred message when there are none or none match the query.
  */
 @Composable
 fun AppList(
-    apps: List<LauncherApp>,
+    content: ListContent,
     query: String,
     homePresses: Int,
     onOpen: (LauncherApp) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val apps = (content as? ListContent.Apps)?.apps.orEmpty()
     val listState = rememberLazyListState()
     var position by remember { mutableStateOf(ListPosition(0, 0)) }
     // Bumped on every move, even to the same position, so the list scrolls and the selected row takes focus each time.
@@ -112,14 +117,14 @@ fun AppList(
                     )
                 }
             }
-            LazyColumn(
+            if (hasApps) LazyColumn(
                 state = listState,
                 flingBehavior = rememberSnapFlingBehavior(listState),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(rowHeight * rowsPerPage)
                     .onPreviewKeyEvent { event ->
-                        if (event.type != KeyEventType.KeyDown || !hasApps) return@onPreviewKeyEvent false
+                        if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
                         // Start from the screen as it is now, which touch scrolling may have moved.
                         val now = position.copy(first = listState.firstVisibleItemIndex)
                         val held = event.nativeKeyEvent.repeatCount > 0
@@ -147,6 +152,21 @@ fun AppList(
                 }
             }
         }
+        // Centred on the whole screen, as MinUI does, whether or not the query line is showing above it.
+        val message = when (content) {
+            ListContent.Loading, is ListContent.Apps -> null
+            ListContent.NoApps -> R.string.no_apps
+            ListContent.NoMatch -> R.string.no_match
+        }
+        if (message != null) Message(stringResource(message))
+    }
+}
+
+/** Centred on the screen, in the rows' text style. */
+@Composable
+private fun Message(text: String) {
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Text(text = text, color = MaterialTheme.colorScheme.onBackground, style = RowMetrics.TextStyle)
     }
 }
 

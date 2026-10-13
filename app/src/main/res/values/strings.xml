@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">MinimalUI</string>
+    <!-- Centred where the app list would be, MinUI-terse (#75). -->
+    <string name="no_apps">No apps</string>
+    <string name="no_match">No match</string>
 </resources>

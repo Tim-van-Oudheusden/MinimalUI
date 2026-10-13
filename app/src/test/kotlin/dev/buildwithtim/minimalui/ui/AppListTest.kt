@@ -14,14 +14,17 @@ import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasScrollAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performKeyPress
 import androidx.compose.ui.test.pressKey
+import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.dp
 import dev.buildwithtim.minimalui.core.LauncherApp
+import dev.buildwithtim.minimalui.core.ListContent
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -43,10 +46,12 @@ class AppListTest {
     private var homePresses by mutableIntStateOf(0)
     private var query by mutableStateOf("")
 
-    private fun show(list: List<LauncherApp> = apps) {
+    private fun show(list: List<LauncherApp> = apps) = show(ListContent.Apps(list))
+
+    private fun show(content: ListContent) {
         rule.setContent {
             MinimalTheme {
-                AppList(apps = list, query = query, homePresses = homePresses, onOpen = { opened += it })
+                AppList(content = content, query = query, homePresses = homePresses, onOpen = { opened += it })
             }
         }
     }
@@ -225,6 +230,38 @@ class AppListTest {
 
         assertEquals(rows - 1, rowsOnScreen().size)
         rule.onNodeWithText("App 00").assertIsFocused()
+    }
+
+    @Test
+    fun `while the apps load the screen stays blank`() {
+        show(ListContent.Loading)
+
+        assertEquals(0, rule.onAllNodes(hasText("", substring = true)).fetchSemanticsNodes().size)
+    }
+
+    @Test
+    fun `no apps at all shows a centred message`() {
+        show(ListContent.NoApps)
+
+        assertCentred(rule.onNodeWithText("No apps").getUnclippedBoundsInRoot())
+    }
+
+    @Test
+    fun `a query with no match keeps the query line and shows a centred message`() {
+        query = "x"
+        show(ListContent.NoMatch)
+
+        val queryLine = rule.onNodeWithText("x_").getUnclippedBoundsInRoot()
+        val message = rule.onNodeWithText("No match").getUnclippedBoundsInRoot()
+        assertCentred(message)
+        assertTrue("the message covers the query line", queryLine.bottom <= message.top)
+    }
+
+    /** [message] sits in the middle of the screen. */
+    private fun assertCentred(message: DpRect) {
+        val root = rule.onRoot().getUnclippedBoundsInRoot()
+        assertEquals(0f, (message.left + message.right - root.left - root.right).value / 2, Slack.value)
+        assertEquals(0f, (message.top + message.bottom - root.top - root.bottom).value / 2, Slack.value)
     }
 
     private fun assertFillsWithWholeRows() {
