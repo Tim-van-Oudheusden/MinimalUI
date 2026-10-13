@@ -19,5 +19,12 @@ fun List<LauncherApp>.sortedForDisplay(): List<LauncherApp> = sortedWith(
 /**
  * How the launcher compares names, for sorting and for telling duplicates apart: SECONDARY strength, so accents sort
  * next to their base letter and letter case is ignored.
+ *
+ * `java.text.Collator` is a different engine on a device than on a desktop JVM (#96). Android backs it with ICU and
+ * the CLDR root collation, which keeps letters such as `Ø`, `Ł` and `Đ` next to their base letter, sorts fullwidth
+ * letters with their ASCII form, puts leading spaces and punctuation before letters, and sorts non-Latin scripts after
+ * Latin, grouped by script. The JDK collator, which unit and Robolectric tests run on, has rules for little beyond
+ * Latin-1. It sorts every other character by code point after `z`, and it ignores spaces and hyphens. The two
+ * engines agree only on ASCII and Latin-1 accented labels, so tests can pin the device's order only for those.
  */
 internal fun labelCollator(): Collator = Collator.getInstance(Locale.ROOT).apply { strength = Collator.SECONDARY }
