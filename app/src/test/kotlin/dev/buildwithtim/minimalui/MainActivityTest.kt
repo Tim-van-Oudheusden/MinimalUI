@@ -219,6 +219,23 @@ class MainActivityTest {
     }
 
     @Test
+    fun `hardware arrow keys and the D-pad wrap and page through the list`() {
+        install("Alarm", "com.example.alarm")
+        install("Zebra", "com.example.zebra")
+        val activity = launch()
+        awaitListed("Zebra")
+
+        type(activity, KeyEvent.KEYCODE_DPAD_UP)
+        rule.onNodeWithText("Zebra").assertIsFocused()
+
+        type(activity, KeyEvent.KEYCODE_DPAD_LEFT)
+        rule.onNodeWithText("Alarm").assertIsFocused()
+
+        type(activity, KeyEvent.KEYCODE_DPAD_RIGHT)
+        rule.onNodeWithText("Zebra").assertIsFocused()
+    }
+
+    @Test
     fun `a newly installed app is listed without leaving the home screen`() {
         install("Alarm", "com.example.alarm")
         launch()
