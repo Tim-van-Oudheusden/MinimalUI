@@ -116,6 +116,12 @@ Run these before opening a PR (CI runs the same on every PR):
 | `./gradlew lint`           | Android lint, warnings as errors              |
 | `./gradlew assembleDebug`  | Debug APK build                               |
 
+The `main` ruleset also requires the **Unit-test coverage floors** check (`.github/workflows/coverage-gate.yml`): it
+runs `./gradlew :<module>:koverXmlReport` for every module in `.github/auto-qa-tuning.json` and fails the PR if a
+module's function or line coverage drops below its floor there. Check locally with
+`./gradlew :core:koverXmlReport && scripts/coverage-check.sh core <functions> <lines>`; see
+[`docs/testing.md`](docs/testing.md#coverage-floors).
+
 ### Applying review suggestions
 
 Comment `/apply-suggestions` on a pull request to commit every ```` ```suggestion ```` block that reviewers with write

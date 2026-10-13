@@ -17,6 +17,7 @@ class WorkflowInvariantsTest {
         "auto-review.yml" to mapOf("contents" to "read"),
         "ci.yml" to mapOf("contents" to "read"),
         "claude.yml" to mapOf("contents" to "read"),
+        "coverage-gate.yml" to mapOf("contents" to "read"),
         // Sanctioned pull_request_target exception: labels PRs, never checks out code.
         "labeler.yml" to mapOf("contents" to "read", "pull-requests" to "write"),
         "nightly-compliance.yml" to mapOf("contents" to "read"),

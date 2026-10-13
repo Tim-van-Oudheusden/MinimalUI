@@ -1,0 +1,59 @@
+name: Coverage gate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  # One live run per PR: a new push cancels the superseded run. Pushes to main
+  # get a per-commit group, so no main run is ever cancelled.
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  coverage:
+    # Required by the main ruleset (.github/rulesets/main.json); keep the name in sync.
+    name: Unit-test coverage floors
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Floors per module live in .github/auto-qa-tuning.json; every module listed there is gated.
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Setup JDK
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+      - name: Unit tests with coverage
+        run: |
+          modules="$(jq -er '.floors | keys[]' .github/auto-qa-tuning.json)"
+          tasks=()
+          for module in $modules; do
+            tasks+=(":$module:koverXmlReport")
+          done
+          ./gradlew "${tasks[@]}"
+      - name: Check coverage floors
+        run: |
+          modules="$(jq -er '.floors | keys[]' .github/auto-qa-tuning.json)"
+          failed=0
+          for module in $modules; do
+            functions="$(jq -er --arg m "$module" '.floors[$m].functions' .github/auto-qa-tuning.json)"
+            lines="$(jq -er --arg m "$module" '.floors[$m].lines' .github/auto-qa-tuning.json)"
+            scripts/coverage-check.sh "$module" "$functions" "$lines" || failed=1
+          done
+          exit "$failed"
+      - name: Upload coverage reports
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: coverage-reports
+          path: '*/build/reports/kover/'
+          retention-days: 14
