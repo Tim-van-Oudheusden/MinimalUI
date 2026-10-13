@@ -10,16 +10,13 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 ## Latest session
 
 - **Date:** 2026-10-13
-- **Worked:** #14–#27 — port the website repo's CI, review and agent scaffolding (Claude Code workflow, prompts,
-  `tooling` invariant tests, apply-suggestions, coverage gate, quality report, risk tiers, metrics, nightly
-  compliance, security policy, these hand-off artifacts, sandbox image, triage settings) as one stacked PR per issue.
-- **Outcome:** repository settings for #23 and #27 applied through the API; the rest as stacked PRs, each based on the
-  previous issue's branch so they merge in order. hive-forge-app had opened competing PRs for several of these issues;
-  at the maintainer's request they were closed in favour of the stack (hive's sound hardening ideas folded in).
-- **Open follow-ups:** after the coverage-gate PR merges, apply `.github/rulesets/main.json` to the live ruleset.
+- **Worked:** #75 — loading, empty and no-match states for the app list (stack row 1 of the #60 interface stack, on
+  `feat/66-recent-apps`).
+- **Outcome:** `core/ListContent.kt` decides what the list area shows (`Loading`, `NoApps`, `NoMatch`, `Apps`);
+  `MainActivity.apps` is null until the first load; `AppList` takes a `ListContent` and centres `No apps` /
+  `No match` on the screen, keeping the query line so Backspace and Home still work.
+- **Open follow-ups:** the rest of the #60 stack builds on this branch.
 - **Notes for next session:**
-  - Start from `bd ready` / `gh issue list`; AGENTS.md is authoritative and
-    `.claude/skills/github-issue-flow/SKILL.md` encodes the per-issue loop.
-  - No JDK on the host: run Gradle in a container (JDK 21 + Android SDK image), mounting the checkout and a named
-    Gradle home volume. The image needs `jq` for the `tooling` script tests.
-  - Adding a workflow means adding its token scopes to `WorkflowInvariantsTest`.
+  - `AppList(content = listContent(apps, query), ...)`: filtering happens in `listContent`; map apps to their displayed
+    labels before calling it.
+  - No JDK on the host: run Gradle via the podman sandbox (`/tmp/gates.sh`).

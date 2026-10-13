@@ -168,6 +168,40 @@ class MainActivityTest {
     }
 
     @Test
+    fun `a filter that matches nothing says so, and Backspace edits the query from there`() {
+        install("Alarm", "com.example.alarm")
+        val activity = launch()
+        awaitListed("Alarm")
+
+        type(activity, KeyEvent.KEYCODE_A)
+        type(activity, KeyEvent.KEYCODE_Q)
+        rule.onNodeWithText("aq_").assertExists()
+        awaitListed("No match")
+
+        type(activity, KeyEvent.KEYCODE_DEL)
+
+        rule.onNodeWithText("a_").assertExists()
+        awaitListed("Alarm")
+        rule.onNodeWithText("No match").assertDoesNotExist()
+    }
+
+    @Test
+    fun `Home from a filter that matches nothing clears it`() {
+        install("Alarm", "com.example.alarm")
+        val activity = launch()
+        awaitListed("Alarm")
+        type(activity, KeyEvent.KEYCODE_Q)
+        awaitListed("No match")
+
+        activity.newIntent(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME))
+
+        awaitListed("Alarm")
+        rule.onNodeWithText("q_").assertDoesNotExist()
+        rule.onNodeWithText("No match").assertDoesNotExist()
+        rule.onNodeWithText("Alarm").assertIsFocused()
+    }
+
+    @Test
     fun `an opened app is recent, and stays recent when the launcher starts again`() {
         install("Alarm", "com.example.alarm")
         install("Zebra", "com.example.zebra")
