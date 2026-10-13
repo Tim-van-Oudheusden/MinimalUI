@@ -42,8 +42,9 @@ a plain list, driven entirely by keys, that gets out of the way. It is not a the
   percentage settings leave those items out; with nothing left, the row stays empty. Glyphs are drawn in code, never
   copied from MinUI.
 - **Root list:** the favourites head the list, then the recently used apps, then a `Collections` row when there are
-  collections, then one empty row, then every app; no rule, header or other separator is drawn, and the selection
-  never rests on the empty row.
+  collections, then one empty row, then every app, then one more empty row and a `Groups` row last (as MinUI lists
+  Tools last), so the first row is always an app and Up from it reaches the groups; no rule, header or other separator
+  is drawn, and the selection never rests on an empty row.
 - **Favourite marker:** a favourite's name has a `★` and a space before it wherever it is listed, as in Cannoli. The
   star is only drawn: typing matches the plain name.
 - **Hidden apps:** a hidden app shows only when typing finds it, after the other matches, its name in grey
@@ -51,16 +52,21 @@ a plain list, driven entirely by keys, that gets out of the way. It is not a the
 - **Collections:** the `Collections` row opens a list of the collections' names, each opening its apps in the user's
   order (MinUI); both are lists in the same style, titled `Collections` and the collection's name. A new collection's
   name is typed in the text editor, titled `New collection`.
-- **Text editor:** one screen for every name the user types (`Rename`, `New collection`): its title in the dark-grey
-  pill, then the text on the line below, aligned with the title's text, in the rows' type and white, with a white
-  cursor. No box or underline is drawn around it. It opens focused, prefilled with the current name for Rename.
+- **Groups:** the `Groups` row opens a list of group names, alphabetical with `Other` last, each opening its apps in
+  the list's order; both are lists in the same style, titled `Groups` and the group's name. A group the user made and
+  an automatic one of the same name are one entry, as MinUI merges folders that share a name.
+- **Text editor:** one screen for every name the user types (`Rename`, `New collection`, `New group`, `Rename group`):
+  its title in the dark-grey pill, then the text on the line below, aligned with the title's text, in the rows' type
+  and white, with a white cursor. No box or underline is drawn around it. It opens focused, prefilled with the current
+  name for Rename and Rename group.
 - **Duplicate names:** when apps are listed under the same name, each shows a suffix after the name on the same line,
   as in Cannoli: its package name (or its activity's short class name when they share a package), in grey (`#808080`)
   at 0.75× the label's size. Unique names show none. The name keeps priority on a narrow row: the suffix is cut off
   with an ellipsis first. The `★` is drawn before the name only, never on the suffix.
-- **Menus:** a menu (such as an app's context menu) is another list in the same style that takes the list's place,
-  one list at a time. Its title, the app's name, sits in a dark-grey (`#262626`) pill below the status pill, as MinUI
-  marks its in-game menu's title; an action that does not apply stays listed in grey (`#808080`) and does nothing.
+- **Menus:** a menu (an app's context menu, or a group's) is another list in the same style that takes the list's
+  place, one list at a time. Its title, the app's or group's name, sits in a dark-grey (`#262626`) pill below the
+  status pill, as MinUI marks its in-game menu's title; an action that does not apply stays listed in grey (`#808080`)
+  and does nothing.
 - **Settings:** MinimalUI's settings are such a list, titled `MinimalUI settings`; a setting's value (`On`, `Off`)
   sits in white at the right end of its row, outside the selection pill, as in MinUI and Cannoli. Hidden apps and
   About, the last rows, open lists of their own: the hidden apps (`No hidden apps`, centred, when there are none), and

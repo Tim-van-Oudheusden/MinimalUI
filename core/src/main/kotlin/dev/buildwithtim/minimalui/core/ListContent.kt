@@ -17,11 +17,12 @@ sealed interface ListContent {
 
 /**
  * What to show for the [installed] apps, `null` until they first load. Without a query, the root list with its block
- * of [favourites], [recents] as the [settings] allow and the [collections] row, all without the [hidden] apps (#71);
- * with one, only the apps it keeps, from all of them: the visible ones first, the favourites first among them, then
- * the hidden ones, flagged so they are drawn dim, each part in list order. With no block and no blank row. The query
- * matches the plain label: the `★` is only drawn. No apps at all wins over no match: a different query would not help;
- * so does a root with every app hidden.
+ * of [favourites], [recents] as the [settings] allow and the [collections] row, and the Groups row of the user's
+ * [groups] and the automatic ones at its end (#69), all without the [hidden] apps (#71); with one, only the apps it
+ * keeps, from all of them: the visible ones first, the favourites first among them, then the hidden ones, flagged so
+ * they are drawn dim, each part in list order. With no block, no blank row and no Groups row. The query matches the
+ * plain label: the `★` is only drawn. No apps at all wins over no match: a different query would not help; so does a
+ * root with every app hidden.
  */
 fun listContent(
     installed: List<LauncherApp>?,
@@ -31,11 +32,14 @@ fun listContent(
     favourites: Favourites = Favourites(),
     collections: AppCollections = AppCollections(),
     hidden: HiddenApps = HiddenApps(),
+    groups: UserGroups = UserGroups(),
 ): ListContent {
     if (installed == null) return ListContent.Loading
     val visible = hidden.visibleFrom(installed)
     if (installed.isEmpty() || query.isEmpty() && visible.isEmpty()) return ListContent.NoApps
-    if (query.isEmpty()) return ListContent.Apps(rootEntries(visible, recents, settings, favourites, collections))
+    if (query.isEmpty()) {
+        return ListContent.Apps(rootEntries(visible, recents, settings, favourites, collections, groups))
+    }
     val (starred, others) = visible.filteredBy(query).partition { it in favourites }
     val found = installed.filteredBy(query).filter { it in hidden }
     val shown = starred.map { RootEntry.App(it, isFavourite = true) } + others.map { RootEntry.App(it) } +

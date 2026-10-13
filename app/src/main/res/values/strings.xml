@@ -28,6 +28,14 @@
     <string name="no_hidden_apps">No hidden apps</string>
     <!-- Rename (#72): the context-menu row, also the title of the text editor it opens. -->
     <string name="menu_rename">Rename</string>
+    <!-- Groups (#69): the root's last row and the list it opens, the context-menu rows, a group's own menu. The
+         automatic groups' names come from core. -->
+    <string name="groups">Groups</string>
+    <string name="new_group">New group</string>
+    <string name="menu_add_group">Add to group</string>
+    <string name="menu_remove_group">Remove from group</string>
+    <string name="menu_rename_group">Rename group</string>
+    <string name="menu_delete_group">Delete group</string>
     <!-- MinimalUI's own settings (#73): the list's row next to Android's Settings, the list's title, its rows. -->
     <string name="settings_entry">MinimalUI settings</string>
     <string name="setting_clock">Clock</string>

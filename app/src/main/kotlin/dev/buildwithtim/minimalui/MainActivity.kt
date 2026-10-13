@@ -23,6 +23,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import dev.buildwithtim.minimalui.core.Aliases
 import dev.buildwithtim.minimalui.core.AppCollections
+import dev.buildwithtim.minimalui.core.AppGroup
 import dev.buildwithtim.minimalui.core.AppFacts
 import dev.buildwithtim.minimalui.core.CollectionPlace
 import dev.buildwithtim.minimalui.core.Favourites
@@ -38,8 +39,11 @@ import dev.buildwithtim.minimalui.core.Setting
 import dev.buildwithtim.minimalui.core.Settings
 import dev.buildwithtim.minimalui.core.SettingsLink
 import dev.buildwithtim.minimalui.core.StatusPill
+import dev.buildwithtim.minimalui.core.UserGroups
+import dev.buildwithtim.minimalui.core.appGroups
 import dev.buildwithtim.minimalui.core.contextMenu
 import dev.buildwithtim.minimalui.core.duplicateSuffixes
+import dev.buildwithtim.minimalui.core.groupMenu
 import dev.buildwithtim.minimalui.core.isLauncherSettings
 import dev.buildwithtim.minimalui.core.launcherSettings
 import dev.buildwithtim.minimalui.core.listContent
@@ -114,8 +118,15 @@ class MainActivity : ComponentActivity() {
     private val hiddenStore by lazy { HiddenAppsStore(this) }
     private var hidden by mutableStateOf(HiddenApps())
 
-    /** The installed apps the user did not hide, as the root list and the collections show them. */
+    /** The installed apps the user did not hide, as the root list, the collections and the groups show them. */
     private val visibleApps: List<LauncherApp> get() = hidden.visibleFrom(apps.orEmpty())
+
+    // The groups the user made (#69), shown merged with the automatic ones from the apps' categories.
+    private val groupsStore by lazy { GroupsStore(this) }
+    private var userGroups by mutableStateOf(UserGroups())
+
+    /** The groups the Groups list shows: each holds at least one visible app. */
+    private val shownGroups: List<AppGroup> get() = appGroups(visibleApps, userGroups)
 
     /**
      * The apps last opened from here, newest first, for the root screen (#70). Derived from the installed list, so an
@@ -149,6 +160,7 @@ class MainActivity : ComponentActivity() {
         collections = favouritesStore.loadCollections()
         hidden = hiddenStore.load()
         aliases = aliasesStore.load()
+        userGroups = groupsStore.load()
         // Registered for the activity's whole life, not only while resumed, so the list is current before a return.
         registerReceiver(
             packageChanges,
@@ -175,6 +187,7 @@ class MainActivity : ComponentActivity() {
                         onOpen = ::open,
                         onMenu = { openMenu(it) },
                         onCollections = { screens = screens.pushed(Screen.CollectionsList()) },
+                        onGroups = { screens = screens.pushed(Screen.GroupsList()) },
                         state = listState,
                         returned = returned,
                         status = shownStatus,
@@ -210,6 +223,7 @@ class MainActivity : ComponentActivity() {
                     is Screen.CollectionChoice -> CollectionChoice(
                         title = stringResource(R.string.menu_add_collection),
                         names = collections.namesWithout(screen.app, visibleApps),
+                        newLabel = stringResource(R.string.new_collection),
                         // Back down past this list and the menu, to the list the menu was opened from.
                         onChoose = { addToCollection(it, screen.app, closing = 2) },
                         onNew = { screens = screens.pushed(Screen.NewCollection(screen.app)) },
@@ -222,6 +236,60 @@ class MainActivity : ComponentActivity() {
                         initial = "",
                         // Back down past the name, the list of collections and the menu. A blank name makes nothing.
                         onDone = { name -> if (name.isNotBlank()) addToCollection(name, screen.app, closing = 3) },
+                        onClose = ::back,
+                        status = shownStatus,
+                    )
+                    is Screen.GroupsList -> CollectionsList(
+                        title = stringResource(R.string.groups),
+                        names = shownGroups.map { it.name },
+                        onOpen = { screens = screens.pushed(Screen.Group(it)) },
+                        onClose = ::back,
+                        state = screen.list,
+                        status = shownStatus,
+                        onMenu = ::openGroupMenu,
+                    )
+                    is Screen.Group -> CollectionApps(
+                        name = screen.name,
+                        apps = shownGroups.firstOrNull { it.name == screen.name }?.apps.orEmpty(),
+                        isFavourite = { it in favourites },
+                        onOpen = ::open,
+                        onMenu = { openMenu(it, group = screen.name) },
+                        onClose = ::back,
+                        state = screen.state,
+                        status = shownStatus,
+                        suffix = suffixes::get,
+                    )
+                    is Screen.GroupMenu -> ContextMenu(
+                        title = screen.name,
+                        items = screen.items,
+                        onChoose = { chooseForGroup(screen, it) },
+                        onClose = ::back,
+                        status = shownStatus,
+                        state = screen.list,
+                    )
+                    is Screen.GroupChoice -> CollectionChoice(
+                        title = stringResource(R.string.menu_add_group),
+                        names = userGroups.namesWithout(screen.app),
+                        newLabel = stringResource(R.string.new_group),
+                        // Back down past this list and the menu, to the list the menu was opened from.
+                        onChoose = { addToGroup(it, screen.app, closing = 2) },
+                        onNew = { screens = screens.pushed(Screen.NewGroup(screen.app)) },
+                        onClose = ::back,
+                        state = screen.list,
+                        status = shownStatus,
+                    )
+                    is Screen.NewGroup -> TextEntry(
+                        title = stringResource(R.string.new_group),
+                        initial = "",
+                        // Back down past the name, the list of groups and the menu. A blank name makes nothing.
+                        onDone = { name -> if (name.isNotBlank()) addToGroup(name, screen.app, closing = 3) },
+                        onClose = ::back,
+                        status = shownStatus,
+                    )
+                    is Screen.RenameGroup -> TextEntry(
+                        title = stringResource(R.string.menu_rename_group),
+                        initial = screen.name,
+                        onDone = { renameGroup(screen.name, it) },
                         onClose = ::back,
                         status = shownStatus,
                     )
@@ -265,9 +333,10 @@ class MainActivity : ComponentActivity() {
 
     /**
      * What the root list shows: the full list under its block of favourites, recently used apps and the Collections
-     * row, without the hidden apps, or the apps the query keeps, the hidden ones last.
+     * row, and above the Groups row, without the hidden apps, or the apps the query keeps, the hidden ones last.
      */
-    private fun shownList(): ListContent = listContent(apps, query, recents, settings, favourites, collections, hidden)
+    private fun shownList(): ListContent =
+        listContent(apps, query, recents, settings, favourites, collections, hidden, userGroups)
 
     /** Back or Esc on a list opened from the root: the list below comes back as it was. */
     private fun back() {
@@ -372,8 +441,8 @@ class MainActivity : ComponentActivity() {
         }
 
     // The facts are read once, as the menu opens; every action closes it again. A menu opened inside the [collection]
-    // can also take the app out of it or move it there.
-    private fun openMenu(app: LauncherApp, collection: String? = null) {
+    // can also take the app out of it or move it there; one opened inside a [group] the user put it in can take it out.
+    private fun openMenu(app: LauncherApp, collection: String? = null, group: String? = null) {
         val recent = recentApps
         val inCollection = collection?.let { collections.appsIn(it, visibleApps) }
         val facts = AppFacts(
@@ -386,15 +455,22 @@ class MainActivity : ComponentActivity() {
             place = inCollection?.let { CollectionPlace(it.indexOf(app), it.size) },
             isHidden = app in hidden,
             isLauncherSettings = app.isLauncherSettings,
+            isGroupMember = group != null && userGroups.holds(group, app),
         )
-        screens = screens.pushed(Screen.Menu(app, contextMenu(facts), collection))
+        screens = screens.pushed(Screen.Menu(app, contextMenu(facts), collection, group))
     }
 
-    // The list comes back on the same app: its selection was kept while the menu was up. Add to collection and Rename
-    // keep the menu below the list or editor they open, so Back returns to it.
+    // A purely automatic group's menu still opens, its rows disabled, so the key never does nothing.
+    private fun openGroupMenu(name: String) {
+        val isUserGroup = shownGroups.firstOrNull { it.name == name }?.isUserGroup == true
+        screens = screens.pushed(Screen.GroupMenu(name, groupMenu(isUserGroup)))
+    }
+
+    // The list comes back on the same app: its selection was kept while the menu was up. Add to collection, Add to
+    // group and Rename keep the menu below the list or editor they open, so Back returns to it.
     private fun choose(menu: Screen.Menu, action: MenuAction) {
         val app = menu.app
-        if (action != MenuAction.AddToCollection && action != MenuAction.Rename) back()
+        if (action !in KeptMenuActions) back()
         when (action) {
             MenuAction.AppInfo -> start(app.appInfoIntent())
             MenuAction.Uninstall -> start(app.uninstallIntent())
@@ -403,12 +479,52 @@ class MainActivity : ComponentActivity() {
             MenuAction.RemoveFromCollection -> menu.collection?.let { removeFromCollection(it, app) }
             MenuAction.MoveUp -> menu.collection?.let { moveInCollection(it, app, -1) }
             MenuAction.MoveDown -> menu.collection?.let { moveInCollection(it, app, 1) }
+            MenuAction.AddToGroup -> screens = screens.pushed(Screen.GroupChoice(app))
+            MenuAction.RemoveFromGroup -> menu.group?.let { removeFromGroup(it, app) }
             MenuAction.Rename -> screens = screens.pushed(Screen.Rename(app))
             MenuAction.Hide -> hide(menu)
             MenuAction.Unhide -> saveHidden(hidden.unhidden(app))
             MenuAction.RemoveFromRecents -> saveRecents(recents.without(app))
             MenuAction.ClearRecents -> saveRecents(recents.cleared())
+            // Only a group's menu lists these, and it has its own handler.
+            MenuAction.RenameGroup, MenuAction.DeleteGroup -> Unit
         }
+    }
+
+    // Rename group keeps the menu below the editor, so Back returns to it; Delete group closes it, back on the groups,
+    // and those close too when no group is left to show. A merged automatic group of that name stays.
+    private fun chooseForGroup(menu: Screen.GroupMenu, action: MenuAction) {
+        if (action == MenuAction.RenameGroup) {
+            screens = screens.pushed(Screen.RenameGroup(menu.name))
+            return
+        }
+        back()
+        saveGroups(userGroups.deleted(menu.name))
+        if (shownGroups.isEmpty()) back()
+    }
+
+    /** The user group called [from] renamed [to] (merged into a group of that name), then the editor and menu closed. */
+    private fun renameGroup(from: String, to: String) {
+        saveGroups(userGroups.renamed(from, to))
+        repeat(2) { back() }
+    }
+
+    /** [app] added to the user group called [name], then [closing] lists closed, back to where the menu was opened. */
+    private fun addToGroup(name: String, app: LauncherApp, closing: Int) {
+        saveGroups(userGroups.added(name, app))
+        repeat(closing) { back() }
+    }
+
+    private fun removeFromGroup(name: String, app: LauncherApp) {
+        saveGroups(userGroups.removed(name, app))
+        leaveGroupIfGone(name)
+    }
+
+    // The group's list closes once it shows no app, and the list of groups once no group shows any.
+    private fun leaveGroupIfGone(name: String) {
+        val names = shownGroups.map { it.name }
+        if (name !in names) back()
+        if (names.isEmpty()) back()
     }
 
     /**
@@ -437,6 +553,7 @@ class MainActivity : ComponentActivity() {
     private fun hide(menu: Screen.Menu) {
         saveHidden(hidden.hidden(menu.app, packageManager.systemSettings()?.packageName))
         menu.collection?.let(::leaveIfGone)
+        menu.group?.let(::leaveGroupIfGone)
     }
 
     // The collection's list closes with its last app shown, and the list of collections with the last collection that
@@ -459,6 +576,11 @@ class MainActivity : ComponentActivity() {
     private fun saveCollections(changed: AppCollections) {
         collections = changed
         favouritesStore.save(changed)
+    }
+
+    private fun saveGroups(changed: UserGroups) {
+        userGroups = changed
+        groupsStore.save(changed)
     }
 
     private fun saveHidden(changed: HiddenApps) {
@@ -497,16 +619,19 @@ class MainActivity : ComponentActivity() {
  */
 private class Loaded(val apps: List<LauncherApp>, val settingsPackage: String?)
 
+/** The app's menu actions that open a list or editor on top of the menu, which stays below it. */
+private val KeptMenuActions = setOf(MenuAction.AddToCollection, MenuAction.AddToGroup, MenuAction.Rename)
+
 /** A list on [ScreenStack], each holding what it needs to show again as it was left. */
 private sealed interface Screen {
     /** The app list (its selection is kept by the activity's content, which outlives every other screen). */
     data object Root : Screen
 
     /**
-     * The context menu of [app], with its [items] as they were when it opened, and the [collection] it was opened in;
-     * its selection is kept while a list opened from it is up.
+     * The context menu of [app], with its [items] as they were when it opened, and the [collection] or [group] it was
+     * opened in; its selection is kept while a list opened from it is up.
      */
-    class Menu(val app: LauncherApp, val items: List<MenuItem>, val collection: String?) : Screen {
+    class Menu(val app: LauncherApp, val items: List<MenuItem>, val collection: String?, val group: String?) : Screen {
         val list = PillListState()
     }
 
@@ -527,6 +652,32 @@ private sealed interface Screen {
 
     /** A new collection's name for [app], in the text editor. */
     class NewCollection(val app: LauncherApp) : Screen
+
+    /** The groups (#69), automatic and the user's, from the root's Groups row. */
+    class GroupsList : Screen {
+        val list = PillListState()
+    }
+
+    /** The apps of the group called [name], in the main list's order. */
+    class Group(val name: String) : Screen {
+        val state = CollectionState()
+    }
+
+    /** The menu of the group called [name]: its [items] rename or delete it. */
+    class GroupMenu(val name: String, val items: List<MenuItem>) : Screen {
+        val list = PillListState()
+    }
+
+    /** The user groups [app] can be added to, and a new one. */
+    class GroupChoice(val app: LauncherApp) : Screen {
+        val list = PillListState()
+    }
+
+    /** A new group's name for [app], in the text editor. */
+    class NewGroup(val app: LauncherApp) : Screen
+
+    /** A new name for the user group called [name], in the text editor, which starts with it. */
+    class RenameGroup(val name: String) : Screen
 
     /** A new name for [app] (#72), in the text editor, which starts with the name it is listed under. */
     class Rename(val app: LauncherApp) : Screen

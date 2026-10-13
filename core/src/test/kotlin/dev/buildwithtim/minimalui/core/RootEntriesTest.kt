@@ -33,7 +33,7 @@ class RootEntriesTest {
     fun `the newest recents come first, then one blank row, then the full list, which still holds them`() {
         val entries = rootEntries(apps, opened("Bell", "Easel"), Settings())
 
-        assertEquals(listOf(recent("Easel"), recent("Bell"), RootEntry.Blank) + all, entries)
+        assertEquals(listOf(recent("Easel"), recent("Bell"), RootEntry.Blank()) + all, entries)
     }
 
     @Test
@@ -42,11 +42,11 @@ class RootEntriesTest {
 
         assertEquals(3, Settings().recentlyUsed)
         assertEquals(
-            listOf(recent("Flute"), recent("Easel"), recent("Drums"), RootEntry.Blank),
+            listOf(recent("Flute"), recent("Easel"), recent("Drums"), RootEntry.Blank()),
             rootEntries(apps, recents, Settings()).take(4),
         )
-        assertEquals(5, rootEntries(apps, recents, recentlyUsed(Choice.Five)).indexOf(RootEntry.Blank))
-        assertEquals(6, rootEntries(apps, recents, recentlyUsed(Choice.Fifteen)).indexOf(RootEntry.Blank))
+        assertEquals(5, rootEntries(apps, recents, recentlyUsed(Choice.Five)).indexOf(RootEntry.Blank()))
+        assertEquals(6, rootEntries(apps, recents, recentlyUsed(Choice.Fifteen)).indexOf(RootEntry.Blank()))
     }
 
     @Test
@@ -76,7 +76,7 @@ class RootEntriesTest {
         val entries = rootEntries(apps, RecentApps(), Settings(), favourites("Easel", "Bell"))
 
         assertEquals(
-            listOf(favourite("Bell"), favourite("Easel"), RootEntry.Blank) + allStarred(setOf("Bell", "Easel")),
+            listOf(favourite("Bell"), favourite("Easel"), RootEntry.Blank()) + allStarred(setOf("Bell", "Easel")),
             entries,
         )
     }
@@ -87,7 +87,7 @@ class RootEntriesTest {
         val entries = rootEntries(apps, recents, Settings(), favourites("Drums", "Bell"))
 
         assertEquals(
-            listOf(favourite("Bell"), favourite("Drums"), recent("Camera"), recent("Alarm"), RootEntry.Blank),
+            listOf(favourite("Bell"), favourite("Drums"), recent("Camera"), recent("Alarm"), RootEntry.Blank()),
             entries.take(5),
         )
     }
@@ -104,7 +104,7 @@ class RootEntriesTest {
         val entries = rootEntries(apps, opened("Bell"), Settings(), favourites("Alarm"), games)
 
         assertEquals(
-            listOf(favourite("Alarm"), recent("Bell"), RootEntry.Collections, RootEntry.Blank),
+            listOf(favourite("Alarm"), recent("Bell"), RootEntry.Collections, RootEntry.Blank()),
             entries.take(4),
         )
     }
@@ -112,7 +112,7 @@ class RootEntriesTest {
     @Test
     fun `the Collections row alone still gets the blank row below it`() {
         assertEquals(
-            listOf(RootEntry.Collections, RootEntry.Blank) + all,
+            listOf(RootEntry.Collections, RootEntry.Blank()) + all,
             rootEntries(apps, RecentApps(), Settings(), collections = games),
         )
     }
@@ -125,13 +125,41 @@ class RootEntriesTest {
         assertEquals(withoutDrums.map { RootEntry.App(it) }, entries)
     }
 
+    private val chess = LauncherApp("Chess", "pkg.Chess", "pkg.Chess.Main", AppCategory.Games)
+
+    @Test
+    fun `with a group shown, one Groups row ends the root below its own blank row, after the full list`() {
+        val withChess = apps + chess
+        val entries = rootEntries(withChess, opened("Bell"), Settings())
+
+        assertEquals(
+            listOf(recent("Bell"), RootEntry.Blank()) + withChess.map { RootEntry.App(it) } +
+                RootEntry.Blank("groups-blank") + RootEntry.Groups,
+            entries,
+        )
+        assertEquals(entries.size, entries.map { it.key }.toSet().size)
+    }
+
+    @Test
+    fun `a user group alone still makes the Groups row, and an empty one does not`() {
+        val work = UserGroups().added("Work", app("Bell"))
+
+        assertEquals(
+            all + RootEntry.Blank("groups-blank") + RootEntry.Groups,
+            rootEntries(apps, RecentApps(), Settings(), groups = work),
+        )
+        assertEquals(all.drop(2), rootEntries(apps.drop(2), RecentApps(), Settings(), groups = work))
+    }
+
     @Test
     fun `only the blank row cannot be selected`() {
-        assertFalse(RootEntry.Blank.selectable)
+        assertFalse(RootEntry.Blank().selectable)
         assertTrue(recent("Bell").selectable)
         assertTrue(RootEntry.App(app("Bell")).selectable)
         assertTrue(RootEntry.Collections.selectable)
         assertEquals(null, RootEntry.Collections.app)
+        assertTrue(RootEntry.Groups.selectable)
+        assertEquals(null, RootEntry.Groups.app)
     }
 
     @Test

@@ -11,10 +11,10 @@ import dev.buildwithtim.minimalui.core.MenuItem
 import dev.buildwithtim.minimalui.core.StatusPill
 
 /**
- * The context menu of one app, a second list in the app list's style that takes its place on screen (#67). The
- * [title] (the app's name) sits in a dark-grey pill in the row below the [status] pill, not selectable; the [items] follow, the first
- * one selected. Choosing an enabled item calls [onChoose]; Back or Esc calls [onClose]. The selection lives in
- * [state], so the menu comes back on its row from a list opened from it.
+ * A menu, a second list in the app list's style that takes its place on screen (#67): one app's context menu, or a
+ * group's (#69). The [title] (the app's or group's name) sits in a dark-grey pill in the row below the [status] pill,
+ * not selectable; the [items] follow, the first one selected. Choosing an enabled item calls [onChoose]; Back or Esc
+ * calls [onClose]. The selection lives in [state], so the menu comes back on its row from a list opened from it.
  */
 @Composable
 fun ContextMenu(
@@ -53,9 +53,13 @@ private val MenuAction.label: Int
         MenuAction.RemoveFromCollection -> R.string.menu_remove_collection
         MenuAction.MoveUp -> R.string.menu_move_up
         MenuAction.MoveDown -> R.string.menu_move_down
+        MenuAction.AddToGroup -> R.string.menu_add_group
+        MenuAction.RemoveFromGroup -> R.string.menu_remove_group
         MenuAction.Rename -> R.string.menu_rename
         MenuAction.Hide -> R.string.menu_hide
         MenuAction.Unhide -> R.string.menu_unhide
         MenuAction.RemoveFromRecents -> R.string.menu_remove_recent
         MenuAction.ClearRecents -> R.string.menu_clear_recents
+        MenuAction.RenameGroup -> R.string.menu_rename_group
+        MenuAction.DeleteGroup -> R.string.menu_delete_group
     }

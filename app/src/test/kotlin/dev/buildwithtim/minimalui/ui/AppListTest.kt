@@ -63,7 +63,7 @@ class AppListTest {
 
     /** The root list with [recent] in its block above the blank row, then the full [list]. */
     private fun root(recent: List<LauncherApp>, list: List<LauncherApp>) = ListContent.Apps(
-        recent.map { RootEntry.App(it, RootSection.Recent) } + RootEntry.Blank + list.map { RootEntry.App(it) },
+        recent.map { RootEntry.App(it, RootSection.Recent) } + RootEntry.Blank() + list.map { RootEntry.App(it) },
     )
 
     private fun show(content: ListContent) {
@@ -80,6 +80,7 @@ class AppListTest {
                         onOpen = { opened += it },
                         onMenu = { menus += it },
                         onCollections = { collectionsOpened++ },
+                        onGroups = { groupsOpened++ },
                         state = state,
                         status = status,
                     )
@@ -473,7 +474,7 @@ class AppListTest {
         val calendar = apps[1]
         show(
             ListContent.Apps(
-                listOf(RootEntry.App(calendar, RootSection.Favourite, isFavourite = true), RootEntry.Blank) +
+                listOf(RootEntry.App(calendar, RootSection.Favourite, isFavourite = true), RootEntry.Blank()) +
                     apps.map { RootEntry.App(it, isFavourite = it == calendar) },
             ),
         )
@@ -485,7 +486,7 @@ class AppListTest {
 
     @Test
     fun `the Collections row opens the collections, and has no menu`() {
-        show(ListContent.Apps(listOf(RootEntry.Collections, RootEntry.Blank) + apps.map { RootEntry.App(it) }))
+        show(ListContent.Apps(listOf(RootEntry.Collections, RootEntry.Blank()) + apps.map { RootEntry.App(it) }))
 
         rule.onNodeWithText("Collections").assertIsFocused()
         rule.onRoot().performKeyInput { pressKey(Key.Menu) }
@@ -495,18 +496,36 @@ class AppListTest {
         assertEquals(emptyList<LauncherApp>(), menus + opened)
     }
 
+    private var groupsOpened = 0
+
+    @Test
+    fun `the Groups row ends the list below its blank row, Up from the top wraps to it, and it has no menu`() {
+        val groupsBlank = RootEntry.Blank("groups-blank")
+        show(ListContent.Apps(apps.map { RootEntry.App(it) } + groupsBlank + RootEntry.Groups))
+
+        press(Key.DirectionUp)
+        rule.onNodeWithText("Groups").assertIsFocused()
+        rule.onRoot().performKeyInput { pressKey(Key.Menu) }
+        press(Key.Enter)
+        press(Key.DirectionUp)
+
+        assertEquals(1, groupsOpened)
+        assertEquals(emptyList<LauncherApp>(), menus + opened)
+        rule.onNodeWithText("Camera").assertIsFocused()
+    }
+
     @Test
     fun `a list that comes back with the blank row where its selected row was selects the next row`() {
         val starred = RootEntry.App(apps[1], RootSection.Favourite, isFavourite = true)
         val full = apps.map { RootEntry.App(it, isFavourite = it == apps[1]) }
-        show(ListContent.Apps(listOf(starred, RootEntry.Collections, RootEntry.Blank) + full))
+        show(ListContent.Apps(listOf(starred, RootEntry.Collections, RootEntry.Blank()) + full))
         press(Key.DirectionDown)
         rule.onNodeWithText("Collections").assertIsFocused()
 
         // The collections list takes the list's place, and its last collection goes, taking the Collections row.
         listShown = false
         rule.waitForIdle()
-        content = ListContent.Apps(listOf(starred, RootEntry.Blank) + full)
+        content = ListContent.Apps(listOf(starred, RootEntry.Blank()) + full)
         listShown = true
 
         // The next row down, the first of the full list.
