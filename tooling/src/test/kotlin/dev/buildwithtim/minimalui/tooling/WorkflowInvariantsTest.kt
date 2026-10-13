@@ -14,6 +14,7 @@ class WorkflowInvariantsTest {
      * workflow or widening a scope means editing these maps, so the change is reviewed rather than slipped in.
      */
     private val topLevelPermissions = mapOf(
+        "auto-review.yml" to mapOf("contents" to "read"),
         "ci.yml" to mapOf("contents" to "read"),
         "claude.yml" to mapOf("contents" to "read"),
         // Sanctioned pull_request_target exception: labels PRs, never checks out code.
@@ -23,6 +24,10 @@ class WorkflowInvariantsTest {
     )
 
     private val jobPermissions = mapOf(
+        // Pushes the suggestions commit and posts the report; only trusted comments on same-repo PRs reach it.
+        "auto-review.yml" to mapOf(
+            "apply" to mapOf("contents" to "write", "pull-requests" to "write"),
+        ),
         "claude.yml" to mapOf(
             "claude" to mapOf(
                 "contents" to "write",

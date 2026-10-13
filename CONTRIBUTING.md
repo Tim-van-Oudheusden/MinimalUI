@@ -116,6 +116,21 @@ Run these before opening a PR (CI runs the same on every PR):
 | `./gradlew lint`           | Android lint, warnings as errors              |
 | `./gradlew assembleDebug`  | Debug APK build                               |
 
+### Applying review suggestions
+
+Comment `/apply-suggestions` on a pull request to commit every ```` ```suggestion ```` block that reviewers with write
+access (human or Claude) left on its current diff. `.github/workflows/auto-review.yml` commits them to the PR branch as
+`chore(review): apply review suggestions (#N)` and posts a report comment listing what was applied and what was skipped:
+outdated suggestions, ones on the base side of the diff, ranges past the end of the file or overlapping an already
+applied range, comments holding more than one suggestion block, paths outside the checkout, and files under
+`.github/workflows/` (the workflow token cannot push those, and one such edit would sink the whole push). A suggestion
+block ends only at a fence that starts a line. Only `OWNER`/`MEMBER`/`COLLABORATOR` comments trigger it and only their
+suggestions count; fork pull requests are refused, and so is a head committed after the command comment (comment again
+once you have looked at it). Resolved or declined review threads are not detected (the REST API does not expose thread
+state): delete or edit a suggestion you do not want before commenting. The apply script
+(`scripts/apply-review-suggestions.sh`) runs from the default branch, never from the PR. Pushes made with the workflow
+token start no CI run, so push again or re-run CI before merging.
+
 ### Handing work to Claude Code
 
 `.github/workflows/claude.yml` runs [Claude Code](https://github.com/anthropics/claude-code-action) in CI. Label an
