@@ -2,8 +2,8 @@
   "margin": 2,
   "floors": {
     "app": {
-      "functions": 0,
-      "lines": 0
+      "functions": 93,
+      "lines": 84
     },
     "core": {
       "functions": 100,
