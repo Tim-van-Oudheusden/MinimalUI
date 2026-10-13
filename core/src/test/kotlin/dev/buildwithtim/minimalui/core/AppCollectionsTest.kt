@@ -42,6 +42,14 @@ class AppCollectionsTest {
     }
 
     @Test
+    fun `a name keeps spaces and punctuation, its tabs and line breaks become spaces, and it reads back the same`() {
+        val collections = AppCollections().added("My games!\tnew\n", app("Bell")).added("Work, etc.", app("Alarm"))
+
+        assertEquals(listOf("My games! new", "Work, etc."), collections.names(installed))
+        assertEquals(collections, AppCollections.fromStored(collections.stored()))
+    }
+
+    @Test
     fun `collections are named in alphabetical order, ignoring case`() {
         val collections = AppCollections().added("work", app("Bell")).added("Games", app("Alarm"))
             .added("Apps", app("Camera"))

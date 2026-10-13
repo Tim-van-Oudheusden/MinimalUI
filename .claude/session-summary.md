@@ -10,17 +10,20 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 ## Latest session
 
 - **Date:** 2026-10-13
-- **Worked:** #71 — hide apps (stack row 8 of the #60 interface stack, on `feat/68-favourites`, PR #102).
-- **Outcome:** D6 (b), way back = both. Core `HiddenApps` (by component; `hidden(app, settingsPackage)` refuses
-  Android's Settings and the MinimalUI settings row; `unhidden`, `visibleFrom`, `shownFrom` alphabetical, stored),
-  `listContent(..., hidden)` (root without them; a query lists them after the visible matches with
-  `RootEntry.App.isHidden`), `MenuAction.Hide` / `Unhide` with `AppFacts.isHidden`, `SettingsLink.HiddenApps`.
-  `AppCollections.moved` now keeps apps it cannot show in place instead of dropping them. App: `HiddenAppsStore`
-  (prefs "hidden_apps"), `ui/HiddenAppsList.kt`, `PillList(dim = …)` draws a working row in `DimText`.
-- **Open follow-ups:** none for #71. Hidden state is never pruned on uninstall (documented choice: a reinstall stays
-  hidden).
+- **Worked:** #72 — rename apps and tell apart duplicate labels (stack row 9 of the #60 interface stack, on
+  `feat/71-hide-apps`, PR #103).
+- **Outcome:** D7 (b) rename + duplicates (b) Cannoli-style suffix. Core `Aliases` (by component, never pruned;
+  `renamed` clears on blank or the system label; `labelled(installed, settingsPackage)` re-sorts and keeps the
+  MinimalUI settings row after Android's Settings; stored), `duplicateSuffixes` (equal under the list collator →
+  package, or short activity class within one package), shared `labelCollator()` and `typedName()` (one line, trimmed;
+  collection names use it too), `MenuAction.Rename` + `AppFacts.isLauncherSettings`. App: `AliasesStore` (prefs
+  "aliases"), `ui/TextEntry.kt` (one editor for Rename and New collection, replacing `NewCollection`),
+  `PillList(suffix = …)` draws the dim 0.75× suffix in the same Text.
+- **Open follow-ups:** none for #72.
 - **Notes for next session:**
-  - Collections and the root take `visibleApps` in `MainActivity`; the Hidden apps list and the filter take all apps.
-  - Removing the focused row in place (Hidden apps) lets focus land on another row, whose `onFocused` moves the
-    selection: re-select the wanted row in a `LaunchedEffect(items)` after the shorter list composes.
+  - `MainActivity.apps` is now derived (`loaded` system-labelled + `aliases`); every list takes it, so aliases show
+    everywhere. Rename looks up the system-labelled app in `loaded`.
+  - Use the `TextFieldState` `BasicTextField` (not the `TextFieldValue` one): the latter drops keys sent faster than a
+    recomposition (Backspace right after a letter).
+  - Robolectric: wait for the editor's field to be focused before dispatching keys; Shift meta for capitals.
   - No JDK on the host: run Gradle via the podman sandbox (`/tmp/gates.sh`).

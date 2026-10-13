@@ -45,8 +45,12 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.em
 import dev.buildwithtim.minimalui.core.ListPosition
 import dev.buildwithtim.minimalui.core.StatusPill
 import dev.buildwithtim.minimalui.core.listRhythm
@@ -54,8 +58,14 @@ import dev.buildwithtim.minimalui.core.paged
 import dev.buildwithtim.minimalui.core.selecting
 import dev.buildwithtim.minimalui.core.stepped
 
-/** Grey for a row that is listed but cannot be chosen, or that is listed though hidden (#71). */
+/**
+ * Grey for a row that is listed but cannot be chosen, or that is listed though hidden (#71), and for the suffix that
+ * tells apart apps of the same name (#72).
+ */
 internal val DimText = Color(0xFF808080)
+
+/** The duplicate-name suffix's size against the label's, Cannoli's 0.75. */
+internal const val SuffixScale = 0.75f
 
 /**
  * Where a [PillList] is: the selected row, the row at the top of the screen, and the scroll. Held by the caller, so a
@@ -80,8 +90,10 @@ class PillListState {
 /**
  * The list every screen uses: one row per item, paged a whole screenful of [rowsPerPage] rows at a time, the selected
  * row's label in an inverted pill that hugs it (see BRANDING.md) and holds focus; a row's [value], when it has one,
- * sits at its right end. Up/Down move one row and wrap around at the ends, except while held. Left/Right turn a page,
- * stopping at the ends. Enter, D-pad centre or a tap confirms a row; a disabled row is drawn dim and confirms nothing.
+ * sits at its right end. A row's [suffix], when it has one (what tells apart apps of the same name, #72), follows its
+ * label on the same line, smaller and dim, and is cut off first when the row is too narrow for both. Up/Down move one
+ * row and wrap around at the ends, except while held. Left/Right turn a page, stopping at the ends. Enter, D-pad centre
+ * or a tap confirms a row; a disabled row is drawn dim and confirms nothing.
  * A [dim] row is drawn dim too, selected or not, yet works as any other (a hidden app that type-to-filter found).
  * An item that is not [selectable] is an empty row (the root list's blank row): it takes a row on every page, and the
  * selection skips it. Holding Enter or D-pad centre until it repeats, or a touch long-press, calls [onLongPress]
@@ -104,6 +116,7 @@ internal fun <T> PillList(
     onKey: (Key, T) -> Boolean = { _, _ -> false },
     value: (T) -> String? = { null },
     dim: (T) -> Boolean = { false },
+    suffix: (T) -> String? = { null },
 ) {
     val count = items.size
     val blank = { row: Int -> !selectable(items[row]) }
@@ -166,6 +179,7 @@ internal fun <T> PillList(
             } else {
                 PillRow(
                     label = label(item),
+                    suffix = suffix(item),
                     value = value(item),
                     height = rowHeight,
                     enabled = enabled(item),
@@ -249,6 +263,7 @@ internal fun HeaderLine(text: String, height: Dp, pill: Boolean = false) {
 @Composable
 private fun PillRow(
     label: String,
+    suffix: String?,
     value: String?,
     height: Dp,
     enabled: Boolean,
@@ -296,7 +311,14 @@ private fun PillRow(
     ) {
         Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
             Text(
-                text = label,
+                // One text, so the label keeps the room it needs and only the suffix is cut short on a narrow row.
+                text = buildAnnotatedString {
+                    append(label)
+                    if (suffix != null) {
+                        append(' ')
+                        withStyle(SpanStyle(color = DimText, fontSize = SuffixScale.em)) { append(suffix) }
+                    }
+                },
                 color = when {
                     !enabled || dim -> DimText
                     focused -> colors.onPrimary

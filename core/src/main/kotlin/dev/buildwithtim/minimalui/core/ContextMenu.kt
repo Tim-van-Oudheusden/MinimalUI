@@ -1,6 +1,6 @@
 package dev.buildwithtim.minimalui.core
 
-/** What a row of the per-app context menu does. Later features add their own kinds (Hide, Rename, …). */
+/** What a row of the per-app context menu does. Later features add their own kinds. */
 enum class MenuAction {
     /** Android's App info screen for the app. */
     AppInfo,
@@ -26,6 +26,9 @@ enum class MenuAction {
     /** Moves the app one row down in the collection the menu was opened in. */
     MoveDown,
 
+    /** Opens the text editor to give the app a name of the user's own (#72). */
+    Rename,
+
     /** Hides the app from the root list and the collections; type-to-filter still finds it. */
     Hide,
 
@@ -47,9 +50,10 @@ data class CollectionPlace(val row: Int, val count: Int)
 
 /**
  * What the menu needs to know about the app it was opened on: whether it is a system app ([isSystem]), the Settings
- * entry the list always keeps ([isSettingsEntry]), one of the recently used apps ([isRecent]), whether there are
- * any recently used apps at all ([hasRecents]), whether it is a favourite ([isFavourite]), its [place] when the
- * menu was opened inside a collection, and whether it is hidden ([isHidden]).
+ * entry the list always keeps ([isSettingsEntry]), MinimalUI's own settings row ([isLauncherSettings], one of the two),
+ * one of the recently used apps ([isRecent]), whether there are any recently used apps at all ([hasRecents]), whether
+ * it is a favourite ([isFavourite]), its [place] when the menu was opened inside a collection, and whether it is
+ * hidden ([isHidden]).
  */
 data class AppFacts(
     val isSystem: Boolean,
@@ -59,13 +63,16 @@ data class AppFacts(
     val isFavourite: Boolean = false,
     val place: CollectionPlace? = null,
     val isHidden: Boolean = false,
+    val isLauncherSettings: Boolean = false,
 )
 
 /**
  * The context menu for an app, top to bottom. Uninstall stays listed but disabled for a system app, which cannot be
  * removed, and for the Settings entry, which keeps the way back to another home app open. One row adds the app to the
  * favourites or removes it, by its state. Inside a collection the app can leave it or move, though not past either
- * end. One row hides the app or shows it again, by its state; disabled for the Settings entry, which is never hidden.
+ * end. Rename is disabled for MinimalUI's own settings row, which is the launcher's, not an app; Android's Settings can
+ * be renamed. One row hides the app or shows it again, by its state; disabled for the Settings entry, which is never
+ * hidden.
  * The recents rows show only when they would change something.
  */
 fun contextMenu(facts: AppFacts): List<MenuItem> = buildList {
@@ -78,6 +85,7 @@ fun contextMenu(facts: AppFacts): List<MenuItem> = buildList {
         add(MenuItem(MenuAction.MoveUp, enabled = place.row > 0))
         add(MenuItem(MenuAction.MoveDown, enabled = place.row < place.count - 1))
     }
+    add(MenuItem(MenuAction.Rename, enabled = !facts.isLauncherSettings))
     add(MenuItem(if (facts.isHidden) MenuAction.Unhide else MenuAction.Hide, enabled = !facts.isSettingsEntry))
     if (facts.isRecent) add(MenuItem(MenuAction.RemoveFromRecents))
     if (facts.hasRecents) add(MenuItem(MenuAction.ClearRecents))

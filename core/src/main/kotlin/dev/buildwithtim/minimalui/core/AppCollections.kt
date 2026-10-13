@@ -1,8 +1,5 @@
 package dev.buildwithtim.minimalui.core
 
-import java.text.Collator
-import java.util.Locale
-
 /**
  * The user's collections (#68), MinUI-style: named lists of apps, each in the user's own order (the order the apps
  * were added, then as moved), never nested. A collection exists only while it holds an app, so removing its last app
@@ -11,11 +8,12 @@ import java.util.Locale
 data class AppCollections(val byName: Map<String, List<String>> = emptyMap()) {
 
     /**
-     * [app] added at the end of the collection called [name], trimmed, which is created when there is none. A blank
-     * name creates nothing, and an app the collection already holds stays where it is.
+     * [app] added at the end of the collection called [name], made one line and trimmed ([typedName]), which is
+     * created when there is none. A blank name creates nothing, and an app the collection already holds stays where it
+     * is.
      */
     fun added(name: String, app: LauncherApp): AppCollections {
-        val trimmed = name.trim()
+        val trimmed = typedName(name)
         val components = byName[trimmed].orEmpty()
         if (trimmed.isEmpty() || app.component in components) return this
         return AppCollections(byName + (trimmed to components + app.component))
@@ -50,12 +48,9 @@ data class AppCollections(val byName: Map<String, List<String>> = emptyMap()) {
         return byName[name].orEmpty().mapNotNull(byComponent::get)
     }
 
-    /** The collections holding an app among [installed], alphabetical: the others have nothing to show. */
-    fun names(installed: List<LauncherApp>): List<String> {
-        // SECONDARY strength, as the app list: case is ignored, accented letters sort next to their base letter.
-        val collator = Collator.getInstance(Locale.ROOT).apply { strength = Collator.SECONDARY }
-        return byName.keys.filter { appsIn(it, installed).isNotEmpty() }.sortedWith(collator)
-    }
+    /** The collections holding an app among [installed], alphabetical as apps are: the others have nothing to show. */
+    fun names(installed: List<LauncherApp>): List<String> =
+        byName.keys.filter { appsIn(it, installed).isNotEmpty() }.sortedWith(labelCollator())
 
     /** The collections [names] lists that [app] could still be added to. */
     fun namesWithout(app: LauncherApp, installed: List<LauncherApp>): List<String> =

@@ -1,19 +1,9 @@
 package dev.buildwithtim.minimalui.ui
 
-import androidx.compose.foundation.focusable
-import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
-import androidx.compose.runtime.remember
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.onPreviewKeyEvent
-import androidx.compose.ui.input.key.type
 import androidx.compose.ui.res.stringResource
 import dev.buildwithtim.minimalui.R
 import dev.buildwithtim.minimalui.core.LauncherApp
@@ -59,9 +49,9 @@ class CollectionState {
 }
 
 /**
- * One collection called [name]: its [apps] in the user's order, a favourite with its `★` ([isFavourite]). Enter opens
- * an app ([onOpen]); the Menu key, holding Enter or a long-press asks for its menu ([onMenu]); Back or Esc calls
- * [onClose]. When an app moves, the selection moves with it.
+ * One collection called [name]: its [apps] in the user's order, a favourite with its `★` ([isFavourite]), an app whose
+ * name another shares with its [suffix] (#72). Enter opens an app ([onOpen]); the Menu key, holding Enter or a
+ * long-press asks for its menu ([onMenu]); Back or Esc calls [onClose]. When an app moves, the selection moves with it.
  */
 @Composable
 internal fun CollectionApps(
@@ -73,6 +63,7 @@ internal fun CollectionApps(
     onClose: () -> Unit,
     state: CollectionState,
     status: StatusPill? = null,
+    suffix: (LauncherApp) -> String? = { null },
 ) {
     TitledList(name, status, onClose) { rowHeight, rowsPerPage ->
         LaunchedEffect(apps) {
@@ -90,6 +81,7 @@ internal fun CollectionApps(
             items = apps,
             key = { "${it.packageName}/${it.activityName}" },
             label = { shownLabel(it, isFavourite(it)) },
+            suffix = suffix,
             rowHeight = rowHeight,
             rowsPerPage = rowsPerPage,
             onConfirm = onOpen,
@@ -136,43 +128,6 @@ internal fun CollectionChoice(
             onConfirm = { row -> if (row == null) onNew() else onChoose(row) },
             onKey = { key, _ -> closesOnEscape(key, onClose) },
         )
-    }
-}
-
-/**
- * The name of a new collection, typed as the root's filter is (the activity edits [name]): it shows on the line under
- * the [title] pill with an underscore after it. Enter calls [onDone]; Back or Esc calls [onClose].
- */
-@Composable
-internal fun NewCollection(
-    title: String,
-    name: String,
-    onDone: () -> Unit,
-    onClose: () -> Unit,
-    status: StatusPill? = null,
-) {
-    val requester = remember { FocusRequester() }
-
-    TitledList(title, status, onClose) { rowHeight, _ ->
-        // Focused, so Enter and Esc reach it; letters, digits and Backspace pass on to the activity, which types them.
-        Box(
-            Modifier
-                .focusRequester(requester)
-                .focusable()
-                .onPreviewKeyEvent { event ->
-                    if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
-                    when (event.key) {
-                        Key.Enter, Key.NumPadEnter, Key.DirectionCenter -> {
-                            if (event.nativeKeyEvent.repeatCount == 0) onDone()
-                            true
-                        }
-                        else -> closesOnEscape(event.key, onClose)
-                    }
-                },
-        ) {
-            HeaderLine("${name}_", rowHeight)
-        }
-        LaunchedEffect(Unit) { requester.requestFocus() }
     }
 }
 

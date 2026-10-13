@@ -33,8 +33,9 @@ import dev.buildwithtim.minimalui.core.selecting
  * The root list (#70), in a [PillList]: one row per entry of [content], an app's row opening it ([onOpen]) on Enter,
  * D-pad centre or a tap; the Menu key, holding Enter or D-pad centre, or a touch long-press asks for its context menu
  * ([onMenu]). A favourite's name has a `★` before it (#68); a hidden app, listed only when the query finds it (#71), is
- * drawn dim. The Collections row opens the collections ([onCollections]) and has no menu. The blank row below the block
- * at the top is empty, and the selection skips it.
+ * drawn dim. An app whose name another app shares has its [suffix] after it, small and dim (#72). The Collections row
+ * opens the collections ([onCollections]) and has no menu. The blank row below the block at the top is empty, and the
+ * selection skips it.
  *
  * The first row is selected when the apps first arrive, so the keyboard works without touching the screen, and again
  * whenever [homePresses] or the type-to-filter [query] changes. Each new [returned] selects its row instead, keeping
@@ -57,6 +58,7 @@ fun AppList(
     state: AppListState = rememberAppListState(),
     returned: Returned? = null,
     status: StatusPill? = null,
+    suffix: (LauncherApp) -> String? = { null },
 ) {
     val entries = (content as? ListContent.Apps)?.entries.orEmpty()
     val list = state.list
@@ -145,6 +147,7 @@ fun AppList(
                     }
                 },
                 dim = { (it as? RootEntry.App)?.isHidden == true },
+                suffix = { entry -> entry.app?.let(suffix) },
             )
         }
         // Centred on the whole screen, as MinUI does, whether or not the query line is showing above it.

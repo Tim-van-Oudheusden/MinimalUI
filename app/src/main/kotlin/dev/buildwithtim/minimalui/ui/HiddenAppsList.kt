@@ -22,7 +22,8 @@ import dev.buildwithtim.minimalui.core.selecting
 /**
  * The Hidden apps list (#71), opened from the settings: the hidden [apps] under the [title] pill, Enter or a tap
  * showing one again ([onUnhide]). The row then leaves the list and the selection stays on its row number, or the new
- * last row. With none hidden, a centred message says so. Back or Esc calls [onClose].
+ * last row. An app whose name another shares has its [suffix] after it (#72). With none hidden, a centred message
+ * says so. Back or Esc calls [onClose].
  */
 @Composable
 internal fun HiddenAppsList(
@@ -32,6 +33,7 @@ internal fun HiddenAppsList(
     onClose: () -> Unit,
     state: PillListState,
     status: StatusPill? = null,
+    suffix: (LauncherApp) -> String? = { null },
 ) {
     TitledList(title, status, onClose) { rowHeight, rowsPerPage ->
         if (apps.isEmpty()) {
@@ -60,6 +62,7 @@ internal fun HiddenAppsList(
                 items = apps,
                 key = { "${it.packageName}/${it.activityName}" },
                 label = { it.label },
+                suffix = suffix,
                 rowHeight = rowHeight,
                 rowsPerPage = rowsPerPage,
                 onConfirm = { app ->

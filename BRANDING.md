@@ -50,7 +50,14 @@ a plain list, driven entirely by keys, that gets out of the way. It is not a the
   (`#808080`, the colour of an action that does not apply) whether selected or not, so it reads as hidden.
 - **Collections:** the `Collections` row opens a list of the collections' names, each opening its apps in the user's
   order (MinUI); both are lists in the same style, titled `Collections` and the collection's name. A new collection's
-  name is typed on the line below its `New collection` title, with an underscore after it, like the filter.
+  name is typed in the text editor, titled `New collection`.
+- **Text editor:** one screen for every name the user types (`Rename`, `New collection`): its title in the dark-grey
+  pill, then the text on the line below, aligned with the title's text, in the rows' type and white, with a white
+  cursor. No box or underline is drawn around it. It opens focused, prefilled with the current name for Rename.
+- **Duplicate names:** when apps are listed under the same name, each shows a suffix after the name on the same line,
+  as in Cannoli: its package name (or its activity's short class name when they share a package), in grey (`#808080`)
+  at 0.75× the label's size. Unique names show none. The name keeps priority on a narrow row: the suffix is cut off
+  with an ellipsis first. The `★` is drawn before the name only, never on the suffix.
 - **Menus:** a menu (such as an app's context menu) is another list in the same style that takes the list's place,
   one list at a time. Its title, the app's name, sits in a dark-grey (`#262626`) pill below the status pill, as MinUI
   marks its in-game menu's title; an action that does not apply stays listed in grey (`#808080`) and does nothing.

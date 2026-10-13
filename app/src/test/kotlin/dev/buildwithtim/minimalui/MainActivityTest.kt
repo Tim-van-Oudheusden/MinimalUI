@@ -39,6 +39,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.unit.em
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -1045,8 +1046,9 @@ class MainActivityTest {
         awaitListed("App info", listed = false)
         if (new) {
             chooseRow("New collection")
-            typeText(activity, name)
-            awaitListed("${name}_")
+            awaitEditor()
+            typeChars(activity, name)
+            rule.waitUntil(timeoutMillis = 5_000) { editorText() == name }
             press(Key.Enter)
         } else {
             chooseRow(name)
@@ -1147,18 +1149,20 @@ class MainActivityTest {
         openMenu(activity)
         chooseRow("Add to collection")
         chooseRow("New collection")
+        awaitEditor()
         typeText(activity, "gamex")
         type(activity, KeyEvent.KEYCODE_DEL)
         typeText(activity, "s")
-        awaitListed("games_")
+        rule.waitUntil(timeoutMillis = 5_000) { editorText() == "games" }
 
         type(activity, KeyEvent.KEYCODE_ESCAPE)
-        awaitListed("games_", listed = false)
+        rule.waitUntil(timeoutMillis = 5_000) { rule.onAllNodes(editable).fetchSemanticsNodes().isEmpty() }
         rule.onNodeWithText("New collection").assertIsFocused()
         chooseRow("New collection")
-        awaitListed("_")
+        awaitEditor()
+        assertEquals("", editorText())
         press(Key.Enter)
-        rule.onNodeWithText("_").assertExists()
+        rule.onNode(editable).assertExists()
         activity.get().onBackPressedDispatcher.onBackPressed()
         type(activity, KeyEvent.KEYCODE_ESCAPE)
         awaitListed("App info")
@@ -1458,6 +1462,189 @@ class MainActivityTest {
         openHiddenApps()
         awaitListed("Alarm")
         rule.onNodeWithText("Alarm").assertIsFocused()
+    }
+
+    /** Types [text] through [activity] as a hardware keyboard would: letters (capitals with Shift), digits, spaces. */
+    private fun typeChars(activity: ActivityController<MainActivity>, text: String) = text.forEach { char ->
+        val code = if (char == ' ') {
+            KeyEvent.KEYCODE_SPACE
+        } else {
+            KeyEvent.keyCodeFromString("KEYCODE_${char.uppercaseChar()}")
+        }
+        val meta = if (char.isUpperCase()) KeyEvent.META_SHIFT_ON or KeyEvent.META_SHIFT_LEFT_ON else 0
+        listOf(KeyEvent.ACTION_DOWN, KeyEvent.ACTION_UP).forEach { action ->
+            activity.get().dispatchKeyEvent(KeyEvent(0, 0, action, code, 0, meta))
+        }
+    }
+
+    /** The text editor's field. */
+    private val editable = SemanticsMatcher.keyIsDefined(SemanticsProperties.EditableText)
+
+    /** The text in the open text editor. */
+    private fun editorText(): String =
+        rule.onNode(editable).fetchSemanticsNode().config[SemanticsProperties.EditableText].text
+
+    /** Waits until the text editor is open with its field focused, so typed keys reach it. */
+    private fun awaitEditor() = rule.waitUntil(timeoutMillis = 5_000) {
+        rule.onAllNodes(editable and isFocused()).fetchSemanticsNodes().isNotEmpty()
+    }
+
+    /** From the selected app's menu, by keyboard: Rename, Backspace over the [current] name, then [name] and Enter. */
+    private fun rename(activity: ActivityController<MainActivity>, current: String, name: String) {
+        openMenu(activity)
+        chooseRow("Rename")
+        awaitEditor()
+        assertEquals(current, editorText())
+        repeat(current.length) { type(activity, KeyEvent.KEYCODE_DEL) }
+        typeChars(activity, name)
+        rule.waitUntil(timeoutMillis = 5_000) { editorText() == name }
+        type(activity, KeyEvent.KEYCODE_ENTER)
+        awaitListed("Rename", listed = false)
+    }
+
+    @Test
+    fun `Rename moves the app to its new sort place, selected there, and typing its new name finds it`() {
+        install("Alarm", "com.example.alarm")
+        install("Bell", "com.example.bell")
+        val activity = launch()
+        awaitListed("Alarm")
+        rule.onNodeWithText("Alarm").assertIsFocused()
+
+        rename(activity, current = "Alarm", name = "Zoo b")
+
+        awaitListed("Zoo b")
+        assertEquals(listOf("Bell", "MinimalUI", "MinimalUI settings", "Zoo b"), rowsMatching(activity, ""))
+        rule.onNodeWithText("Zoo b").assertIsFocused()
+        assertEquals(listOf("Zoo b"), rowsMatching(activity, "zo"))
+    }
+
+    @Test
+    fun `Esc or Back in the editor cancels, back on the Rename row, and the name stays`() {
+        install("Alarm", "com.example.alarm")
+        install("Bell", "com.example.bell")
+        val activity = launch()
+        awaitListed("Alarm")
+        openMenu(activity)
+        chooseRow("Rename")
+        awaitEditor()
+        typeChars(activity, "x")
+        rule.waitUntil(timeoutMillis = 5_000) { editorText() == "Alarmx" }
+
+        type(activity, KeyEvent.KEYCODE_ESCAPE)
+        awaitListed("App info")
+        rule.onNodeWithText("Rename").assertIsFocused()
+        press(Key.Enter)
+        awaitEditor()
+        assertEquals("Alarm", editorText())
+        activity.get().onBackPressedDispatcher.onBackPressed()
+        awaitListed("App info")
+        type(activity, KeyEvent.KEYCODE_ESCAPE)
+
+        awaitListed("Bell")
+        assertEquals(listOf("Alarm", "Bell", "MinimalUI", "MinimalUI settings"), rowsMatching(activity, ""))
+        rule.onNodeWithText("Alarm").assertIsFocused()
+    }
+
+    @Test
+    fun `typing in the editor does not filter the list below it`() {
+        install("Alarm", "com.example.alarm")
+        val activity = launch()
+        awaitListed("Alarm")
+        openMenu(activity)
+        chooseRow("Rename")
+        awaitEditor()
+        typeChars(activity, "q")
+        type(activity, KeyEvent.KEYCODE_ESCAPE)
+        awaitListed("App info")
+        type(activity, KeyEvent.KEYCODE_ESCAPE)
+
+        awaitListed("Alarm")
+        rule.onNodeWithText("q_").assertDoesNotExist()
+        assertEquals(listOf("Alarm", "MinimalUI", "MinimalUI settings"), rowsMatching(activity, ""))
+    }
+
+    @Test
+    fun `clearing the name gives the app back its system label and place`() {
+        install("Alarm", "com.example.alarm")
+        install("Bell", "com.example.bell")
+        val activity = launch()
+        awaitListed("Alarm")
+        rename(activity, current = "Alarm", name = "Zoo")
+        awaitListed("Zoo")
+        rule.onNodeWithText("Zoo").assertIsFocused()
+
+        rename(activity, current = "Zoo", name = "")
+
+        awaitListed("Alarm")
+        assertEquals(listOf("Alarm", "Bell", "MinimalUI", "MinimalUI settings"), rowsMatching(activity, ""))
+        rule.onNodeWithText("Alarm").assertIsFocused()
+    }
+
+    @Test
+    fun `a new name is kept when the launcher starts again, and the recently used block shows it`() {
+        install("Alarm", "com.example.alarm")
+        install("Bell", "com.example.bell")
+        val activity = launch()
+        awaitListed("Bell")
+        press(Key.DirectionDown)
+        rename(activity, current = "Bell", name = "Ring")
+        awaitListed("Ring")
+
+        closeActivity()
+        val restarted = launch()
+        awaitListed("Ring")
+        openInTurn(restarted, "Ring")
+
+        assertEquals(listOf("Ring", "Alarm", "MinimalUI", "MinimalUI settings", "Ring"), rowsMatching(restarted, ""))
+    }
+
+    @Test
+    fun `Rename is disabled for the MinimalUI settings row`() {
+        val activity = launch()
+        awaitListed("MinimalUI settings")
+        press(Key.DirectionUp)
+        rule.onNodeWithText("MinimalUI settings").assertIsFocused()
+        openMenu(activity)
+
+        rule.onNodeWithText("Rename").assertIsNotEnabled()
+    }
+
+    @Test
+    fun `apps of the same name show their package after it, small and dim, and a unique name shows none`() {
+        install("Phone", "com.example.dialer")
+        install("Phone", "com.example.phone")
+        install("Bell", "com.example.bell")
+        val activity = launch()
+        awaitListed("Bell")
+
+        assertEquals(
+            listOf("Bell", "MinimalUI", "MinimalUI settings", "Phone com.example.dialer", "Phone com.example.phone"),
+            rowsMatching(activity, ""),
+        )
+        val layouts = mutableListOf<TextLayoutResult>()
+        rule.onNodeWithText("Phone com.example.dialer", useUnmergedTree = true).fetchSemanticsNode()
+            .config[SemanticsActions.GetTextLayoutResult].action!!.invoke(layouts)
+        val text = layouts.single().layoutInput.text
+        val suffix = text.spanStyles.single()
+        assertEquals("com.example.dialer", text.text.substring(suffix.start, suffix.end))
+        assertEquals(DimText, suffix.item.color)
+        assertEquals(0.75f.em, suffix.item.fontSize)
+        // The filter matches the name only, never the suffix.
+        assertEquals(emptyList<String>(), rowsMatching(activity, "com"))
+    }
+
+    @Test
+    fun `a new collection's name takes spaces`() {
+        install("Alarm", "com.example.alarm")
+        val activity = launch()
+        awaitListed("Alarm")
+        addToCollection(activity, "My games", new = true)
+
+        awaitListed("Collections")
+        press(Key.DirectionUp)
+        rule.onNodeWithText("Collections").assertIsFocused()
+        press(Key.Enter)
+        awaitListed("My games")
     }
 }
 
