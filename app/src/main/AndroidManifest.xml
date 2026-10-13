@@ -15,6 +15,10 @@
     <!-- The status pill's Wi-Fi glyph follows the default network (#65). A normal permission, granted at install. -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
+    <!-- Uninstall in the context menu (#67): the system uninstaller refuses ACTION_DELETE from apps targeting API 28+
+         without it. A normal permission, granted at install; the user still confirms every uninstall. -->
+    <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
+
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
 
     <application

@@ -19,19 +19,25 @@ import androidx.compose.runtime.setValue
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import dev.buildwithtim.minimalui.core.AppFacts
 import dev.buildwithtim.minimalui.core.LatestLoader
 import dev.buildwithtim.minimalui.core.LauncherApp
 import dev.buildwithtim.minimalui.core.ListContent
+import dev.buildwithtim.minimalui.core.MenuAction
+import dev.buildwithtim.minimalui.core.MenuItem
 import dev.buildwithtim.minimalui.core.RecentApps
 import dev.buildwithtim.minimalui.core.StatusPill
+import dev.buildwithtim.minimalui.core.contextMenu
 import dev.buildwithtim.minimalui.core.listContent
 import dev.buildwithtim.minimalui.core.minusLastTyped
 import dev.buildwithtim.minimalui.core.plusTyped
 import dev.buildwithtim.minimalui.core.sortedForDisplay
 import dev.buildwithtim.minimalui.core.withSystemSettings
 import dev.buildwithtim.minimalui.ui.AppList
+import dev.buildwithtim.minimalui.ui.ContextMenu
 import dev.buildwithtim.minimalui.ui.MinimalTheme
 import dev.buildwithtim.minimalui.ui.Returned
+import dev.buildwithtim.minimalui.ui.rememberAppListState
 import java.util.concurrent.Executors
 
 class MainActivity : ComponentActivity() {
@@ -42,6 +48,9 @@ class MainActivity : ComponentActivity() {
     private var query by mutableStateOf("")
     private var returned by mutableStateOf<Returned?>(null)
     private var status by mutableStateOf<StatusPill?>(null)
+
+    // The context menu on screen in place of the list (#67), or null while the list shows.
+    private var menu by mutableStateOf<AppMenu?>(null)
 
     // Lazy: the system services exist only once the activity is attached.
     private val statusWatcher by lazy { StatusWatcher(this) { status = it } }
@@ -93,15 +102,30 @@ class MainActivity : ComponentActivity() {
         // The home screen has nothing to go back to: finishing it would surface whichever launcher ran before.
         onBackPressedDispatcher.addCallback(this) {}
         setContent {
+            // Outside the list, so the list comes back from the menu with the same app selected and the same screen.
+            val listState = rememberAppListState()
             MinimalTheme {
-                AppList(
-                    content = listContent(apps, query),
-                    query = query,
-                    homePresses = homePresses,
-                    onOpen = ::open,
-                    returned = returned,
-                    status = status,
-                )
+                val shownMenu = menu
+                if (shownMenu == null) {
+                    AppList(
+                        content = listContent(apps, query),
+                        query = query,
+                        homePresses = homePresses,
+                        onOpen = ::open,
+                        onMenu = ::openMenu,
+                        state = listState,
+                        returned = returned,
+                        status = status,
+                    )
+                } else {
+                    ContextMenu(
+                        title = shownMenu.app.label,
+                        items = shownMenu.items,
+                        onChoose = { choose(shownMenu.app, it) },
+                        onClose = { menu = null },
+                        status = status,
+                    )
+                }
             }
         }
     }
@@ -133,15 +157,17 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         // singleTask: the Home key (or a launcher icon) reaches the running instance here, never a second one.
         awayInApp = false
+        menu = null
         homePresses++
         query = ""
     }
 
     // Typing filters the list. Rows only handle arrows, Enter and Space, so typed keys fall through to here, and still
-    // arrive when the filter leaves no row to hold focus. Other keys, and Ctrl or Meta shortcuts, keep their usual job.
+    // arrive when the filter leaves no row to hold focus. Other keys, and Ctrl or Meta shortcuts, keep their usual job,
+    // and so does every key while the context menu is open: it has nothing to filter.
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
         val newQuery = when {
-            event.isCtrlPressed || event.isMetaPressed -> null
+            menu != null || event.isCtrlPressed || event.isMetaPressed -> null
             keyCode == KeyEvent.KEYCODE_DEL -> query.minusLastTyped()
             else -> query.plusTyped(event.unicodeChar)
         }
@@ -169,19 +195,54 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun open(app: LauncherApp) {
+        if (start(app.launchIntent())) {
+            saveRecents(recents.opened(app, apps.orEmpty()))
+            awayInApp = true
+        }
+    }
+
+    /** Whether [intent] started. */
+    private fun start(intent: Intent): Boolean =
         try {
             // No transition, as Cannoli: nothing animates between a key press and the app (BRANDING.md).
-            startActivity(app.launchIntent(), ActivityOptions.makeCustomAnimation(this, 0, 0).toBundle())
-            recents = recents.opened(app, apps.orEmpty())
-            recentStore.save(recents)
-            awayInApp = true
+            startActivity(intent, ActivityOptions.makeCustomAnimation(this, 0, 0).toBundle())
+            true
         } catch (_: ActivityNotFoundException) {
             // Uninstalled or disabled while the list was on screen: drop it rather than crash the launcher.
             loader.refresh()
+            false
         } catch (_: SecurityException) {
             // Listed but not startable by us (not exported, or guarded by a permission we lack): ignore the press
             // rather than crash the launcher; a refresh would list it again.
+            false
         }
+
+    // The facts are read once, as the menu opens; every action closes it again.
+    private fun openMenu(app: LauncherApp) {
+        val recent = recentApps
+        val facts = AppFacts(
+            isSystem = packageManager.isSystemApp(app.packageName),
+            isSettingsEntry = app.packageName == packageManager.systemSettings()?.packageName,
+            isRecent = app in recent,
+            hasRecents = recent.isNotEmpty(),
+        )
+        menu = AppMenu(app, contextMenu(facts))
+    }
+
+    // The list comes back on the same app: its selection was kept while the menu was up.
+    private fun choose(app: LauncherApp, action: MenuAction) {
+        menu = null
+        when (action) {
+            MenuAction.AppInfo -> start(app.appInfoIntent())
+            MenuAction.Uninstall -> start(app.uninstallIntent())
+            MenuAction.RemoveFromRecents -> saveRecents(recents.without(app))
+            MenuAction.ClearRecents -> saveRecents(recents.cleared())
+        }
+    }
+
+    private fun saveRecents(changed: RecentApps) {
+        recents = changed
+        recentStore.save(changed)
     }
 
     // Runs on the worker thread: the package queries and every label load stay off the main thread.
@@ -191,3 +252,6 @@ class MainActivity : ComponentActivity() {
         return (settings?.let(installed::withSystemSettings) ?: installed).sortedForDisplay()
     }
 }
+
+/** The context menu of [app], with its [items] as they were when it opened. */
+private class AppMenu(val app: LauncherApp, val items: List<MenuItem>)

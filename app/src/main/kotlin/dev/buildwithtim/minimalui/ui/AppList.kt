@@ -1,68 +1,43 @@
 package dev.buildwithtim.minimalui.ui
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusProperties
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.onPreviewKeyEvent
-import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
 import dev.buildwithtim.minimalui.R
 import dev.buildwithtim.minimalui.core.LauncherApp
 import dev.buildwithtim.minimalui.core.ListContent
 import dev.buildwithtim.minimalui.core.ListPosition
 import dev.buildwithtim.minimalui.core.StatusPill
 import dev.buildwithtim.minimalui.core.listRhythm
-import dev.buildwithtim.minimalui.core.paged
 import dev.buildwithtim.minimalui.core.selecting
-import dev.buildwithtim.minimalui.core.stepped
 
 /**
- * One row per app, paged a whole screenful at a time: only whole rows are drawn, and the height left over is shared
- * between them. Up/Down move one row and wrap around at the ends, except while held. Left/Right turn a page, stopping
- * at the ends. Enter or D-pad centre opens the selected app; touch works too, and touch scrolling snaps to whole rows.
- * The selected app's label sits in an inverted pill that hugs it (see BRANDING.md) and holds focus.
+ * One row per app, in a [PillList]: Enter, D-pad centre or a tap opens the selected app ([onOpen]); the Menu key,
+ * holding Enter or D-pad centre, or a touch long-press asks for its context menu ([onMenu]).
  *
  * The first row is selected when the apps first arrive, so the keyboard works without touching the screen, and again
  * whenever [homePresses] or the type-to-filter [query] changes. Each new [returned] selects its row instead, keeping
- * the screen where it was if that row is on it. The [status] pill, when given, takes the top row, so no app row ever
- * runs under it. A non-empty [query] is shown in the row below it, so the user never filters blind. Without apps to
- * list, the rest of the screen stays blank while they load (the status pill too), or shows a centred message when
- * there are none or none match the query.
+ * the screen where it was if that row is on it. The selection and the screen live in [state], so a list that another
+ * screen replaced for a while comes back exactly as it was. The [status] pill, when given, takes the top row, so no
+ * app row ever runs under it. A non-empty [query] is shown in the row below it, so the user never filters blind.
+ * Without apps to list, the rest of the screen stays blank while they load (the status pill too), or shows a centred
+ * message when there are none or none match the query.
  */
 @Composable
 fun AppList(
@@ -71,27 +46,22 @@ fun AppList(
     homePresses: Int,
     onOpen: (LauncherApp) -> Unit,
     modifier: Modifier = Modifier,
+    onMenu: (LauncherApp) -> Unit = {},
+    state: AppListState = rememberAppListState(),
     returned: Returned? = null,
     status: StatusPill? = null,
 ) {
     val apps = (content as? ListContent.Apps)?.apps.orEmpty()
-    val listState = rememberLazyListState()
-    var position by remember { mutableStateOf(ListPosition(0, 0)) }
-    // Bumped on every move, even to the same position, so the list scrolls and the selected row takes focus each time.
-    var moves by remember { mutableIntStateOf(0) }
+    val list = state.list
     val hasApps = apps.isNotEmpty()
 
-    fun select(next: ListPosition) {
-        position = next
-        moves++
-    }
-
     LaunchedEffect(hasApps, homePresses, query) {
-        if (hasApps) select(ListPosition(0, 0))
-    }
-    LaunchedEffect(moves) {
-        // Scrolling composes the selected row if it was off screen; the row then takes focus itself.
-        if (hasApps) listState.scrollToItem(position.first)
+        // Only for a change since the list was last on screen, so coming back from another screen keeps the selection.
+        val reason = Triple(hasApps, homePresses, query)
+        if (reason != state.topFor) {
+            state.topFor = reason
+            if (hasApps) list.select(ListPosition(0, 0))
+        }
     }
 
     BoxWithConstraints(
@@ -112,63 +82,28 @@ fun AppList(
 
         LaunchedEffect(returned) {
             // Start from the screen as it is now, which touch scrolling may have moved.
-            if (returned != null && hasApps) {
-                select(ListPosition(returned.row, listState.firstVisibleItemIndex).selecting(apps.size, rowsPerPage))
+            if (returned != null && returned != state.returned && hasApps) {
+                state.returned = returned
+                val now = ListPosition(returned.row, list.scroll.firstVisibleItemIndex)
+                list.select(now.selecting(apps.size, rowsPerPage))
             }
         }
 
         Column {
             if (shownStatus != null) StatusLine(shownStatus, rowHeight)
-            if (query.isNotEmpty()) {
-                // The trailing underscore marks it as typed text rather than another app.
-                // One row tall, its text aligned with the app labels below.
-                Box(Modifier.fillMaxWidth().height(rowHeight), contentAlignment = Alignment.CenterStart) {
-                    Text(
-                        text = "${query}_",
-                        color = MaterialTheme.colorScheme.onBackground,
-                        style = RowMetrics.TextStyle,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier
-                            .padding(horizontal = RowMetrics.ListPaddingHorizontal + RowMetrics.PillPaddingHorizontal)
-                            .padding(vertical = RowMetrics.PillPaddingVertical),
-                    )
-                }
-            }
-            if (hasApps) LazyColumn(
-                state = listState,
-                flingBehavior = rememberSnapFlingBehavior(listState),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(rowHeight * rowsPerPage)
-                    .onPreviewKeyEvent { event ->
-                        if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
-                        // Start from the screen as it is now, which touch scrolling may have moved.
-                        val now = position.copy(first = listState.firstVisibleItemIndex)
-                        val held = event.nativeKeyEvent.repeatCount > 0
-                        val next = when (event.key) {
-                            Key.DirectionUp -> now.stepped(-1, held, apps.size, rowsPerPage)
-                            Key.DirectionDown -> now.stepped(1, held, apps.size, rowsPerPage)
-                            Key.DirectionLeft -> now.paged(-1, apps.size, rowsPerPage)
-                            Key.DirectionRight -> now.paged(1, apps.size, rowsPerPage)
-                            else -> return@onPreviewKeyEvent false
-                        }
-                        select(next)
-                        true
-                    },
-            ) {
-                itemsIndexed(apps, key = { _, app -> "${app.packageName}/${app.activityName}" }) { index, app ->
-                    AppRow(
-                        app = app,
-                        height = rowHeight,
-                        onOpen = onOpen,
-                        // Focus that moves some other way (Tab, say) moves the selection with it.
-                        onFocused = { if (position.selected != index) position = position.copy(selected = index) },
-                        focusRequest = if (index == position.selected) moves else null,
-                        isSelected = { index == position.selected },
-                    )
-                }
-            }
+            // The trailing underscore marks it as typed text rather than another app.
+            if (query.isNotEmpty()) HeaderLine("${query}_", rowHeight)
+            if (hasApps) PillList(
+                state = list,
+                items = apps,
+                key = { "${it.packageName}/${it.activityName}" },
+                label = { it.label },
+                rowHeight = rowHeight,
+                rowsPerPage = rowsPerPage,
+                onConfirm = onOpen,
+                onLongPress = onMenu,
+                onKey = { key, app -> (key == Key.Menu).also { if (it) onMenu(app) } },
+            )
         }
         // Centred on the whole screen, as MinUI does, whether or not the query line is showing above it.
         val message = when (content) {
@@ -180,6 +115,21 @@ fun AppList(
     }
 }
 
+/** What the app list keeps while another screen takes its place: [AppList] comes back as it was. */
+@Stable
+class AppListState {
+    internal val list = PillListState()
+
+    // The apps-present flag, Home count and query the top row was last selected for.
+    internal var topFor: Any? = null
+
+    // The last [Returned] acted on.
+    internal var returned: Returned? = null
+}
+
+@Composable
+fun rememberAppListState(): AppListState = remember { AppListState() }
+
 /** The user came back to the launcher by a route other than Home, for the [count]th time: the list selects [row]. */
 data class Returned(val row: Int, val count: Int)
 
@@ -188,55 +138,5 @@ data class Returned(val row: Int, val count: Int)
 private fun Message(text: String) {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Text(text = text, color = MaterialTheme.colorScheme.onBackground, style = RowMetrics.TextStyle)
-    }
-}
-
-@Composable
-private fun AppRow(
-    app: LauncherApp,
-    height: Dp,
-    onOpen: (LauncherApp) -> Unit,
-    onFocused: () -> Unit,
-    focusRequest: Int?,
-    isSelected: () -> Boolean,
-    modifier: Modifier = Modifier,
-) {
-    var focused by remember { mutableStateOf(false) }
-    val requester = remember { FocusRequester() }
-    val colors = MaterialTheme.colorScheme
-
-    // Runs once this row has composed as the selected one, so its requester is attached. A later move (or Home) may
-    // have selected another row by then; that row asks instead, so focus never lands on a stale selection.
-    LaunchedEffect(focusRequest) {
-        if (focusRequest != null && isSelected()) requester.requestFocus()
-    }
-
-    // The whole row is the focus and touch target; only the drawn pill hugs the label.
-    Box(
-        contentAlignment = Alignment.CenterStart,
-        modifier = modifier
-            .fillMaxWidth()
-            .height(height)
-            .focusRequester(requester)
-            .onFocusChanged {
-                focused = it.isFocused
-                if (it.isFocused) onFocused()
-            }
-            // Clickables refuse focus in touch mode; a keyboard launcher needs a focused row from the start.
-            .focusProperties { canFocus = true }
-            // No ripple: its full-width focus layer would blur the pill, the one selection mark.
-            .clickable(interactionSource = null, indication = null) { onOpen(app) }
-            .padding(horizontal = RowMetrics.ListPaddingHorizontal),
-    ) {
-        Text(
-            text = app.label,
-            color = if (focused) colors.onPrimary else colors.onBackground,
-            style = RowMetrics.TextStyle,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier
-                .background(if (focused) colors.primary else Color.Transparent, RowMetrics.PillShape)
-                .padding(horizontal = RowMetrics.PillPaddingHorizontal, vertical = RowMetrics.PillPaddingVertical),
-        )
     }
 }

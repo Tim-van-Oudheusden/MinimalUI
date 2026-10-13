@@ -7,4 +7,9 @@
     <!-- Spoken for the status pill's glyphs (#65); the battery percentage and the clock are text already. -->
     <string name="status_wifi">Wi-Fi</string>
     <string name="status_charging">Charging</string>
+    <!-- The per-app context menu (#67). -->
+    <string name="menu_app_info">App info</string>
+    <string name="menu_uninstall">Uninstall</string>
+    <string name="menu_remove_recent">Remove from recently used</string>
+    <string name="menu_clear_recents">Clear recently used</string>
 </resources>

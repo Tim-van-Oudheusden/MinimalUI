@@ -10,17 +10,19 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 ## Latest session
 
 - **Date:** 2026-10-13
-- **Worked:** #65 — status pill (stack row 3 of the #60 interface stack, on `feat/64-instant-launch`).
-- **Outcome:** the launcher hides Android's status bar (`enableEdgeToEdge` + `WindowInsetsControllerCompat`, swipe
-  shows it transiently) and draws a MinUI-style `#262626` pill top-right: Wi-Fi glyph while the default network is
-  Wi-Fi, battery glyph + percentage, clock following the 12/24-hour setting. Model in core `StatusPill.kt`
-  (`StatusPill`, `Battery` thresholds, `battery(level, scale, charging)`, `clockText`); `StatusWatcher` feeds it from
-  the sticky battery broadcast, `TIME_TICK`/`TIME_CHANGED`/`TIMEZONE_CHANGED` and `registerDefaultNetworkCallback`,
-  between `onStart` and `onStop`. `AppList(status = ...)` reserves the top row for it (hidden while loading).
-- **Open follow-ups:** the rest of the #60 stack builds on this branch.
+- **Worked:** #67 — per-app context menu (stack row 4 of the #60 interface stack, on `feat/65-status-pill`).
+- **Outcome:** core `ContextMenu.kt` (`MenuAction`, `MenuItem(action, enabled)`, `AppFacts`, `contextMenu(facts)`):
+  App info, Uninstall (disabled for system apps and the Settings entry), Remove from / Clear recently used. The list
+  machinery moved from `AppList` into a shared `ui/PillList.kt` (`PillList`, `PillListState`, `HeaderLine`); `AppList`
+  keeps its selection in a hoisted `AppListState`, so it comes back from the menu unchanged. `ui/ContextMenu.kt`
+  replaces the list until Back/Esc; opened by Menu, a held Enter/centre (first auto-repeat) or a touch long-press.
+  Uninstall uses `ACTION_DELETE` with the normal `REQUEST_DELETE_PACKAGES` permission.
+- **Open follow-ups:** the rest of the #60 stack builds on this branch (Favourite, Hide, Rename, groups add
+  `MenuAction` kinds).
 - **Notes for next session:**
-  - Robolectric: `ShadowConnectivityManager.networkCallbacks` drives the network callback; a sticky
-    `ACTION_BATTERY_CHANGED` sent before launch is what `registerReceiver` returns.
-  - Render a composable to PNG under `@GraphicsMode(NATIVE)` with `captureToImage()` for a visual check; the ATD
-    emulator's `screencap` is black.
+  - `PillList` swallows a confirm-key release it did not see pressed, so the release ending a long press never
+    triggers a row on the screen it opened.
+  - Robolectric: `shadowOf(pm).installPackage(PackageInfo)` before `addActivityIfNotPresent` sets
+    `ApplicationInfo.flags` (e.g. `FLAG_SYSTEM`).
+  - After a touch action the next key may race the focus request; wait (`assertIsFocused`) before typing.
   - No JDK on the host: run Gradle via the podman sandbox (`/tmp/gates.sh`).

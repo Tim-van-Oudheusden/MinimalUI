@@ -16,11 +16,13 @@ import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performKeyPress
+import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.dp
@@ -46,22 +48,34 @@ class AppListTest {
     private val apps = listOf("Calculator", "Calendar", "Camera").map { LauncherApp(it, "pkg.$it", "pkg.$it.Main") }
 
     private val opened = mutableListOf<LauncherApp>()
+    private val menus = mutableListOf<LauncherApp>()
     private var homePresses by mutableIntStateOf(0)
     private var query by mutableStateOf("")
     private var status by mutableStateOf<StatusPill?>(null)
+    private var content by mutableStateOf<ListContent>(ListContent.Loading)
+
+    /** False while another screen (the context menu) takes the list's place. */
+    private var listShown by mutableStateOf(true)
 
     private fun show(list: List<LauncherApp> = apps) = show(ListContent.Apps(list))
 
     private fun show(content: ListContent) {
+        this.content = content
         rule.setContent {
+            // Kept outside the list, as MainActivity keeps it, so it outlives the list leaving the screen.
+            val state = rememberAppListState()
             MinimalTheme {
-                AppList(
-                    content = content,
-                    query = query,
-                    homePresses = homePresses,
-                    onOpen = { opened += it },
-                    status = status,
-                )
+                if (listShown) {
+                    AppList(
+                        content = this.content,
+                        query = query,
+                        homePresses = homePresses,
+                        onOpen = { opened += it },
+                        onMenu = { menus += it },
+                        state = state,
+                        status = status,
+                    )
+                }
             }
         }
     }
@@ -75,6 +89,16 @@ class AppListTest {
     private fun holdDown() = rule.onRoot().performKeyPress(
         KeyEvent(AndroidKeyEvent(0, 0, AndroidKeyEvent.ACTION_DOWN, AndroidKeyEvent.KEYCODE_DPAD_DOWN, 1)),
     )
+
+    private fun send(action: Int, keyCode: Int, repeat: Int = 0) =
+        rule.onRoot().performKeyPress(KeyEvent(AndroidKeyEvent(0, 0, action, keyCode, repeat)))
+
+    /** A key held long enough to auto-repeat, then released. */
+    private fun longPress(keyCode: Int) {
+        send(AndroidKeyEvent.ACTION_DOWN, keyCode)
+        send(AndroidKeyEvent.ACTION_DOWN, keyCode, repeat = 1)
+        send(AndroidKeyEvent.ACTION_UP, keyCode)
+    }
 
     /** Labels of the rows on screen, top to bottom, after checking that each one is drawn whole. */
     private fun rowsOnScreen(): List<String> {
@@ -118,6 +142,65 @@ class AppListTest {
         press(Key.DirectionCenter)
 
         assertEquals(listOf("Calendar", "Camera"), opened.map { it.label })
+    }
+
+    @Test
+    fun `the Menu key asks for the focused app's menu`() {
+        show()
+        press(Key.DirectionDown)
+
+        press(Key.Menu)
+
+        assertEquals(listOf("Calendar"), menus.map { it.label })
+        assertEquals(emptyList<LauncherApp>(), opened)
+    }
+
+    @Test
+    fun `a long press of Enter or D-pad centre asks for the menu and opens nothing`() {
+        show()
+
+        longPress(AndroidKeyEvent.KEYCODE_ENTER)
+        press(Key.DirectionDown)
+        longPress(AndroidKeyEvent.KEYCODE_DPAD_CENTER)
+
+        assertEquals(listOf("Calculator", "Calendar"), menus.map { it.label })
+        assertEquals(emptyList<LauncherApp>(), opened)
+    }
+
+    @Test
+    fun `a touch long-press asks for that app's menu`() {
+        show()
+
+        rule.onNodeWithText("Camera").performTouchInput { longClick() }
+
+        assertEquals(listOf("Camera"), menus.map { it.label })
+        assertEquals(emptyList<LauncherApp>(), opened)
+    }
+
+    @Test
+    @Config(qualifiers = "w360dp-h360dp")
+    fun `the list comes back with the same row selected and the same rows on screen`() {
+        show(manyApps)
+        val rows = rowsOnScreen().size
+        repeat(rows + 1) { press(Key.DirectionDown) }
+        val page = rowsOnScreen()
+
+        listShown = false
+        rule.onNodeWithText("App 00").assertDoesNotExist()
+        listShown = true
+
+        rule.onNodeWithText("App %02d".format(rows + 1)).assertIsFocused()
+        assertEquals(page, rowsOnScreen())
+    }
+
+    @Test
+    fun `the last row takes the selection when the list shrinks past it`() {
+        show()
+        press(Key.DirectionUp)
+
+        content = ListContent.Apps(apps.dropLast(1))
+
+        rule.onNodeWithText("Calendar").assertIsFocused()
     }
 
     @Test

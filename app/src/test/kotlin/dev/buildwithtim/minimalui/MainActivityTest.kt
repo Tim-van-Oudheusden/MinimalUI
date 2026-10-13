@@ -7,6 +7,7 @@ import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.pm.ApplicationInfo
+import android.content.pm.PackageInfo
 import android.content.pm.ResolveInfo
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
@@ -20,6 +21,7 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsFocused
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -399,6 +401,232 @@ class MainActivityTest {
         )
 
         awaitListed("Zebra")
+    }
+
+    /** An app that came with the system, so it cannot be uninstalled. */
+    private fun installSystem(label: String, packageName: String) {
+        shadowOf(application.packageManager).installPackage(
+            PackageInfo().apply {
+                this.packageName = packageName
+                applicationInfo = ApplicationInfo().apply {
+                    this.packageName = packageName
+                    flags = ApplicationInfo.FLAG_SYSTEM
+                }
+            },
+        )
+        install(label, packageName)
+    }
+
+    /** Enter held until it auto-repeats, the way a hardware keyboard sends a long press, then released. */
+    private fun holdEnter(activity: ActivityController<MainActivity>) {
+        val down = KeyEvent(0, 0, KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ENTER, 0)
+        activity.get().dispatchKeyEvent(down)
+        activity.get().dispatchKeyEvent(KeyEvent.changeTimeRepeat(down, 500, 1, KeyEvent.FLAG_LONG_PRESS))
+        activity.get().dispatchKeyEvent(KeyEvent.changeAction(down, KeyEvent.ACTION_UP))
+        rule.waitForIdle()
+    }
+
+    /** Opens the context menu on the selected app with the Menu key. */
+    private fun openMenu(activity: ActivityController<MainActivity>) {
+        type(activity, KeyEvent.KEYCODE_MENU)
+        awaitListed("App info")
+    }
+
+    private fun packageUri(packageName: String) = android.net.Uri.fromParts("package", packageName, null)
+
+    @Test
+    fun `the Menu key replaces the list with the app's menu, and Esc brings the list back on that app`() {
+        install("Alarm", "com.example.alarm")
+        install("Bell", "com.example.bell")
+        val activity = launch()
+        awaitListed("Bell")
+        press(Key.DirectionDown)
+
+        openMenu(activity)
+        rule.onNodeWithText("Alarm").assertDoesNotExist()
+        rule.onNodeWithText("Bell").assertExists()
+        rule.onNodeWithText("App info").assertIsFocused()
+
+        type(activity, KeyEvent.KEYCODE_ESCAPE)
+
+        awaitListed("Alarm")
+        rule.onNodeWithText("App info").assertDoesNotExist()
+        rule.onNodeWithText("Bell").assertIsFocused()
+    }
+
+    @Test
+    fun `a long press of Enter opens the menu and not the app`() {
+        install("Alarm", "com.example.alarm")
+        val activity = launch()
+        awaitListed("Alarm")
+
+        holdEnter(activity)
+
+        rule.onNodeWithText("App info").assertIsFocused()
+        assertNull(shadowOf(application).nextStartedActivity)
+        assertEquals(emptyList<String>(), activity.get().recentApps)
+    }
+
+    @Test
+    fun `App info opens Android's details screen for the app, and the list comes back on it`() {
+        install("Alarm", "com.example.alarm")
+        install("Bell", "com.example.bell")
+        val activity = launch()
+        awaitListed("Bell")
+        press(Key.DirectionDown)
+        openMenu(activity)
+
+        press(Key.Enter)
+
+        val started = shadowOf(application).nextStartedActivity
+        assertEquals(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, started.action)
+        assertEquals(packageUri("com.example.bell"), started.data)
+        awaitListed("Alarm")
+        rule.onNodeWithText("Bell").assertIsFocused()
+    }
+
+    @Test
+    fun `Back closes the menu on the same app, and on the list still does nothing`() {
+        install("Alarm", "com.example.alarm")
+        install("Bell", "com.example.bell")
+        val activity = launch()
+        awaitListed("Bell")
+        press(Key.DirectionDown)
+        openMenu(activity)
+
+        activity.get().onBackPressedDispatcher.onBackPressed()
+        awaitListed("Alarm")
+        rule.onNodeWithText("Bell").assertIsFocused()
+
+        activity.get().onBackPressedDispatcher.onBackPressed()
+        rule.waitForIdle()
+        assertFalse(activity.get().isFinishing)
+        rule.onNodeWithText("Bell").assertIsFocused()
+    }
+
+    @Test
+    fun `Uninstall asks Android to remove the app`() {
+        install("Alarm", "com.example.alarm")
+        val activity = launch()
+        awaitListed("Alarm")
+        openMenu(activity)
+
+        press(Key.DirectionDown)
+        press(Key.Enter)
+
+        val started = shadowOf(application).nextStartedActivity
+        assertEquals(Intent.ACTION_DELETE, started.action)
+        assertEquals(packageUri("com.example.alarm"), started.data)
+    }
+
+    @Test
+    fun `Uninstall is disabled for a system app`() {
+        installSystem("Alarm", "com.example.alarm")
+        val activity = launch()
+        awaitListed("Alarm")
+        openMenu(activity)
+
+        press(Key.DirectionDown)
+        rule.onNodeWithText("Uninstall").assertIsFocused().assertIsNotEnabled()
+        press(Key.Enter)
+
+        assertNull(shadowOf(application).nextStartedActivity)
+        rule.onNodeWithText("Uninstall").assertIsFocused()
+    }
+
+    @Test
+    fun `Uninstall is disabled for the Settings entry the list always keeps`() {
+        val settings = ResolveInfo().apply {
+            activityInfo = ActivityInfo().apply {
+                nonLocalizedLabel = "Settings"
+                packageName = "com.example.settings"
+                name = "com.example.settings.Main"
+                applicationInfo = ApplicationInfo().apply { packageName = "com.example.settings" }
+            }
+        }
+        shadowOf(application.packageManager).addResolveInfoForIntent(Intent(Settings.ACTION_SETTINGS), settings)
+        val activity = launch()
+        awaitListed("Settings")
+        type(activity, KeyEvent.KEYCODE_S)
+        awaitListed("MinimalUI", listed = false)
+        rule.onNodeWithText("Settings").assertIsFocused()
+        openMenu(activity)
+
+        press(Key.DirectionDown)
+
+        rule.onNodeWithText("Uninstall").assertIsNotEnabled()
+    }
+
+    @Test
+    fun `Remove from recently used drops only that app, and only a recent app offers it`() {
+        install("Alarm", "com.example.alarm")
+        install("Bell", "com.example.bell")
+        val activity = launch()
+        awaitListed("Bell")
+        press(Key.Enter)
+        press(Key.DirectionDown)
+        press(Key.Enter)
+        openMenu(activity)
+
+        rule.onNodeWithText("Remove from recently used").performClick()
+
+        assertEquals(listOf("Alarm"), activity.get().recentApps.map { it.label })
+        rule.onNodeWithText("Bell").assertIsFocused()
+        openMenu(activity)
+        rule.onNodeWithText("Remove from recently used").assertDoesNotExist()
+        rule.onNodeWithText("Clear recently used").assertExists()
+    }
+
+    @Test
+    fun `Clear recently used empties the recent apps, for good`() {
+        install("Alarm", "com.example.alarm")
+        val activity = launch()
+        awaitListed("Alarm")
+        press(Key.Enter)
+        openMenu(activity)
+
+        // The last action, reached by wrapping up from the first.
+        press(Key.DirectionUp)
+        rule.onNodeWithText("Clear recently used").assertIsFocused()
+        press(Key.Enter)
+
+        assertEquals(emptyList<String>(), activity.get().recentApps)
+        closeActivity()
+        val restarted = launch()
+        awaitListed("Alarm")
+        assertEquals(emptyList<String>(), restarted.get().recentApps)
+        openMenu(restarted)
+        rule.onNodeWithText("Clear recently used").assertDoesNotExist()
+    }
+
+    @Test
+    fun `typing while the menu is open does not filter the list`() {
+        install("Alarm", "com.example.alarm")
+        val activity = launch()
+        awaitListed("Alarm")
+        openMenu(activity)
+
+        type(activity, KeyEvent.KEYCODE_Z)
+        type(activity, KeyEvent.KEYCODE_ESCAPE)
+
+        awaitListed("Alarm")
+        rule.onNodeWithText("z_").assertDoesNotExist()
+    }
+
+    @Test
+    fun `Home closes the menu and returns to the top of the list`() {
+        install("Alarm", "com.example.alarm")
+        install("Bell", "com.example.bell")
+        val activity = launch()
+        awaitListed("Bell")
+        press(Key.DirectionDown)
+        openMenu(activity)
+
+        activity.newIntent(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME))
+
+        awaitListed("Alarm")
+        rule.onNodeWithText("App info").assertDoesNotExist()
+        rule.onNodeWithText("Alarm").assertIsFocused()
     }
 
     private fun batteryAt(level: Int, status: Int = BatteryManager.BATTERY_STATUS_DISCHARGING) =

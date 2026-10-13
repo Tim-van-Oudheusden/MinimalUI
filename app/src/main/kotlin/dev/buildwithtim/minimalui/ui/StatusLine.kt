@@ -31,8 +31,8 @@ import dev.buildwithtim.minimalui.R
 import dev.buildwithtim.minimalui.core.Battery
 import dev.buildwithtim.minimalui.core.StatusPill
 
-/** MinUI's dark-grey status pill (research §4) and the red the battery turns when low. */
-private val PillColor = Color(0xFF262626)
+/** MinUI's dark-grey status pill (research §4), also behind a menu's title, and the red the battery turns when low. */
+internal val PillColor = Color(0xFF262626)
 private val LowColor = Color(0xFFFF5A4F)
 
 /** Smaller than a row's label, on the same line height, so the pill is exactly as tall as the selection pill. */
