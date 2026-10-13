@@ -41,24 +41,34 @@ another home app in the same place.
 | Up / Down (arrows, D-pad)    | Move one row. A fresh press past either end wraps around; holding stops there |
 | Left / Right (arrows, D-pad) | Turn a page, stopping at the first or last app                                |
 | Left / Right in settings     | Change the highlighted setting to its previous / next value, wrapping around  |
-| Enter or D-pad centre        | Open the highlighted app; in the app menu, do the highlighted action          |
+| Enter or D-pad centre        | Open the highlighted app, collection or list; in the app menu, do the action  |
 | Enter in settings            | Change the highlighted setting to its next value, or open About               |
 | Menu, or hold Enter / centre | Open the highlighted app's menu (touch: long-press the app)                   |
-| Back or Esc                  | Close the app menu, settings or About; does nothing on the home screen        |
-| Home                         | Close any menu or settings and return to the top of the list                  |
+| Letters, digits, Backspace   | Filter the home screen; on New collection, type the collection's name         |
+| Back or Esc                  | Close the open list, one at a time; does nothing on the home screen           |
+| Home                         | Close every open list and return to the top of the home screen                |
 
-The home screen is one list. At its top, the apps you opened last from MinimalUI, newest first, then one blank row,
-then every app in alphabetical order (the recent ones too). Up and Down skip the blank row. The **Recently used**
-setting picks how many recent apps show there: Off, 3 (the default), 5 or 15. Typing filters all apps and hides the
-recent block until the filter is cleared.
+The home screen is one list. At its top, your favourites, marked `★`, in alphabetical order; then the apps you opened
+last from MinimalUI, newest first (leaving out favourites); then a **Collections** row once you have a collection;
+then one blank row, then every app in alphabetical order (those at the top too). Up and Down skip the blank row. The
+**Recently used** setting picks how many recent apps show there: Off, 3 (the default), 5 or 15. Typing filters all
+apps by their name (the `★` is not part of it), favourites first, and hides the block until the filter is cleared.
 
 The list updates on its own when apps are installed or removed. Apps open without a transition animation. Coming
 back from an app by Back, Recents or the app closing selects that app again, so one press reopens it; the filter
 stays. Home instead clears the filter and returns to the top.
 
 The app menu replaces the list until it is closed: App info, Uninstall (dim and inactive for system apps and the
-Settings entry), and, when there are recently used apps, Remove from recently used and Clear recently used. After an
-action, Back or Esc, the list comes back with the same app highlighted.
+Settings entry), Add to favourites or Remove from favourites, Add to collection, and, when there are recently used
+apps, Remove from recently used and Clear recently used. After an action, Back or Esc, the list comes back with the
+same app highlighted.
+
+Collections are named lists of apps in your own order, as in MinUI. **Add to collection** lists the collections that
+do not hold the app yet and a last row, **New collection**: type a name (letters and digits, Backspace to correct) and
+press Enter to make it with the app, or Esc to cancel. Enter on the home screen's **Collections** row lists them by
+name; Enter on a name lists its apps, which open like any other. Inside a collection the app menu also offers Remove
+from collection, Move up and Move down; a collection goes away with its last app. Favourites and collections are kept
+in the app's private storage.
 
 MinimalUI's own settings open from the **MinimalUI settings** row, listed right after Android's Settings (type `min`
 to find it). They replace the list until closed, the way the app menu does: Clock and Battery percentage show or hide

@@ -41,8 +41,14 @@ a plain list, driven entirely by keys, that gets out of the way. It is not a the
   top row, so no app row runs under it; it stays hidden with the rest while the apps load. The Clock and Battery
   percentage settings leave those items out; with nothing left, the row stays empty. Glyphs are drawn in code, never
   copied from MinUI.
-- **Root list:** the recently used apps head the list, then one empty row, then every app; no rule, header or other
-  separator is drawn, and the selection never rests on the empty row.
+- **Root list:** the favourites head the list, then the recently used apps, then a `Collections` row when there are
+  collections, then one empty row, then every app; no rule, header or other separator is drawn, and the selection
+  never rests on the empty row.
+- **Favourite marker:** a favourite's name has a `★` and a space before it wherever it is listed, as in Cannoli. The
+  star is only drawn: typing matches the plain name.
+- **Collections:** the `Collections` row opens a list of the collections' names, each opening its apps in the user's
+  order (MinUI); both are lists in the same style, titled `Collections` and the collection's name. A new collection's
+  name is typed on the line below its `New collection` title, with an underscore after it, like the filter.
 - **Menus:** a menu (such as an app's context menu) is another list in the same style that takes the list's place,
   one list at a time. Its title, the app's name, sits in a dark-grey (`#262626`) pill below the status pill, as MinUI
   marks its in-game menu's title; an action that does not apply stays listed in grey (`#808080`) and does nothing.

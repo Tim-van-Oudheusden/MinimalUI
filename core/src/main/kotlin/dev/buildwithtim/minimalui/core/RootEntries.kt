@@ -1,10 +1,10 @@
 package dev.buildwithtim.minimalui.core
 
 /**
- * Where an app row sits on the root list (#70): in the recently used block at the top, or in the full alphabetical
- * list below it. A block added later (favourites, #68) is one more section.
+ * Where an app row sits on the root list (#70): in the favourites or the recently used block at the top (#68), or in
+ * the full alphabetical list below them.
  */
-enum class RootSection { Recent, All }
+enum class RootSection { Favourite, Recent, All }
 
 /**
  * One row of the root list. An app's row opens it; the blank row only separates the block at the top from the full
@@ -20,9 +20,21 @@ sealed interface RootEntry {
     /** The app the row opens, if it is an app's row. */
     val app: LauncherApp?
 
-    data class App(override val app: LauncherApp, val section: RootSection = RootSection.All) : RootEntry {
+    /** An app's row; [isFavourite] wherever a favourite is listed, so it shows with its `★` (#68). */
+    data class App(
+        override val app: LauncherApp,
+        val section: RootSection = RootSection.All,
+        val isFavourite: Boolean = false,
+    ) : RootEntry {
         override val key: String get() = "$section/${app.packageName}/${app.activityName}"
         override val selectable: Boolean get() = true
+    }
+
+    /** The one row that opens the list of collections (#68), at the end of the block. */
+    data object Collections : RootEntry {
+        override val key: String get() = "collections"
+        override val selectable: Boolean get() = true
+        override val app: LauncherApp? get() = null
     }
 
     /** One empty row between the block and the full list; it still takes a row on every page. */
@@ -34,15 +46,25 @@ sealed interface RootEntry {
 }
 
 /**
- * The root list, top to bottom (#70, the hybrid of MinUI's root and a flat list): the newest of the [recents] among
- * [apps], as many as the Recently used setting allows, then one blank row, then all [apps] in their order, which
- * still lists the recent ones too. Without a recent app to show there is no block and no blank row.
+ * The root list, top to bottom (#70, the hybrid of MinUI's root and a flat list): the [favourites] among [apps] in
+ * their order (#68), then the newest of the [recents] that are not favourites, as many as the Recently used setting
+ * allows, then a Collections row when any of the [collections] is shown, then one blank row, then all [apps] in their
+ * order, which still lists those apps too. With none of these at the top there is no block and no blank row.
  */
-fun rootEntries(apps: List<LauncherApp>, recents: RecentApps, settings: Settings): List<RootEntry> {
-    val all = apps.map { RootEntry.App(it) }
-    val recent = recents.shownFrom(apps).take(settings.recentlyUsed)
-    if (recent.isEmpty()) return all
-    return recent.map { RootEntry.App(it, RootSection.Recent) } + RootEntry.Blank + all
+fun rootEntries(
+    apps: List<LauncherApp>,
+    recents: RecentApps,
+    settings: Settings,
+    favourites: Favourites = Favourites(),
+    collections: AppCollections = AppCollections(),
+): List<RootEntry> {
+    val all = apps.map { RootEntry.App(it, isFavourite = it in favourites) }
+    val recent = recents.shownFrom(apps).filterNot { it in favourites }.take(settings.recentlyUsed)
+    val block = favourites.shownFrom(apps).map { RootEntry.App(it, RootSection.Favourite, isFavourite = true) } +
+        recent.map { RootEntry.App(it, RootSection.Recent) } +
+        listOfNotNull(RootEntry.Collections.takeIf { collections.names(apps).isNotEmpty() })
+    if (block.isEmpty()) return all
+    return block + RootEntry.Blank + all
 }
 
 /**

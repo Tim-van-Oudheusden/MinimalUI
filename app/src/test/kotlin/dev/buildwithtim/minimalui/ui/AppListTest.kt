@@ -79,6 +79,7 @@ class AppListTest {
                         homePresses = homePresses,
                         onOpen = { opened += it },
                         onMenu = { menus += it },
+                        onCollections = { collectionsOpened++ },
                         state = state,
                         status = status,
                     )
@@ -463,6 +464,53 @@ class AppListTest {
         show(ListContent.Loading)
 
         assertEquals(0, rule.onAllNodes(hasText("", substring = true)).fetchSemanticsNodes().size)
+    }
+
+    private var collectionsOpened = 0
+
+    @Test
+    fun `a favourite is listed with a star before its name, wherever it is`() {
+        val calendar = apps[1]
+        show(
+            ListContent.Apps(
+                listOf(RootEntry.App(calendar, RootSection.Favourite, isFavourite = true), RootEntry.Blank) +
+                    apps.map { RootEntry.App(it, isFavourite = it == calendar) },
+            ),
+        )
+
+        assertEquals(listOf("★ Calendar", "Calculator", "★ Calendar", "Camera"), rowsOnScreen())
+        press(Key.Enter)
+        assertEquals(listOf(calendar), opened)
+    }
+
+    @Test
+    fun `the Collections row opens the collections, and has no menu`() {
+        show(ListContent.Apps(listOf(RootEntry.Collections, RootEntry.Blank) + apps.map { RootEntry.App(it) }))
+
+        rule.onNodeWithText("Collections").assertIsFocused()
+        rule.onRoot().performKeyInput { pressKey(Key.Menu) }
+        press(Key.Enter)
+
+        assertEquals(1, collectionsOpened)
+        assertEquals(emptyList<LauncherApp>(), menus + opened)
+    }
+
+    @Test
+    fun `a list that comes back with the blank row where its selected row was selects the next row`() {
+        val starred = RootEntry.App(apps[1], RootSection.Favourite, isFavourite = true)
+        val full = apps.map { RootEntry.App(it, isFavourite = it == apps[1]) }
+        show(ListContent.Apps(listOf(starred, RootEntry.Collections, RootEntry.Blank) + full))
+        press(Key.DirectionDown)
+        rule.onNodeWithText("Collections").assertIsFocused()
+
+        // The collections list takes the list's place, and its last collection goes, taking the Collections row.
+        listShown = false
+        rule.waitForIdle()
+        content = ListContent.Apps(listOf(starred, RootEntry.Blank) + full)
+        listShown = true
+
+        // The next row down, the first of the full list.
+        rule.onNodeWithText("Calculator").assertIsFocused()
     }
 
     /** [message] sits in the middle of the screen. */
