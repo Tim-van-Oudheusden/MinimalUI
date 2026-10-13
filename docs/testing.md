@@ -105,7 +105,8 @@ blocks every PR.
 Raise a floor when coverage rises; never lower one to make a PR pass. Add tests instead.
 
 The initial floors are the coverage observed when the gate was added, rounded down: `core` 100 % / 100 %, `app` 0 % /
-0 % (it has no unit tests yet). Run the check locally:
+0 % (it had no unit tests yet). `app` was raised to 93 % / 84 % once it was unit-tested (#95): observed coverage minus
+the margin, taken from the lowest of `main` and the PRs then open, so no open PR started failing. Run the check locally:
 
 ```bash
 ./gradlew :core:koverXmlReport
