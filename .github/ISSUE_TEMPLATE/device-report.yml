@@ -1,0 +1,71 @@
+name: Device report
+description: Tell us how MinimalUI runs on your phone, so it can be listed in DEVICES.md
+title: "docs(devices): <phone model>, Android <version>"
+labels: ["documentation"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for trying MinimalUI on your phone! The checks below are the ones listed in
+        [DEVICES.md](https://github.com/Tim-van-Oudheusden/MinimalUI/blob/main/DEVICES.md#reporting-a-device).
+        Tick each one that passed, and describe any that failed under "What went wrong".
+  - type: input
+    id: phone
+    attributes:
+      label: Phone
+      description: Manufacturer and model.
+      placeholder: e.g. Unihertz Titan 2
+    validations:
+      required: true
+  - type: input
+    id: android
+    attributes:
+      label: Android version
+      description: Settings → About phone → Android version.
+      placeholder: e.g. Android 11
+    validations:
+      required: true
+  - type: dropdown
+    id: input
+    attributes:
+      label: Input
+      description: How did you drive MinimalUI?
+      multiple: true
+      options:
+        - Built-in keyboard
+        - D-pad
+        - External keyboard
+        - Touch only
+    validations:
+      required: true
+  - type: input
+    id: build
+    attributes:
+      label: Build
+      description: The commit the APK was built from, or a link to the CI run you downloaded it from.
+      placeholder: e.g. d71710d, or https://github.com/Tim-van-Oudheusden/MinimalUI/actions/runs/...
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks that passed
+      options:
+        - label: "Home app: MinimalUI can be chosen as the default home app, and the Home key brings its list back"
+        - label: "Moving: Up and Down move one row; Left and Right turn a page"
+        - label: "Opening: Enter (or the D-pad centre) opens the highlighted app, and coming back highlights it again"
+        - label: "Filtering: typing letters narrows the list; Home clears the filter"
+        - label: "App menu: Menu, or holding Enter, opens the app's menu; Back or Esc closes it"
+        - label: "Status pill: shows the battery level and the time, and Wi-Fi when connected"
+        - label: "Live list: installing or uninstalling an app updates the list"
+        - label: "Way out: the Settings entry opens Android's settings, where another home app can be chosen"
+  - type: textarea
+    id: problems
+    attributes:
+      label: What went wrong
+      description: For each check that failed, what you did and what happened instead. Leave empty if all passed.
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything else
+      description: Keys that behave differently on this phone, screenshots, or other launchers you compared with.
