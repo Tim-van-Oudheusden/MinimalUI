@@ -42,6 +42,15 @@ fun ListPosition.paged(direction: Int, count: Int, rowsPerPage: Int): ListPositi
     return ListPosition((selected + shift).coerceIn(0, count - 1), first + shift).showingSelected(count, rowsPerPage)
 }
 
+/**
+ * Selects [ListPosition.selected] (the last row if the list has shrunk past it). The screen stays where it is when
+ * the row is on it, and otherwise scrolls just enough to show it.
+ */
+fun ListPosition.selecting(count: Int, rowsPerPage: Int): ListPosition {
+    if (count == 0) return ListPosition(0, 0)
+    return ListPosition(selected.coerceAtMost(count - 1), first).showingSelected(count, rowsPerPage)
+}
+
 /** The nearest screen that shows the selection and no blank rows past the end of the list. */
 private fun ListPosition.showingSelected(count: Int, rowsPerPage: Int): ListPosition {
     val lastFirst = maxOf(0, count - rowsPerPage)

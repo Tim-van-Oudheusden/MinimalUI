@@ -42,7 +42,9 @@ another home app in the same place.
 | Home                         | Return to the top of the list                                                 |
 | Back                         | Does nothing on the home screen                                               |
 
-The list updates on its own when apps are installed or removed.
+The list updates on its own when apps are installed or removed. Apps open without a transition animation. Coming
+back from an app by Back, Recents or the app closing selects that app again, so one press reopens it; the filter
+stays. Home instead clears the filter and returns to the top.
 
 ## Contributing
 

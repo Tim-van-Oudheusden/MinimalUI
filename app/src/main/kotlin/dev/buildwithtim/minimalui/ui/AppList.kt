@@ -47,6 +47,7 @@ import dev.buildwithtim.minimalui.core.ListContent
 import dev.buildwithtim.minimalui.core.ListPosition
 import dev.buildwithtim.minimalui.core.listRhythm
 import dev.buildwithtim.minimalui.core.paged
+import dev.buildwithtim.minimalui.core.selecting
 import dev.buildwithtim.minimalui.core.stepped
 
 /**
@@ -56,7 +57,8 @@ import dev.buildwithtim.minimalui.core.stepped
  * The selected app's label sits in an inverted pill that hugs it (see BRANDING.md) and holds focus.
  *
  * The first row is selected when the apps first arrive, so the keyboard works without touching the screen, and again
- * whenever [homePresses] or the type-to-filter [query] changes. A non-empty [query] is shown in the top row, so the
+ * whenever [homePresses] or the type-to-filter [query] changes. Each new [returned] selects its row instead, keeping
+ * the screen where it was if that row is on it. A non-empty [query] is shown in the top row, so the
  * user never filters blind. Without apps to list, the rest of the screen stays blank while they load, or shows a
  * centred message when there are none or none match the query.
  */
@@ -67,6 +69,7 @@ fun AppList(
     homePresses: Int,
     onOpen: (LauncherApp) -> Unit,
     modifier: Modifier = Modifier,
+    returned: Returned? = null,
 ) {
     val apps = (content as? ListContent.Apps)?.apps.orEmpty()
     val listState = rememberLazyListState()
@@ -99,6 +102,13 @@ fun AppList(
         val rowHeight = with(density) { rhythm.rowHeight.toDp() }
         // The query line takes the top row; the list gets the rest.
         val rowsPerPage = maxOf(1, if (query.isEmpty()) rhythm.rows else rhythm.rows - 1)
+
+        LaunchedEffect(returned) {
+            // Start from the screen as it is now, which touch scrolling may have moved.
+            if (returned != null && hasApps) {
+                select(ListPosition(returned.row, listState.firstVisibleItemIndex).selecting(apps.size, rowsPerPage))
+            }
+        }
 
         Column {
             if (query.isNotEmpty()) {
@@ -161,6 +171,9 @@ fun AppList(
         if (message != null) Message(stringResource(message))
     }
 }
+
+/** The user came back to the launcher by a route other than Home, for the [count]th time: the list selects [row]. */
+data class Returned(val row: Int, val count: Int)
 
 /** Centred on the screen, in the rows' text style. */
 @Composable

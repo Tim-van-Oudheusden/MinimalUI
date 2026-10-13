@@ -77,4 +77,21 @@ class ListNavigationTest {
         assertEquals(at(0, 0), down(at(4, 1), count = 0))
         assertEquals(at(0, 0), right(at(4, 1), count = 0))
     }
+
+    @Test
+    fun `selecting a row on screen keeps the screen where it was`() {
+        assertEquals(at(5, 2), at(5, 2).selecting(count = 20, rowsPerPage = 8))
+    }
+
+    @Test
+    fun `selecting a row off screen scrolls just enough to show it`() {
+        assertEquals(at(15, 8), at(15, 2).selecting(count = 20, rowsPerPage = 8))
+        assertEquals(at(1, 1), at(1, 8).selecting(count = 20, rowsPerPage = 8))
+    }
+
+    @Test
+    fun `selecting a row past the end selects the last row`() {
+        assertEquals(at(19, 12), at(25, 0).selecting(count = 20, rowsPerPage = 8))
+        assertEquals(at(0, 0), at(3, 1).selecting(count = 0, rowsPerPage = 8))
+    }
 }

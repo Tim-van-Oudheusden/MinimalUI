@@ -94,4 +94,31 @@ class RecentAppsTest {
 
         assertEquals(listOf("App1") + (2..15).map { "App$it" }, recents.labelsFrom(installed))
     }
+
+    @Test
+    fun `a return selects the row of the app opened last`() {
+        val recents = openedInOrder("App1", "App3")
+
+        assertEquals(2, recents.returnRow(installed))
+    }
+
+    @Test
+    fun `a return selects the top when nothing was opened yet`() {
+        assertEquals(0, RecentApps().returnRow(installed))
+    }
+
+    @Test
+    fun `a return selects the top when the app opened last was uninstalled meanwhile`() {
+        val recents = openedInOrder("App1", "App3")
+
+        assertEquals(0, recents.returnRow(installed - app("App3")))
+    }
+
+    @Test
+    fun `a return selects the top when the filter hides the app opened last`() {
+        // App12, opened earlier, still matches the filter, but only the app opened last counts.
+        val recents = openedInOrder("App12", "App3")
+
+        assertEquals(0, recents.returnRow(installed.filteredBy("App1")))
+    }
 }
