@@ -103,6 +103,17 @@ Run these before opening a PR (CI runs the same on every PR):
 | `./gradlew lint`           | Android lint, warnings as errors              |
 | `./gradlew assembleDebug`  | Debug APK build                               |
 
+### Handing work to Claude Code
+
+`.github/workflows/claude.yml` runs [Claude Code](https://github.com/anthropics/claude-code-action) in CI. Label an
+issue `ai-fix-requested`, or mention `@claude` in an issue comment, PR review, or review comment, and Claude works the
+request on a `claude/*` branch and opens a pull request; it never pushes to `main`. On a pull request, `@claude review
+this` asks for a review. Mentions only count from `OWNER`/`MEMBER`/`COLLABORATOR`, the label can only be applied by
+triagers, and fork pull requests are refused, so outside contributors cannot start or steer a run. Claude may run only
+the quality gates (`./gradlew test`, `lint`, `assembleDebug`, `check`, and the module test tasks). Its PRs go through the
+same checks and human review as any other. The workflow needs the `CLAUDE_CODE_OAUTH_TOKEN` repo secret and the Claude
+GitHub App.
+
 ## Code style
 
 - Kotlin official code style (`kotlin.code.style=official`), 4-space indent, max line length 120 (`.editorconfig`).
