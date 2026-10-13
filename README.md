@@ -34,12 +34,13 @@ another home app in the same place.
 
 ## Keys
 
-| Key                       | Action                                         |
-| ------------------------- | ---------------------------------------------- |
-| Up / Down (arrows, D-pad) | Move through the list                          |
-| Enter or D-pad centre     | Open the highlighted app                       |
-| Home                      | Return to the top of the list                  |
-| Back                      | Does nothing on the home screen                |
+| Key                          | Action                                                                        |
+| ---------------------------- | ----------------------------------------------------------------------------- |
+| Up / Down (arrows, D-pad)    | Move one row. A fresh press past either end wraps around; holding stops there |
+| Left / Right (arrows, D-pad) | Turn a page, stopping at the first or last app                                |
+| Enter or D-pad centre        | Open the highlighted app                                                      |
+| Home                         | Return to the top of the list                                                 |
+| Back                         | Does nothing on the home screen                                               |
 
 The list updates on its own when apps are installed or removed.
 
