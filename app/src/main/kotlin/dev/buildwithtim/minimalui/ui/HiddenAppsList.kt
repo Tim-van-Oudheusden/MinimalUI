@@ -14,6 +14,7 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.res.stringResource
 import dev.buildwithtim.minimalui.R
+import dev.buildwithtim.minimalui.core.HintedScreen
 import dev.buildwithtim.minimalui.core.LauncherApp
 import dev.buildwithtim.minimalui.core.ListPosition
 import dev.buildwithtim.minimalui.core.StatusPill
@@ -36,7 +37,7 @@ internal fun HiddenAppsList(
     status: StatusPill? = null,
     suffix: (LauncherApp) -> String? = { null },
 ) {
-    TitledList(title, status, onClose) { rowHeight, rowsPerPage ->
+    TitledList(title, status, HintedScreen.HiddenApps(apps.isEmpty()), onClose) { rowHeight, rowsPerPage ->
         if (apps.isEmpty()) {
             // Focused, so Esc still reaches the list once its last row is gone.
             val requester = remember { FocusRequester() }

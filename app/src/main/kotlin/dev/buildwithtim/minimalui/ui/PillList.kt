@@ -51,8 +51,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.em
+import dev.buildwithtim.minimalui.core.HintedScreen
 import dev.buildwithtim.minimalui.core.ListPosition
 import dev.buildwithtim.minimalui.core.StatusPill
+import dev.buildwithtim.minimalui.core.buttonHints
 import dev.buildwithtim.minimalui.core.listRhythm
 import dev.buildwithtim.minimalui.core.paged
 import dev.buildwithtim.minimalui.core.selecting
@@ -203,13 +205,15 @@ private val ConfirmKeys = setOf(Key.Enter, Key.NumPadEnter, Key.DirectionCenter)
 
 /**
  * A list screen that takes the app list's place for a while: the [status] pill on top, the [title] in a dark-grey
- * pill below it, then the [list], given the row height and the rows left for it per page. Back calls [onClose]; the
- * list handles Esc itself, through its `onKey`.
+ * pill below it, then the [list], given the row height and the rows left for it per page, and the hint row (#74) at
+ * the bottom, with the [hints] for what the screen shows. Back calls [onClose]; the list handles Esc itself, through
+ * its `onKey`.
  */
 @Composable
 internal fun TitledList(
     title: String,
     status: StatusPill?,
+    hints: HintedScreen,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
     list: @Composable (rowHeight: Dp, rowsPerPage: Int) -> Unit,
@@ -224,11 +228,13 @@ internal fun TitledList(
         val density = LocalDensity.current
         val rhythm = listRhythm(constraints.maxHeight, with(density) { RowMetrics.rowHeight().roundToPx() })
         val rowHeight = with(density) { rhythm.rowHeight.toDp() }
-        val reserved = (if (status != null) 1 else 0) + 1
-        Column {
+        // The status line, the title and the hint row each take a whole row.
+        val reserved = (if (status != null) 1 else 0) + 2
+        Column(Modifier.fillMaxSize()) {
             if (status != null) StatusLine(status, rowHeight)
             HeaderLine(title, rowHeight, pill = true)
-            list(rowHeight, maxOf(1, rhythm.rows - reserved))
+            Box(Modifier.fillMaxWidth().weight(1f)) { list(rowHeight, maxOf(1, rhythm.rows - reserved)) }
+            HintLine(buttonHints(hints), rowHeight)
         }
     }
 }

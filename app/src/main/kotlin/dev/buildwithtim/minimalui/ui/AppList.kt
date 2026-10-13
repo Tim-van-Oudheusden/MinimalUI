@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.safeDrawing
@@ -20,11 +21,13 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import dev.buildwithtim.minimalui.R
+import dev.buildwithtim.minimalui.core.HintedScreen
 import dev.buildwithtim.minimalui.core.LauncherApp
 import dev.buildwithtim.minimalui.core.ListContent
 import dev.buildwithtim.minimalui.core.ListPosition
 import dev.buildwithtim.minimalui.core.RootEntry
 import dev.buildwithtim.minimalui.core.StatusPill
+import dev.buildwithtim.minimalui.core.buttonHints
 import dev.buildwithtim.minimalui.core.followedRow
 import dev.buildwithtim.minimalui.core.listRhythm
 import dev.buildwithtim.minimalui.core.selecting
@@ -43,9 +46,10 @@ import dev.buildwithtim.minimalui.core.selecting
  * the screen where it was if that row is on it. When the rows change otherwise (the block above grows or shrinks), the
  * selection stays on its entry. The selection and the screen live in [state], so a list that another screen replaced
  * for a while comes back exactly as it was. The [status] pill, when given, takes the top row, so no row ever runs
- * under it. A non-empty [query] is shown in the row below it, so the user never filters blind. Without apps to list,
- * the rest of the screen stays blank while they load (the status pill too), or shows a centred message when there are
- * none or none match the query.
+ * under it. A non-empty [query] is shown in the row below it, so the user never filters blind. The hint row (#74)
+ * takes the bottom row, naming the keys that work on the selected row. Without apps to list, the rest of the screen
+ * stays blank while they load (the status pill and the hints too), or shows a centred message when there are none or
+ * none match the query.
  */
 @Composable
 fun AppList(
@@ -79,11 +83,11 @@ fun AppList(
         val density = LocalDensity.current
         val rhythm = listRhythm(constraints.maxHeight, with(density) { RowMetrics.rowHeight().roundToPx() })
         val rowHeight = with(density) { rhythm.rowHeight.toDp() }
-        // The status line and the query line each take a whole row at the top; the list gets the rest. A reserved row,
-        // rather than MinUI's shortened first row, because the first row on screen changes as the list scrolls, and
-        // every page keeps the same rhythm.
+        // The status line and the query line each take a whole row at the top, and the hint row (#74) one at the
+        // bottom; the list gets the rest. A reserved row, rather than MinUI's shortened first row, because the first
+        // row on screen changes as the list scrolls, and every page keeps the same rhythm.
         val shownStatus = status?.takeUnless { content == ListContent.Loading }
-        val reserved = (if (shownStatus != null) 1 else 0) + (if (query.isEmpty()) 0 else 1)
+        val reserved = (if (shownStatus != null) 1 else 0) + (if (query.isEmpty()) 0 else 1) + 1
         val rowsPerPage = maxOf(1, rhythm.rows - reserved)
 
         LaunchedEffect(entries, homePresses, query, returned) {
@@ -115,7 +119,7 @@ fun AppList(
             }
         }
 
-        Column {
+        Column(Modifier.fillMaxSize()) {
             if (shownStatus != null) StatusLine(shownStatus, rowHeight)
             // The trailing underscore marks it as typed text rather than another app.
             if (query.isNotEmpty()) HeaderLine("${query}_", rowHeight)
@@ -155,6 +159,9 @@ fun AppList(
                 dim = { entry -> (entry as? RootEntry.App)?.isHidden == true || entry.app?.let(paused) == true },
                 suffix = { entry -> entry.app?.let(suffix) },
             )
+            Spacer(Modifier.weight(1f))
+            val selected = entries.getOrNull(list.position.selected)
+            HintLine(buttonHints(HintedScreen.Root(content, query, selected)), rowHeight)
         }
         // Centred on the whole screen, as MinUI does, whether or not the query line is showing above it.
         val message = when (content) {

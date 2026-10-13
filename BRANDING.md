@@ -41,6 +41,14 @@ a plain list, driven entirely by keys, that gets out of the way. It is not a the
   top row, so no app row runs under it; it stays hidden with the rest while the apps load. The Clock and Battery
   percentage settings leave those items out; with nothing left, the row stays empty. Glyphs are drawn in code, never
   copied from MinUI.
+- **Hint row:** the bottom row of every screen names the keys that work there, as MinUI's button hints do: a
+  dark-grey (`#262626`) pill at the left edge for the secondary keys (`☰ MENU`, or `⌫ DELETE` while filtering) and
+  one at the right edge for the main ones (`⏎ OPEN`, with `⎋ BACK` before it below the root). Inside a pill, each
+  key's glyph is black in a small white circle, followed by what it does in white upper case at 18 sp, on the rows'
+  line height, so the pill is as tall as the selection pill. Keys are named by their keyboard glyphs (`⏎` Enter,
+  `⎋` Esc or Back, `☰` Menu, `⌫` Backspace), never pad letters. The row takes a whole list row, so no row runs under
+  it; on a screen narrower than 320 dp only the right pill shows, and while the apps load the row stays blank. The
+  hints are drawn only: they never take focus and do nothing when tapped.
 - **Root list:** the favourites head the list, then the recently used apps, then a `Collections` row when there are
   collections, then one empty row, then every app, then one more empty row and a `Groups` row last (as MinUI lists
   Tools last), so the first row is always an app and Up from it reaches the groups; no rule, header or other separator

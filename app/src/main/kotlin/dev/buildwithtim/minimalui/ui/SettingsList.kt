@@ -7,6 +7,7 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.res.stringResource
 import dev.buildwithtim.minimalui.R
 import dev.buildwithtim.minimalui.core.Choice
+import dev.buildwithtim.minimalui.core.HintedScreen
 import dev.buildwithtim.minimalui.core.Setting
 import dev.buildwithtim.minimalui.core.Settings
 import dev.buildwithtim.minimalui.core.SettingsLink
@@ -36,7 +37,8 @@ internal fun SettingsList(
     val linkLabels = SettingsLink.entries.associateWith { stringResource(it.label) }
     val choiceLabels = Choice.entries.associateWith { stringResource(it.label) }
 
-    TitledList(title, status, onClose, modifier) { rowHeight, rowsPerPage ->
+    val hints = HintedScreen.Settings(settingsRows[state.position.selected])
+    TitledList(title, status, hints, onClose, modifier) { rowHeight, rowsPerPage ->
         PillList(
             state = state,
             items = settingsRows,
@@ -87,7 +89,8 @@ internal fun AboutList(
     val state = remember { PillListState() }
     val rows = listOf(stringResource(R.string.about_version, version), stringResource(R.string.about_commit, commit))
 
-    TitledList(stringResource(R.string.settings_about), status, onClose, modifier) { rowHeight, rowsPerPage ->
+    val title = stringResource(R.string.settings_about)
+    TitledList(title, status, HintedScreen.About, onClose, modifier) { rowHeight, rowsPerPage ->
         PillList(
             state = state,
             items = rows,
