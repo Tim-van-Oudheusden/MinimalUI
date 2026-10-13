@@ -32,6 +32,13 @@ android {
         compose = true
     }
 
+    testOptions {
+        unitTests {
+            // Robolectric reads the merged manifest and resources, so app tests run on the JVM without a device.
+            isIncludeAndroidResources = true
+        }
+    }
+
     lint {
         abortOnError = true
         warningsAsErrors = true
@@ -47,4 +54,11 @@ dependencies {
     implementation(libs.androidx.compose.foundation)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.ui)
+
+    testImplementation(libs.junit)
+    testImplementation(libs.robolectric)
+    testImplementation(platform(libs.androidx.compose.bom))
+    testImplementation(libs.androidx.compose.ui.test.junit4)
+    // Declares the empty activity that createComposeRule() hosts content in; debug builds only.
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
 }

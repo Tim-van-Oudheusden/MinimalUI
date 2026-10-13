@@ -51,6 +51,7 @@ To skip the local SDK install, use the sandbox image instead: `Dockerfile.sandbo
 app/                        Android application: manifest, activity, Compose UI, resources
   src/main/kotlin/          Kotlin sources, package dev.buildwithtim.minimalui (ui/ holds composables)
   src/main/res/             strings, theme, adaptive launcher icon, backup rules
+  src/test/kotlin/          Robolectric + Compose UI tests, run on the JVM without an emulator
 core/                       pure Kotlin/JVM logic (no Android dependencies), package dev.buildwithtim.minimalui.core
   src/test/kotlin/          JUnit tests, run on the JVM without an emulator
 gradle/libs.versions.toml   every dependency and plugin version
@@ -66,6 +67,12 @@ reads from Android APIs and renders with Compose.
 
 **Where a test goes.** Next to the module it covers, in the same package: a test for
 `core/src/main/kotlin/dev/buildwithtim/minimalui/core/Foo.kt` goes in `core/src/test/kotlin/dev/buildwithtim/minimalui/core/FooTest.kt`.
+
+**App tests.** What has to stay in `app` (focus, key handling, intents, the package manager) is tested with Robolectric
+and `createComposeRule()` in `app/src/test`, inside `./gradlew test`. Drive the UI the way a user does: keys through
+`performKeyInput`, or through the activity's `dispatchKeyEvent` for keys no row consumes, and assert on what shows or
+what was started. Robolectric emulates SDK 35 (`app/src/test/resources/robolectric.properties`), because it cannot yet
+emulate the app's `targetSdk`. Mark a test `@Config(sdk = [28, 35])` when it covers a version branch.
 
 **Tests for CI and scripts.** `tooling` has no main sources: its tests read `.github/` and run `scripts/` the way CI
 does, so they run with `./gradlew test`. `WorkflowInvariantsTest` holds the reviewed `GITHUB_TOKEN` scopes of every
