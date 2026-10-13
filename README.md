@@ -6,6 +6,10 @@ A minimal Android launcher for keyboard-centric phones, such as those from Zinwa
 [MinUI](https://github.com/shauninman/MinUI) and [Cannoli](https://github.com/CannoliHQ/cannoli): a plain list of
 apps, driven entirely by keys.
 
+[![MinimalUI introduction video on YouTube](https://img.youtube.com/vi/S72aC8-c0lo/maxresdefault.jpg)](https://youtu.be/S72aC8-c0lo)
+
+Watch the [introduction video](https://youtu.be/S72aC8-c0lo) on YouTube.
+
 ## Status
 
 Early development (version 0.1.0). There are no releases yet, and no phone is listed as supported until it has been
