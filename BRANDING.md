@@ -47,8 +47,8 @@ a plain list, driven entirely by keys, that gets out of the way. It is not a the
   key's glyph is black in a small white circle, followed by what it does in white upper case at 18 sp, on the rows'
   line height, so the pill is as tall as the selection pill. Keys are named by their keyboard glyphs (`⏎` Enter,
   `⎋` Esc or Back, `☰` Menu, `⌫` Backspace), never pad letters. The row takes a whole list row, so no row runs under
-  it; on a screen narrower than 320 dp only the right pill shows, and while the apps load the row stays blank. The
-  hints are drawn only: they never take focus and do nothing when tapped.
+  it; on a screen narrower than 320 dp only the right pill shows, and while the apps load the row stays blank. A
+  tap on a hint presses its key, with no ripple; the hints never take focus, so the selection stays where it was.
 - **Root list:** the favourites head the list, then the recently used apps, then a `Collections` row when there are
   collections, then one empty row, then every app, then one more empty row and a `Groups` row last (as MinUI lists
   Tools last), so the first row is always an app and Up from it reaches the groups; no rule, header or other separator

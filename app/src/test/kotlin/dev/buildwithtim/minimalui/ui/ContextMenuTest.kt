@@ -7,7 +7,9 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
@@ -70,7 +72,8 @@ class ContextMenuTest {
         val title = rule.onNodeWithText("Camera").getUnclippedBoundsInRoot()
         val first = rule.onNodeWithText("App info").assertIsFocused().getUnclippedBoundsInRoot()
         assertTrue("the title is not above the actions", title.bottom <= first.top)
-        assertEquals(all.size, rule.onAllNodes(hasClickAction()).fetchSemanticsNodes().size)
+        val rows = rule.onAllNodes(hasClickAction() and hasAnyAncestor(hasScrollAction()))
+        assertEquals(all.size, rows.fetchSemanticsNodes().size)
     }
 
     @Test

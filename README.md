@@ -41,8 +41,8 @@ another home app in the same place.
 The bottom row of every screen is a hint row, as in MinUI: it names the keys that work on the screen and the selected
 row by their glyphs, `⏎` Enter, `⎋` Esc (or Back), `☰` Menu and `⌫` Backspace, with what each does, for example
 `☰ MENU` on the left and `⏎ OPEN` on the right of the home screen, `⌫ DELETE` while filtering, `⎋ BACK  ⏎ OPEN` in
-a list opened from it and `⎋ CANCEL  ⏎ SAVE` in the text editor. Screens narrower than 320 dp show only the right-hand
-hints.
+a list opened from it and `⎋ CANCEL  ⏎ SAVE` in the text editor. Tapping a hint does the same as pressing its key, so
+the keys also work by touch. Screens narrower than 320 dp show only the right-hand hints.
 
 | Key                          | Action                                                                        |
 | ---------------------------- | ----------------------------------------------------------------------------- |

@@ -33,7 +33,9 @@ import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isFocused
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
@@ -131,6 +133,9 @@ class MainActivityTest {
         }
 
     private fun press(key: Key) = rule.onRoot().performKeyInput { pressKey(key) }
+
+    /** A row of the open list; the hint row's pills take taps too, but are not rows. */
+    private val listRow = hasClickAction() and hasAnyAncestor(hasScrollAction())
 
     /** Types through the activity, the path a key takes when no row consumes it. */
     private fun type(activity: ActivityController<MainActivity>, keyCode: Int) {
@@ -771,7 +776,7 @@ class MainActivityTest {
     private fun rowsMatching(activity: ActivityController<MainActivity>, query: String): List<String> {
         query.forEach { type(activity, KeyEvent.keyCodeFromString("KEYCODE_${it.uppercaseChar()}")) }
         rule.waitForIdle()
-        return rule.onAllNodes(hasClickAction())
+        return rule.onAllNodes(listRow)
             .fetchSemanticsNodes()
             .map { node -> node.config[SemanticsProperties.Text].joinToString { it.text } }
     }
@@ -976,7 +981,7 @@ class MainActivityTest {
 
         val rows = listOf("Bell", "Alarm", "Alarm", "Bell", "MinimalUI", "MinimalUI settings", "Groups")
         assertEquals(rows, rowsMatching(activity, ""))
-        val bounds = rule.onAllNodes(hasClickAction()).fetchSemanticsNodes().map { it.boundsInRoot }
+        val bounds = rule.onAllNodes(listRow).fetchSemanticsNodes().map { it.boundsInRoot }
         // The blank row between the block and the full list is as tall as any other row.
         assertEquals(bounds[1].height, bounds[2].top - bounds[1].bottom, 1f)
         rule.onAllNodesWithText("Bell")[0].assertIsFocused()
@@ -1102,7 +1107,7 @@ class MainActivityTest {
         awaitListed("★ Bell")
         val rows = listOf("★ Bell", "Alarm", "★ Bell", "MinimalUI", "MinimalUI settings", "Groups")
         assertEquals(rows, rowsMatching(activity, ""))
-        val bounds = rule.onAllNodes(hasClickAction()).fetchSemanticsNodes().map { it.boundsInRoot }
+        val bounds = rule.onAllNodes(listRow).fetchSemanticsNodes().map { it.boundsInRoot }
         assertEquals(bounds[0].height, bounds[1].top - bounds[0].bottom, 1f)
         // The selection stays on the row the menu was opened on, now one block row lower.
         rule.onAllNodesWithText("★ Bell")[1].assertIsFocused()
@@ -1160,7 +1165,7 @@ class MainActivityTest {
         rule.onNodeWithText("gamez").assertIsFocused()
         press(Key.Enter)
         awaitListed("Bell")
-        assertEquals(listOf("Bell", "Alarm"), rule.onAllNodes(hasClickAction()).fetchSemanticsNodes().map {
+        assertEquals(listOf("Bell", "Alarm"), rule.onAllNodes(listRow).fetchSemanticsNodes().map {
             it.config[SemanticsProperties.Text].joinToString()
         })
         rule.onNodeWithText("Bell").assertIsFocused()
@@ -1222,7 +1227,7 @@ class MainActivityTest {
         awaitListed("games")
         press(Key.Enter)
         awaitListed("Alarm")
-        fun rows() = rule.onAllNodes(hasClickAction()).fetchSemanticsNodes().map {
+        fun rows() = rule.onAllNodes(listRow).fetchSemanticsNodes().map {
             it.config[SemanticsProperties.Text].joinToString()
         }
 
@@ -1343,7 +1348,7 @@ class MainActivityTest {
         awaitListed("games")
         press(Key.Enter)
         awaitListed("Alarm")
-        fun rows() = rule.onAllNodes(hasClickAction()).fetchSemanticsNodes().map {
+        fun rows() = rule.onAllNodes(listRow).fetchSemanticsNodes().map {
             it.config[SemanticsProperties.Text].joinToString()
         }
         assertEquals(listOf("Bell", "Alarm"), rows())
@@ -1444,7 +1449,7 @@ class MainActivityTest {
         }
         awaitListed("Cello", listed = false)
         openHiddenApps()
-        fun rows() = rule.onAllNodes(hasClickAction()).fetchSemanticsNodes().map {
+        fun rows() = rule.onAllNodes(listRow).fetchSemanticsNodes().map {
             it.config[SemanticsProperties.Text].joinToString()
         }
         assertEquals(listOf("Alarm", "Bell", "Cello"), rows())
@@ -1689,7 +1694,7 @@ class MainActivityTest {
     }
 
     /** The texts of the open list's rows, top to bottom. */
-    private fun shownRows(): List<String> = rule.onAllNodes(hasClickAction()).fetchSemanticsNodes().map {
+    private fun shownRows(): List<String> = rule.onAllNodes(listRow).fetchSemanticsNodes().map {
         it.config[SemanticsProperties.Text].joinToString()
     }
 
@@ -1758,6 +1763,35 @@ class MainActivityTest {
         rule.onNodeWithText("CANCEL").assertIsDisplayed()
         rule.onNodeWithText("SAVE").assertIsDisplayed()
         rule.onNodeWithText("SELECT").assertDoesNotExist()
+    }
+
+    @Test
+    fun `tapping a hint does what its key does, so Backspace edits the filter, Enter saves a name, Esc closes the menu`() {
+        install("Alarm", "com.example.alarm")
+        val activity = launch()
+        awaitListed("Alarm")
+
+        type(activity, KeyEvent.KEYCODE_A)
+        type(activity, KeyEvent.KEYCODE_Q)
+        awaitListed("No match")
+        rule.onNodeWithText("DELETE").performClick()
+        rule.onNodeWithText("a_").assertExists()
+        rule.onNodeWithText("DELETE").performClick()
+        awaitListed("Groups")
+
+        openMenu(activity)
+        chooseRow("Rename")
+        awaitEditor()
+        typeText(activity, "s")
+        rule.waitUntil(timeoutMillis = 5_000) { editorText() == "Alarms" }
+        rule.onNodeWithText("SAVE").performClick()
+        awaitListed("Alarms")
+        rule.onNodeWithText("Alarms").assertIsFocused()
+
+        openMenu(activity)
+        rule.onNodeWithText("BACK").performClick()
+        awaitListed("App info", listed = false)
+        rule.onNodeWithText("Alarms").assertIsFocused()
     }
 
     /** From the selected app's menu, by keyboard: Add to group, then [name], made new when [new]. */
