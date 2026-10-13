@@ -32,3 +32,4 @@ documentation:
           - '.github/copilot-instructions.md'
           - '.cursor/**'
           - '.claude/**'
+          - 'prompts/**'
