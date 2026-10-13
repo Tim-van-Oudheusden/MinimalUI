@@ -29,4 +29,6 @@ a plain list, driven entirely by keys, that gets out of the way. It is not a the
 ## 6. Visual identity
 
 - **Colour:** black background, white text; the focused row is inverted (black text on white), as in MinUI.
-- **Type:** the system font until a dedicated one is chosen; legible at arm's length on small, square screens.
+- **Selection:** the inversion is a pill with fully rounded ends that hugs the app's label, as in MinUI and Cannoli.
+  Rows are contiguous, with no gap between them. A label too long for the row ends in an ellipsis and never scrolls.
+- **Type:** the system font at 24 sp until a dedicated one is chosen; legible at arm's length on small, square screens.
