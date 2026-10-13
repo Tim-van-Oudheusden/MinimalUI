@@ -38,9 +38,13 @@ a plain list, driven entirely by keys, that gets out of the way. It is not a the
   a Wi-Fi glyph (only while on Wi-Fi), a battery glyph with the percentage, and a clock that follows the system
   12/24-hour setting. The battery's fill is proportional to the charge; the fill turns red at 20% and the outline too
   at 10%, and a bolt replaces the fill while charging. Its text is 20 sp, on the rows' line height. The pill takes the
-  top row, so no app row runs under it; it stays hidden with the rest while the apps load. Glyphs are drawn in code,
-  never copied from MinUI.
+  top row, so no app row runs under it; it stays hidden with the rest while the apps load. The Clock and Battery
+  percentage settings leave those items out; with nothing left, the row stays empty. Glyphs are drawn in code, never
+  copied from MinUI.
 - **Menus:** a menu (such as an app's context menu) is another list in the same style that takes the list's place,
   one list at a time. Its title, the app's name, sits in a dark-grey (`#262626`) pill below the status pill, as MinUI
   marks its in-game menu's title; an action that does not apply stays listed in grey (`#808080`) and does nothing.
+- **Settings:** MinimalUI's settings are such a list, titled `MinimalUI settings`; a setting's value (`On`, `Off`)
+  sits in white at the right end of its row, outside the selection pill, as in MinUI and Cannoli. About, the last row,
+  opens a list of its own with the version and the build commit.
 - **Type:** the system font at 24 sp until a dedicated one is chosen; legible at arm's length on small, square screens.

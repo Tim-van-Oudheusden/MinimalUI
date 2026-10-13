@@ -10,19 +10,17 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 ## Latest session
 
 - **Date:** 2026-10-13
-- **Worked:** #67 — per-app context menu (stack row 4 of the #60 interface stack, on `feat/65-status-pill`).
-- **Outcome:** core `ContextMenu.kt` (`MenuAction`, `MenuItem(action, enabled)`, `AppFacts`, `contextMenu(facts)`):
-  App info, Uninstall (disabled for system apps and the Settings entry), Remove from / Clear recently used. The list
-  machinery moved from `AppList` into a shared `ui/PillList.kt` (`PillList`, `PillListState`, `HeaderLine`); `AppList`
-  keeps its selection in a hoisted `AppListState`, so it comes back from the menu unchanged. `ui/ContextMenu.kt`
-  replaces the list until Back/Esc; opened by Menu, a held Enter/centre (first auto-repeat) or a touch long-press.
-  Uninstall uses `ACTION_DELETE` with the normal `REQUEST_DELETE_PACKAGES` permission.
-- **Open follow-ups:** the rest of the #60 stack builds on this branch (Favourite, Hide, Rename, groups add
-  `MenuAction` kinds).
+- **Worked:** #73 — settings list and About (stack row 5 of the #60 interface stack, on `feat/67-context-menu`).
+- **Outcome:** core `Settings.kt` (`Choice`, `Setting` enum with key/choices/default, `SettingsLink`, `SettingsRow`,
+  `settingsRows`, `Settings` with `cycled(setting, step)` wrapping both ways, `stored()`/`fromStored`), core
+  `LauncherSettings.kt` (the `MinimalUI settings` pseudo-entry, placed right after Android's Settings), and
+  `StatusPill.shownWith(settings)` (Clock / Battery percentage). App: `SettingsStore` (SharedPreferences
+  `settings`), `ui/SettingsList.kt` (`SettingsList`, `AboutList`), `TitledList` in `ui/PillList.kt` shared with the
+  context menu, `PillList(value = …)` for a right-aligned value, and `BuildConfig.BUILD_COMMIT` from
+  `git rev-parse --short HEAD` (`unknown` without git).
+- **Open follow-ups:** later layers add rows (Hidden apps link, Recently used toggle) as one enum entry each.
 - **Notes for next session:**
-  - `PillList` swallows a confirm-key release it did not see pressed, so the release ending a long press never
-    triggers a row on the screen it opened.
-  - Robolectric: `shadowOf(pm).installPackage(PackageInfo)` before `addActivityIfNotPresent` sets
-    `ApplicationInfo.flags` (e.g. `FLAG_SYSTEM`).
-  - After a touch action the next key may race the focus request; wait (`assertIsFocused`) before typing.
+  - `PillList`'s `onKey` now sees arrow keys before paging; return true to take one over.
+  - Lazy-list keys must be Bundle-storable: a data class key crashes; use a string or an enum.
+  - The new row shifts list positions in tests: with no Android Settings resolved, it sorts after `MinimalUI`.
   - No JDK on the host: run Gradle via the podman sandbox (`/tmp/gates.sh`).

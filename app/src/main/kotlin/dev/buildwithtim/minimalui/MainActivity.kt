@@ -15,7 +15,9 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.res.stringResource
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -26,17 +28,26 @@ import dev.buildwithtim.minimalui.core.ListContent
 import dev.buildwithtim.minimalui.core.MenuAction
 import dev.buildwithtim.minimalui.core.MenuItem
 import dev.buildwithtim.minimalui.core.RecentApps
+import dev.buildwithtim.minimalui.core.Setting
+import dev.buildwithtim.minimalui.core.Settings
+import dev.buildwithtim.minimalui.core.SettingsLink
 import dev.buildwithtim.minimalui.core.StatusPill
 import dev.buildwithtim.minimalui.core.contextMenu
+import dev.buildwithtim.minimalui.core.isLauncherSettings
+import dev.buildwithtim.minimalui.core.launcherSettings
 import dev.buildwithtim.minimalui.core.listContent
 import dev.buildwithtim.minimalui.core.minusLastTyped
 import dev.buildwithtim.minimalui.core.plusTyped
 import dev.buildwithtim.minimalui.core.sortedForDisplay
+import dev.buildwithtim.minimalui.core.withLauncherSettings
 import dev.buildwithtim.minimalui.core.withSystemSettings
+import dev.buildwithtim.minimalui.ui.AboutList
 import dev.buildwithtim.minimalui.ui.AppList
 import dev.buildwithtim.minimalui.ui.ContextMenu
 import dev.buildwithtim.minimalui.ui.MinimalTheme
+import dev.buildwithtim.minimalui.ui.PillListState
 import dev.buildwithtim.minimalui.ui.Returned
+import dev.buildwithtim.minimalui.ui.SettingsList
 import dev.buildwithtim.minimalui.ui.rememberAppListState
 import java.util.concurrent.Executors
 
@@ -51,6 +62,13 @@ class MainActivity : ComponentActivity() {
 
     // The context menu on screen in place of the list (#67), or null while the list shows.
     private var menu by mutableStateOf<AppMenu?>(null)
+
+    // MinimalUI's settings list (#73) on screen in place of the app list, and the list of the link row opened from it.
+    private var settingsOpen by mutableStateOf(false)
+    private var settingsLink by mutableStateOf<SettingsLink?>(null)
+
+    private val settingsStore by lazy { SettingsStore(this) }
+    private var settings by mutableStateOf(Settings())
 
     // Lazy: the system services exist only once the activity is attached.
     private val statusWatcher by lazy { StatusWatcher(this) { status = it } }
@@ -89,6 +107,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         hideStatusBar()
         recents = recentStore.load()
+        settings = settingsStore.load()
         // Registered for the activity's whole life, not only while resumed, so the list is current before a return.
         registerReceiver(
             packageChanges,
@@ -104,10 +123,38 @@ class MainActivity : ComponentActivity() {
         setContent {
             // Outside the list, so the list comes back from the menu with the same app selected and the same screen.
             val listState = rememberAppListState()
+            // Fresh each time the settings open, kept while a link's list is up, so its row is selected on return.
+            val settingsState = remember(settingsOpen) { PillListState() }
+            val shownStatus = status?.shownWith(settings)
             MinimalTheme {
                 val shownMenu = menu
-                if (shownMenu == null) {
-                    AppList(
+                val link = settingsLink
+                when {
+                    link != null -> when (link) {
+                        SettingsLink.About -> AboutList(
+                            version = BuildConfig.VERSION_NAME,
+                            commit = BuildConfig.BUILD_COMMIT,
+                            onClose = { settingsLink = null },
+                            status = shownStatus,
+                        )
+                    }
+                    settingsOpen -> SettingsList(
+                        title = stringResource(R.string.settings_entry),
+                        settings = settings,
+                        onCycle = ::cycle,
+                        onOpen = { settingsLink = it },
+                        onClose = { settingsOpen = false },
+                        state = settingsState,
+                        status = shownStatus,
+                    )
+                    shownMenu != null -> ContextMenu(
+                        title = shownMenu.app.label,
+                        items = shownMenu.items,
+                        onChoose = { choose(shownMenu.app, it) },
+                        onClose = { menu = null },
+                        status = shownStatus,
+                    )
+                    else -> AppList(
                         content = listContent(apps, query),
                         query = query,
                         homePresses = homePresses,
@@ -115,15 +162,7 @@ class MainActivity : ComponentActivity() {
                         onMenu = ::openMenu,
                         state = listState,
                         returned = returned,
-                        status = status,
-                    )
-                } else {
-                    ContextMenu(
-                        title = shownMenu.app.label,
-                        items = shownMenu.items,
-                        onChoose = { choose(shownMenu.app, it) },
-                        onClose = { menu = null },
-                        status = status,
+                        status = shownStatus,
                     )
                 }
             }
@@ -158,16 +197,18 @@ class MainActivity : ComponentActivity() {
         // singleTask: the Home key (or a launcher icon) reaches the running instance here, never a second one.
         awayInApp = false
         menu = null
+        settingsOpen = false
+        settingsLink = null
         homePresses++
         query = ""
     }
 
     // Typing filters the list. Rows only handle arrows, Enter and Space, so typed keys fall through to here, and still
     // arrive when the filter leaves no row to hold focus. Other keys, and Ctrl or Meta shortcuts, keep their usual job,
-    // and so does every key while the context menu is open: it has nothing to filter.
+    // and so does every key while the context menu or the settings are open: they have nothing to filter.
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
         val newQuery = when {
-            menu != null || event.isCtrlPressed || event.isMetaPressed -> null
+            menu != null || settingsOpen || event.isCtrlPressed || event.isMetaPressed -> null
             keyCode == KeyEvent.KEYCODE_DEL -> query.minusLastTyped()
             else -> query.plusTyped(event.unicodeChar)
         }
@@ -195,6 +236,11 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun open(app: LauncherApp) {
+        // MinimalUI's own settings open in place; they are not an app to start, nor a recent one.
+        if (app.isLauncherSettings) {
+            settingsOpen = true
+            return
+        }
         if (start(app.launchIntent())) {
             saveRecents(recents.opened(app, apps.orEmpty()))
             awayInApp = true
@@ -222,7 +268,8 @@ class MainActivity : ComponentActivity() {
         val recent = recentApps
         val facts = AppFacts(
             isSystem = packageManager.isSystemApp(app.packageName),
-            isSettingsEntry = app.packageName == packageManager.systemSettings()?.packageName,
+            // Android's Settings keeps the way back to another home app; MinimalUI's row stands for the launcher itself.
+            isSettingsEntry = app.isLauncherSettings || app.packageName == packageManager.systemSettings()?.packageName,
             isRecent = app in recent,
             hasRecents = recent.isNotEmpty(),
         )
@@ -245,11 +292,18 @@ class MainActivity : ComponentActivity() {
         recentStore.save(changed)
     }
 
+    private fun cycle(setting: Setting, step: Int) {
+        settings = settings.cycled(setting, step)
+        settingsStore.save(settings)
+    }
+
     // Runs on the worker thread: the package queries and every label load stay off the main thread.
     private fun installedApps(): List<LauncherApp> {
         val installed = packageManager.launchableApps()
-        val settings = packageManager.systemSettings()
-        return (settings?.let(installed::withSystemSettings) ?: installed).sortedForDisplay()
+        val system = packageManager.systemSettings()
+        val sorted = (system?.let(installed::withSystemSettings) ?: installed).sortedForDisplay()
+        val entry = launcherSettings(getString(R.string.settings_entry), packageName)
+        return sorted.withLauncherSettings(entry, system?.packageName)
     }
 }
 

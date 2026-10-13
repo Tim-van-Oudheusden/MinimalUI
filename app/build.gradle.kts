@@ -4,6 +4,15 @@ plugins {
     alias(libs.plugins.kover)
 }
 
+// The commit the APK was built from, shown in Settings > About (#73). "unknown" where git or the repository is
+// missing (a source archive, say), so the build never fails for it.
+val buildCommit: String = runCatching {
+    providers.exec {
+        commandLine("git", "rev-parse", "--short", "HEAD")
+        isIgnoreExitValue = true
+    }.standardOutput.asText.get().trim()
+}.getOrNull().orEmpty().ifEmpty { "unknown" }
+
 android {
     namespace = "dev.buildwithtim.minimalui"
     compileSdk = 37
@@ -15,6 +24,7 @@ android {
         targetSdk = 37
         versionCode = 1
         versionName = "0.1.0"
+        buildConfigField("String", "BUILD_COMMIT", "\"$buildCommit\"")
     }
 
     buildTypes {
@@ -30,6 +40,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     testOptions {

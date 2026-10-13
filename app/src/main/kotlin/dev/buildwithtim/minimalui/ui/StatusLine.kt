@@ -40,8 +40,9 @@ private val StatusTextStyle = RowMetrics.TextStyle.copy(fontSize = 20.sp)
 
 /**
  * The status line: one row, [height] tall, with the [pill] in its top-right corner (the system status bar is hidden
- * on the launcher). The pill holds a Wi-Fi glyph while connected, the battery glyph and percentage, and the clock;
- * it reads as one item to accessibility services.
+ * on the launcher). The pill holds a Wi-Fi glyph while connected, the battery glyph and percentage, and the clock,
+ * less whatever the settings turned off; it reads as one item to accessibility services. With nothing left to show,
+ * the row stays empty.
  */
 @Composable
 fun StatusLine(pill: StatusPill, height: Dp, modifier: Modifier = Modifier) {
@@ -52,6 +53,7 @@ fun StatusLine(pill: StatusPill, height: Dp, modifier: Modifier = Modifier) {
             .height(height)
             .padding(horizontal = RowMetrics.ListPaddingHorizontal),
     ) {
+        if (pill.isEmpty) return@Box
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -65,10 +67,10 @@ fun StatusLine(pill: StatusPill, height: Dp, modifier: Modifier = Modifier) {
             pill.battery?.let { battery ->
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     BatteryGlyph(battery, color)
-                    Text(text = battery.text, color = color, style = StatusTextStyle, maxLines = 1)
+                    if (pill.percentage) Text(text = battery.text, color = color, style = StatusTextStyle, maxLines = 1)
                 }
             }
-            Text(text = pill.clock, color = color, style = StatusTextStyle, maxLines = 1)
+            pill.clock?.let { Text(text = it, color = color, style = StatusTextStyle, maxLines = 1) }
         }
     }
 }
