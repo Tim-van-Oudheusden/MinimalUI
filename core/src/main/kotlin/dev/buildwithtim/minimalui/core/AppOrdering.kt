@@ -6,12 +6,14 @@ import java.util.Locale
 /**
  * The order the launcher lists apps in: alphabetical by label, ignoring case, with accented letters next to their base
  * letter (`É` between `D` and `F`, not after `Z`).
- * Apps sharing a label fall back to package and activity name, so the list never reshuffles between loads.
+ * Apps sharing a label fall back to package and activity name, so the list never reshuffles between loads, and an
+ * app of the launcher's own user comes before its copies in other profiles (#78).
  */
 fun List<LauncherApp>.sortedForDisplay(): List<LauncherApp> = sortedWith(
     compareBy<LauncherApp, String>(labelCollator()) { it.label }
         .thenBy { it.packageName }
-        .thenBy { it.activityName },
+        .thenBy { it.activityName }
+        .thenBy(nullsFirst()) { it.profile },
 )
 
 /**

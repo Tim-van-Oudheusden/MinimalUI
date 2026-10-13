@@ -37,4 +37,12 @@ class AppOrderingTest {
 
         assertEquals(listOf("com.android.camera", "com.vendor.camera"), packages)
     }
+
+    @Test
+    fun `orders a personal app before its work copy`() {
+        val personal = app("Camera")
+        val apps = listOf(personal.copy(profile = 11L), personal.copy(profile = 10L), personal)
+
+        assertEquals(listOf(null, 10L, 11L), apps.sortedForDisplay().map { it.profile })
+    }
 }

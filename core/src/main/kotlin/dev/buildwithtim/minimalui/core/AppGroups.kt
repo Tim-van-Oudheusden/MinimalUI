@@ -41,5 +41,13 @@ fun appGroups(apps: List<LauncherApp>, user: UserGroups = UserGroups()): List<Ap
         .sortedWith(compareBy<AppGroup> { it.name == AppCategory.Other.name }.thenBy(labelCollator()) { it.name })
 }
 
-/** The automatic groups [this] app falls in, by name: its category's, if any (#78 adds the work profile's). */
-internal val LauncherApp.automaticGroups: List<String> get() = listOfNotNull(category?.name)
+/**
+ * The automatic group of the apps of another profile than the launcher's own user (#78): a work profile's apps are
+ * listed there only, not in their category's group nor in the root's full list. Also what tells a work app apart from
+ * an app of the same name ([duplicateSuffixes]).
+ */
+const val WORK_GROUP = "Work"
+
+/** The automatic groups [this] app falls in, by name: [WORK_GROUP] alone for a work app, else its category's, if any. */
+internal val LauncherApp.automaticGroups: List<String>
+    get() = if (isWorkApp) listOf(WORK_GROUP) else listOfNotNull(category?.name)

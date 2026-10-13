@@ -61,8 +61,10 @@ a plain list, driven entirely by keys, that gets out of the way. It is not a the
   name for Rename and Rename group.
 - **Duplicate names:** when apps are listed under the same name, each shows a suffix after the name on the same line,
   as in Cannoli: its package name (or its activity's short class name when they share a package), in grey (`#808080`)
-  at 0.75× the label's size. Unique names show none. The name keeps priority on a narrow row: the suffix is cut off
-  with an ellipsis first. The `★` is drawn before the name only, never on the suffix.
+  at 0.75× the label's size; a work-profile app's suffix is `Work` (followed by its package name only when another
+  work app shares its name), and a personal app whose name only work apps share needs none. Unique names show none.
+  The name keeps priority on a narrow row: the suffix is cut off with an ellipsis first. The `★` is drawn before the
+  name only, never on the suffix. While work apps are turned off, their rows are grey (`#808080`) too, yet still open.
 - **Menus:** a menu (an app's context menu, or a group's) is another list in the same style that takes the list's
   place, one list at a time. Its title, the app's or group's name, sits in a dark-grey (`#262626`) pill below the
   status pill, as MinUI marks its in-game menu's title; an action that does not apply stays listed in grey (`#808080`)

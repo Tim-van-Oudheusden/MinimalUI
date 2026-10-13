@@ -49,6 +49,13 @@ class ContextMenuTest {
     }
 
     @Test
+    fun `Uninstall is shown disabled for a work app, which the launcher cannot remove from its profile`() {
+        val menu = contextMenu(userApp.copy(isWorkApp = true))
+
+        assertEquals(listOf(MenuItem(AppInfo), MenuItem(Uninstall, enabled = false)) + listRows, menu)
+    }
+
+    @Test
     fun `Uninstall and Hide are shown disabled for the guaranteed Settings entry`() {
         val menu = contextMenu(userApp.copy(isSettingsEntry = true))
 

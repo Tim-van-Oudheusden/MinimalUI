@@ -3,10 +3,15 @@ package dev.buildwithtim.minimalui
 import android.app.ActivityOptions
 import android.content.ActivityNotFoundException
 import android.content.BroadcastReceiver
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.LauncherApps
+import android.graphics.Rect
 import android.os.Bundle
+import android.os.UserHandle
+import android.os.UserManager
 import android.view.KeyEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.addCallback
@@ -41,10 +46,12 @@ import dev.buildwithtim.minimalui.core.SettingsLink
 import dev.buildwithtim.minimalui.core.StatusPill
 import dev.buildwithtim.minimalui.core.UserGroups
 import dev.buildwithtim.minimalui.core.appGroups
+import dev.buildwithtim.minimalui.core.component
 import dev.buildwithtim.minimalui.core.contextMenu
 import dev.buildwithtim.minimalui.core.duplicateSuffixes
 import dev.buildwithtim.minimalui.core.groupMenu
 import dev.buildwithtim.minimalui.core.isLauncherSettings
+import dev.buildwithtim.minimalui.core.isWorkApp
 import dev.buildwithtim.minimalui.core.launcherSettings
 import dev.buildwithtim.minimalui.core.listContent
 import dev.buildwithtim.minimalui.core.minusLastTyped
@@ -101,6 +108,8 @@ class MainActivity : ComponentActivity() {
 
     // Lazy: the system services exist only once the activity is attached.
     private val statusWatcher by lazy { StatusWatcher(this) { status = it } }
+    private val userManager by lazy { getSystemService(UserManager::class.java) }
+    private val launcherApps by lazy { getSystemService(LauncherApps::class.java) }
 
     // Set once an app opens from here and cleared by Home, so the next resume is a return by Back, Recents or the app
     // exiting, which selects that app again.
@@ -134,6 +143,9 @@ class MainActivity : ComponentActivity() {
      */
     internal val recentApps: List<LauncherApp> get() = recents.shownFrom(apps.orEmpty())
 
+    /** Whether [app] belongs to a work profile whose apps are turned off (#78): it stays listed, dim. */
+    private fun isPaused(app: LauncherApp): Boolean = app.profile in loaded?.paused.orEmpty()
+
     // One worker thread: loads never run side by side on a slow device, and superseded ones are skipped.
     private val worker = Executors.newSingleThreadExecutor()
 
@@ -147,8 +159,23 @@ class MainActivity : ComponentActivity() {
         )
     }
 
-    private val packageChanges = object : BroadcastReceiver() {
+    private val listChanges = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) = loader.refresh()
+    }
+
+    // The other profiles' package changes (#78), which the package broadcasts only report for the launcher's own user.
+    private val profilePackageChanges = object : LauncherApps.Callback() {
+        override fun onPackageAdded(packageName: String, user: UserHandle) = loader.refresh()
+
+        override fun onPackageChanged(packageName: String, user: UserHandle) = loader.refresh()
+
+        override fun onPackageRemoved(packageName: String, user: UserHandle) = loader.refresh()
+
+        override fun onPackagesAvailable(packageNames: Array<out String>, user: UserHandle, replacing: Boolean) =
+            loader.refresh()
+
+        override fun onPackagesUnavailable(packageNames: Array<out String>, user: UserHandle, replacing: Boolean) =
+            loader.refresh()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -163,7 +190,7 @@ class MainActivity : ComponentActivity() {
         userGroups = groupsStore.load()
         // Registered for the activity's whole life, not only while resumed, so the list is current before a return.
         registerReceiver(
-            packageChanges,
+            listChanges,
             IntentFilter().apply {
                 addAction(Intent.ACTION_PACKAGE_ADDED)
                 addAction(Intent.ACTION_PACKAGE_REMOVED)
@@ -171,6 +198,18 @@ class MainActivity : ComponentActivity() {
                 addDataScheme("package")
             },
         )
+        // A work profile added or removed, or its apps turned off or on again (#78); these carry no package.
+        registerReceiver(
+            listChanges,
+            IntentFilter().apply {
+                addAction(Intent.ACTION_MANAGED_PROFILE_ADDED)
+                addAction(Intent.ACTION_MANAGED_PROFILE_REMOVED)
+                addAction(Intent.ACTION_MANAGED_PROFILE_AVAILABLE)
+                addAction(Intent.ACTION_MANAGED_PROFILE_UNAVAILABLE)
+                addAction(Intent.ACTION_MANAGED_PROFILE_UNLOCKED)
+            },
+        )
+        launcherApps.registerCallback(profilePackageChanges)
         // The home screen has nothing to go back to: finishing it would surface whichever launcher ran before.
         onBackPressedDispatcher.addCallback(this) {}
         setContent {
@@ -192,6 +231,7 @@ class MainActivity : ComponentActivity() {
                         returned = returned,
                         status = shownStatus,
                         suffix = suffixes::get,
+                        paused = ::isPaused,
                     )
                     is Screen.Menu -> ContextMenu(
                         title = screen.app.label,
@@ -219,6 +259,7 @@ class MainActivity : ComponentActivity() {
                         state = screen.state,
                         status = shownStatus,
                         suffix = suffixes::get,
+                        paused = ::isPaused,
                     )
                     is Screen.CollectionChoice -> CollectionChoice(
                         title = stringResource(R.string.menu_add_collection),
@@ -258,6 +299,7 @@ class MainActivity : ComponentActivity() {
                         state = screen.state,
                         status = shownStatus,
                         suffix = suffixes::get,
+                        paused = ::isPaused,
                     )
                     is Screen.GroupMenu -> ContextMenu(
                         title = screen.name,
@@ -407,7 +449,8 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
-        unregisterReceiver(packageChanges)
+        unregisterReceiver(listChanges)
+        launcherApps.unregisterCallback(profilePackageChanges)
         worker.shutdown()
         super.onDestroy()
     }
@@ -418,17 +461,40 @@ class MainActivity : ComponentActivity() {
             screens = screens.pushed(Screen.SettingsList())
             return
         }
-        if (start(app.launchIntent())) {
+        val started = if (app.isWorkApp) startInProfile(app, LauncherApps::startMainActivity) else start(app.launchIntent())
+        if (started) {
             saveRecents(recents.opened(app, apps.orEmpty()))
             awayInApp = true
         }
     }
 
     /** Whether [intent] started. */
-    private fun start(intent: Intent): Boolean =
+    private fun start(intent: Intent): Boolean = starting { startActivity(intent, noAnimation()) }
+
+    /**
+     * Whether [app], of another profile (#78), started there through [LauncherApps] by [how]: its main activity, or its
+     * App info. While its profile's apps are turned off, Android offers to turn them back on. A profile removed while
+     * the list was on screen starts nothing and drops its apps.
+     */
+    private fun startInProfile(
+        app: LauncherApp,
+        how: LauncherApps.(ComponentName, UserHandle, Rect?, Bundle?) -> Unit,
+    ): Boolean {
+        val user = app.profile?.let(userManager::getUserForSerialNumber)
+        if (user == null) {
+            loader.refresh()
+            return false
+        }
+        return starting { launcherApps.how(ComponentName(app.packageName, app.activityName), user, null, noAnimation()) }
+    }
+
+    // No transition, as Cannoli: nothing animates between a key press and the app (BRANDING.md).
+    private fun noAnimation(): Bundle = ActivityOptions.makeCustomAnimation(this, 0, 0).toBundle()
+
+    /** Whether [start] started what it starts, without crashing the launcher when it cannot. */
+    private fun starting(start: () -> Unit): Boolean =
         try {
-            // No transition, as Cannoli: nothing animates between a key press and the app (BRANDING.md).
-            startActivity(intent, ActivityOptions.makeCustomAnimation(this, 0, 0).toBundle())
+            start()
             true
         } catch (_: ActivityNotFoundException) {
             // Uninstalled or disabled while the list was on screen: drop it rather than crash the launcher.
@@ -456,6 +522,7 @@ class MainActivity : ComponentActivity() {
             isHidden = app in hidden,
             isLauncherSettings = app.isLauncherSettings,
             isGroupMember = group != null && userGroups.holds(group, app),
+            isWorkApp = app.isWorkApp,
         )
         screens = screens.pushed(Screen.Menu(app, contextMenu(facts), collection, group))
     }
@@ -472,7 +539,8 @@ class MainActivity : ComponentActivity() {
         val app = menu.app
         if (action !in KeptMenuActions) back()
         when (action) {
-            MenuAction.AppInfo -> start(app.appInfoIntent())
+            MenuAction.AppInfo ->
+                if (app.isWorkApp) startInProfile(app, LauncherApps::startAppDetailsActivity) else start(app.appInfoIntent())
             MenuAction.Uninstall -> start(app.uninstallIntent())
             MenuAction.AddToFavourites, MenuAction.RemoveFromFavourites -> saveFavourites(favourites.toggled(app))
             MenuAction.AddToCollection -> screens = screens.pushed(Screen.CollectionChoice(app))
@@ -532,8 +600,7 @@ class MainActivity : ComponentActivity() {
      * editor and the menu below it closed: the list it was opened from shows it at its new place, selected.
      */
     private fun rename(app: LauncherApp, name: String) {
-        val installed = loaded?.apps.orEmpty()
-            .firstOrNull { it.packageName == app.packageName && it.activityName == app.activityName }
+        val installed = loaded?.apps.orEmpty().firstOrNull { it.component == app.component }
         if (installed != null) saveAliases(aliases.renamed(installed, name))
         repeat(2) { back() }
     }
@@ -604,20 +671,24 @@ class MainActivity : ComponentActivity() {
     }
 
     // Runs on the worker thread: the package queries and every label load stay off the main thread. Sorting waits for
-    // the aliases, in [apps].
+    // the aliases, in [apps]. The other profiles' apps (#78) come from LauncherApps, after the Settings check, so a
+    // work profile's Settings never stands in for the launcher's own.
     private fun installedApps(): Loaded {
         val installed = packageManager.launchableApps()
         val system = packageManager.systemSettings()
         val entry = launcherSettings(getString(R.string.settings_entry), packageName)
-        return Loaded((system?.let(installed::withSystemSettings) ?: installed) + entry, system?.packageName)
+        val own = system?.let(installed::withSystemSettings) ?: installed
+        val others = launcherApps.otherProfileApps(userManager)
+        return Loaded(own + others + entry, system?.packageName, userManager.pausedProfiles())
     }
 }
 
 /**
- * The launchable [apps] with their system labels and MinimalUI's settings row, unsorted, and the package of Android's
- * Settings, which that row follows however the apps are named.
+ * The launchable [apps] of every profile with their system labels and MinimalUI's settings row, unsorted, the package
+ * of Android's Settings, which that row follows however the apps are named, and the [paused] profiles, whose apps are
+ * turned off (#78).
  */
-private class Loaded(val apps: List<LauncherApp>, val settingsPackage: String?)
+private class Loaded(val apps: List<LauncherApp>, val settingsPackage: String?, val paused: Set<Long>)
 
 /** The app's menu actions that open a list or editor on top of the menu, which stays below it. */
 private val KeptMenuActions = setOf(MenuAction.AddToCollection, MenuAction.AddToGroup, MenuAction.Rename)

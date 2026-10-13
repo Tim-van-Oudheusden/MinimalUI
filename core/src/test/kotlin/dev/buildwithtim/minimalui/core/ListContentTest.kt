@@ -156,6 +156,21 @@ class ListContentTest {
     }
 
     @Test
+    fun `a query finds work apps too, though the root's full list leaves them to the Work group`() {
+        val workMail = app("Mail").copy(profile = 10L)
+        val installed = apps + workMail
+
+        assertEquals(
+            ListContent.Apps(listOf(RootEntry.App(app("Mail")), RootEntry.App(workMail))),
+            listContent(installed, "mai"),
+        )
+        assertEquals(
+            ListContent.Apps(apps.map { RootEntry.App(it) } + RootEntry.Blank("groups-blank") + RootEntry.Groups),
+            listContent(installed, ""),
+        )
+    }
+
+    @Test
     fun `without apps on screen no row holds an app`() {
         assertEquals(emptyList<LauncherApp?>(), ListContent.NoMatch.rowApps)
     }
