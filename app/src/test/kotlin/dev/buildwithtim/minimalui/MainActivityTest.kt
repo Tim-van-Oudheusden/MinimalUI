@@ -30,6 +30,7 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasClickAction
@@ -594,7 +595,9 @@ class MainActivityTest {
         rule.onNodeWithText("Uninstall").assertIsNotEnabled()
     }
 
+    // One row taller than the default screen, for the hint row (#74): the menu's recents rows still fit on it.
     @Test
+    @Config(qualifiers = "h514dp")
     fun `Remove from recently used drops only that app, and only a recent app offers it`() {
         install("Alarm", "com.example.alarm")
         install("Bell", "com.example.bell")
@@ -959,7 +962,9 @@ class MainActivityTest {
         leaveAndComeBack(activity)
     }
 
+    // One row taller than the default screen, for the hint row (#74): the whole root still fits on it.
     @Test
+    @Config(qualifiers = "h514dp")
     fun `the newest recent apps head the list above one blank row, and the full list still holds them`() {
         install("Alarm", "com.example.alarm")
         install("Bell", "com.example.bell")
@@ -1200,7 +1205,9 @@ class MainActivityTest {
         rule.onNodeWithText("Collections").assertDoesNotExist()
     }
 
+    // One row taller than the default screen, for the hint row (#74): the whole menu still fits on it.
     @Test
+    @Config(qualifiers = "h514dp")
     fun `an app moves up and down in its collection with the selection, and the last one out hides the row`() {
         install("Alarm", "com.example.alarm")
         install("Bell", "com.example.bell")
@@ -1290,7 +1297,10 @@ class MainActivityTest {
         return layouts.single().layoutInput.style.color
     }
 
+    // One row taller than the default screen, for the hint row (#74): the list's first page still holds the block,
+    // the full list's first rows and the Groups row's page break where they were.
     @Test
+    @Config(qualifiers = "h514dp")
     fun `Hide takes the app off the list and off the favourites and recently used blocks`() {
         install("Alarm", "com.example.alarm")
         install("Bell", "com.example.bell")
@@ -1723,6 +1733,31 @@ class MainActivityTest {
         rule.onNodeWithText("Groups").assertIsFocused()
         press(Key.Enter)
         awaitListed("Other")
+    }
+
+    @Test
+    fun `a list opened from the root adds Esc to its hints, a menu hints choosing, and the editor saving`() {
+        install("Alarm", "com.example.alarm")
+        val activity = launch()
+        awaitListed("Alarm")
+        rule.onNodeWithText("BACK").assertDoesNotExist()
+
+        openGroups()
+        for (text in listOf("☰", "MENU", "⎋", "BACK", "⏎", "OPEN")) rule.onNodeWithText(text).assertIsDisplayed()
+        press(Key.Enter)
+        awaitListed("Alarm")
+        rule.onNodeWithText("BACK").assertIsDisplayed()
+        rule.onNodeWithText("MENU").assertIsDisplayed()
+
+        openMenu(activity)
+        rule.onNodeWithText("SELECT").assertIsDisplayed()
+        rule.onNodeWithText("MENU").assertDoesNotExist()
+
+        chooseRow("Rename")
+        awaitEditor()
+        rule.onNodeWithText("CANCEL").assertIsDisplayed()
+        rule.onNodeWithText("SAVE").assertIsDisplayed()
+        rule.onNodeWithText("SELECT").assertDoesNotExist()
     }
 
     /** From the selected app's menu, by keyboard: Add to group, then [name], made new when [new]. */

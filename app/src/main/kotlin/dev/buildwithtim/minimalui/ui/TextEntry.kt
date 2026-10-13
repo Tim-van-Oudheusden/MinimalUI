@@ -26,6 +26,7 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
+import dev.buildwithtim.minimalui.core.HintedScreen
 import dev.buildwithtim.minimalui.core.StatusPill
 
 /**
@@ -47,7 +48,7 @@ internal fun TextEntry(
     val text = rememberTextFieldState(initial, TextRange(initial.length))
     val colors = MaterialTheme.colorScheme
 
-    TitledList(title, status, onClose) { rowHeight, _ ->
+    TitledList(title, status, HintedScreen.Editor, onClose) { rowHeight, _ ->
         BasicTextField(
             state = text,
             lineLimits = TextFieldLineLimits.SingleLine,

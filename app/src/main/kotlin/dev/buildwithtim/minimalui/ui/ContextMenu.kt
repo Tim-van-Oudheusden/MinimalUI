@@ -6,6 +6,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.res.stringResource
 import dev.buildwithtim.minimalui.R
+import dev.buildwithtim.minimalui.core.HintedScreen
 import dev.buildwithtim.minimalui.core.MenuAction
 import dev.buildwithtim.minimalui.core.MenuItem
 import dev.buildwithtim.minimalui.core.StatusPill
@@ -28,7 +29,7 @@ fun ContextMenu(
 ) {
     val labels = MenuAction.entries.associateWith { stringResource(it.label) }
 
-    TitledList(title, status, onClose, modifier) { rowHeight, rowsPerPage ->
+    TitledList(title, status, HintedScreen.Menu, onClose, modifier) { rowHeight, rowsPerPage ->
         PillList(
             state = state,
             items = items,

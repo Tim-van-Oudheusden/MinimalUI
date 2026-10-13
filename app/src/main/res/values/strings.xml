@@ -49,4 +49,14 @@
     <string name="settings_about">About</string>
     <string name="about_version">Version %1$s</string>
     <string name="about_commit">Commit %1$s</string>
+    <!-- The button-hint row (#74): what each hinted key does, drawn in upper case after the key's glyph. -->
+    <string name="hint_menu">Menu</string>
+    <string name="hint_delete">Delete</string>
+    <string name="hint_back">Back</string>
+    <string name="hint_cancel">Cancel</string>
+    <string name="hint_open">Open</string>
+    <string name="hint_select">Select</string>
+    <string name="hint_change">Change</string>
+    <string name="hint_unhide">Unhide</string>
+    <string name="hint_save">Save</string>
 </resources>

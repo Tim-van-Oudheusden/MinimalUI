@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.input.key.Key
+import dev.buildwithtim.minimalui.core.HintedScreen
 import dev.buildwithtim.minimalui.core.LauncherApp
 import dev.buildwithtim.minimalui.core.ListPosition
 import dev.buildwithtim.minimalui.core.StatusPill
@@ -26,7 +27,8 @@ internal fun CollectionsList(
     status: StatusPill? = null,
     onMenu: ((String) -> Unit)? = null,
 ) {
-    TitledList(title, status, onClose) { rowHeight, rowsPerPage ->
+    val hints = HintedScreen.SubList(hasMenu = onMenu != null, isEmpty = names.isEmpty())
+    TitledList(title, status, hints, onClose) { rowHeight, rowsPerPage ->
         PillList(
             state = state,
             items = names,
@@ -77,7 +79,8 @@ internal fun CollectionApps(
     suffix: (LauncherApp) -> String? = { null },
     paused: (LauncherApp) -> Boolean = { false },
 ) {
-    TitledList(name, status, onClose) { rowHeight, rowsPerPage ->
+    val hints = HintedScreen.SubList(hasMenu = true, isEmpty = apps.isEmpty())
+    TitledList(name, status, hints, onClose) { rowHeight, rowsPerPage ->
         LaunchedEffect(apps) {
             val before = state.shown
             state.shown = apps
@@ -130,7 +133,7 @@ internal fun CollectionChoice(
     // The last row, New collection, is the one without a name.
     val rows: List<String?> = names + null
 
-    TitledList(title, status, onClose) { rowHeight, rowsPerPage ->
+    TitledList(title, status, HintedScreen.Choice, onClose) { rowHeight, rowsPerPage ->
         PillList(
             state = state,
             items = rows,

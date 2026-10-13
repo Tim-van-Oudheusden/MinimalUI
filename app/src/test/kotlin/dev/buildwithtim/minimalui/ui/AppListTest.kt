@@ -7,7 +7,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.SemanticsProperties.Focused
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsNotDisplayed
@@ -532,6 +535,73 @@ class AppListTest {
         rule.onNodeWithText("Calculator").assertIsFocused()
     }
 
+    @Test
+    fun `the root hints the Menu key on the left and Enter on the right, in the bottom row, never focused`() {
+        show()
+
+        val root = rule.onRoot().getUnclippedBoundsInRoot()
+        val menu = rule.onNodeWithText("MENU").assertIsDisplayed().getUnclippedBoundsInRoot()
+        val open = rule.onNodeWithText("OPEN").assertIsDisplayed().getUnclippedBoundsInRoot()
+        rule.onNodeWithText("☰").assertIsDisplayed()
+        rule.onNodeWithText("⏎").assertIsDisplayed()
+        rule.onNodeWithText("BACK").assertDoesNotExist()
+        val middle = (root.left + root.right) / 2
+        assertTrue("the menu hint is not on the left", menu.right < middle)
+        assertTrue("the open hint is not on the right", open.left > middle)
+        assertTrue("the hints are not in the bottom row", root.bottom - open.bottom < open.bottom - open.top)
+        for (text in listOf("MENU", "OPEN", "☰", "⏎")) {
+            rule.onNodeWithText(text).assert(!hasClickAction()).assert(SemanticsMatcher.keyNotDefined(Focused))
+        }
+        rule.onNodeWithText("Calculator").assertIsFocused()
+    }
+
+    @Test
+    fun `the Collections row has no menu, so its hints name only Enter`() {
+        show(ListContent.Apps(listOf(RootEntry.Collections, RootEntry.Blank()) + apps.map { RootEntry.App(it) }))
+
+        rule.onNodeWithText("OPEN").assertExists()
+        rule.onNodeWithText("MENU").assertDoesNotExist()
+
+        press(Key.DirectionDown)
+        rule.onNodeWithText("MENU").assertExists()
+    }
+
+    @Test
+    fun `filtering hints Backspace in place of the Menu key, and no match leaves only Backspace`() {
+        query = "ca"
+        show()
+
+        rule.onNodeWithText("⌫").assertIsDisplayed()
+        rule.onNodeWithText("DELETE").assertIsDisplayed()
+        rule.onNodeWithText("OPEN").assertIsDisplayed()
+        rule.onNodeWithText("MENU").assertDoesNotExist()
+
+        content = ListContent.NoMatch
+
+        rule.onNodeWithText("DELETE").assertIsDisplayed()
+        rule.onNodeWithText("OPEN").assertDoesNotExist()
+    }
+
+    @Test
+    @Config(qualifiers = "w360dp-h360dp")
+    fun `the last row on screen sits above the hint row`() {
+        status = pill
+        show(manyApps)
+
+        val last = rule.onNodeWithText(rowsOnScreen().last()).getUnclippedBoundsInRoot()
+        val hints = listOf("☰", "MENU", "⏎", "OPEN").map { rule.onNodeWithText(it).getUnclippedBoundsInRoot() }
+        assertTrue("a row runs under the hint row", hints.all { last.bottom <= it.top + Slack })
+    }
+
+    @Test
+    @Config(qualifiers = "w300dp-h470dp")
+    fun `a screen narrower than 320 dp keeps only the right-hand hints`() {
+        show()
+
+        rule.onNodeWithText("OPEN").assertIsDisplayed()
+        rule.onNodeWithText("MENU").assertDoesNotExist()
+    }
+
     /** [message] sits in the middle of the screen. */
     private fun assertCentred(message: DpRect) {
         val root = rule.onRoot().getUnclippedBoundsInRoot()
@@ -545,8 +615,10 @@ class AppListTest {
         // Rows are at least one label line plus the pill's padding tall; as many as fit are shown.
         val minRowHeight = RowMetrics.LineHeight.value.dp + RowMetrics.PillPaddingVertical * 2
         assertEquals(((list.bottom - list.top) / minRowHeight).toInt(), rows)
+        // The hint row (#74) takes the last row, as tall as the list's rows.
+        val hintRow = (list.bottom - list.top) / rows
         val root = rule.onRoot().getUnclippedBoundsInRoot()
-        assertTrue("a whole row's worth of space is left unused", root.bottom - list.bottom < minRowHeight)
+        assertTrue("a whole row's worth of space is left unused", root.bottom - list.bottom - hintRow < minRowHeight)
     }
 
     private companion object {

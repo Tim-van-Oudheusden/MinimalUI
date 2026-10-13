@@ -10,18 +10,16 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 ## Latest session
 
 - **Date:** 2026-10-13
-- **Worked:** #78 — work-profile apps (stack row 11 of the #60 interface stack, on `feat/69-app-groups`, PR #105).
-- **Outcome:** D22 (c) work apps in their own group. Core `LauncherApp.profile` (profile serial, null = own user),
-  `isWorkApp`, public `component` (`<serial>:pkg/activity` for profile apps, unchanged for own-user apps, so stored
-  keys stay valid), `WORK_GROUP` ("Work", the only automatic group of a work app), root full list without work apps
-  (blocks keep them; Groups row alone when only work apps), duplicate suffix `Work`, `AppFacts.isWorkApp` disables
-  Uninstall, profile tie-break in `sortedForDisplay`. App: `LauncherApps.otherProfileApps(userManager)`,
-  `UserManager.pausedProfiles()`; work apps start via `LauncherApps.startMainActivity`/`startAppDetailsActivity`;
-  managed-profile broadcasts + a `LauncherApps.Callback` reload; paused profiles dim rows (`paused` on AppList and
-  CollectionApps).
-- **Open follow-ups:** none for #78.
+- **Worked:** #74 — button-hint row (stack row 12 of the #60 interface stack, on `feat/78-work-profile`, PR #106).
+- **Outcome:** D12 (b) hint row always shown, keys as glyphs. Core `ButtonHints.kt`: `HintKey` (glyphs `☰ ⌫ ⎋ ⏎`),
+  `HintAction`, `Hint`, `Hints(left, right)`, `HintedScreen` (Root(content, query, selected), SubList(hasMenu,
+  isEmpty), Menu, Choice, Settings(row), About, HiddenApps(isEmpty), Editor), `buttonHints(screen)`,
+  `Hints.fitting(widthDp)` (< 320 dp drops the left group). App: `ui/HintLine.kt` (two `#262626` pills, glyph in a
+  white circle, label upper-cased from sentence-case strings `hint_*`); `TitledList(title, status, hints:
+  HintedScreen, onClose)` and `AppList` reserve the bottom row, so every list has one row fewer per page.
+- **Open follow-ups:** none for #74.
 - **Notes for next session:**
-  - Robolectric: `LauncherActivityInfo.getLabel()` trims glyphless characters and Robolectric's Paint has none, so work
-    tests need `@Config(shadows = [GlyphsFound::class])`; `startMainActivity` is unshadowed and
-    `startAppDetailsActivity` throws, so tests record them with `LauncherAppsRecorder`.
+  - Lint rejects an all-caps `CANCEL` string (ButtonCase) and `Locale.getDefault()` in a composable
+    (NonObservableLocale): keep strings sentence case and upper-case with `LocalConfiguration.current.locales[0]`.
+  - Tests that need a whole menu or root on one page now run on `@Config(qualifiers = "h514dp")` (one row taller).
   - No JDK on the host: run Gradle via the podman sandbox (`/tmp/gates.sh`).
