@@ -8,11 +8,12 @@ Stack: Kotlin, Jetpack Compose, Gradle (Kotlin DSL with a version catalog), Andr
 
 You need:
 
-- JDK 21 (Gradle runs on it; e.g. Temurin 21)
+- JDK 21 (Gradle runs on it; e.g. Temurin 21; on Linux, see [below](#installing-jdk-21-on-linux))
 - The Android SDK with the platform named by `compileSdk` in `app/build.gradle.kts`. Android Studio installs it; from a
   terminal, use [Android CLI](https://developer.android.com/tools/agents/android-cli) (see below). Point Gradle at the SDK
   with `ANDROID_HOME` or a `local.properties` file (`sdk.dir=...`, gitignored)
-- A device or emulator for UI work; a physical keyboard phone is best
+- A device or emulator for UI work; a physical keyboard phone is best (no phone? see
+  [Running it in an emulator on Linux](#running-it-in-an-emulator-on-linux))
 
 Everything else, Gradle included, is fetched by the wrapper:
 
@@ -23,6 +24,17 @@ Everything else, Gradle included, is fetched by the wrapper:
 
 Every CI run uploads the debug APK as the `minimalui-debug-apk` artifact, so a build can be tried on a phone without a
 local toolchain.
+
+### Installing JDK 21 on Linux
+
+Your distribution's OpenJDK 21 package works where it has one. Otherwise use Temurin's tarball, which needs no root
+and suits immutable distributions such as Fedora Atomic or Bazzite:
+
+```bash
+mkdir -p ~/.jdks
+curl -fsSL https://api.adoptium.net/v3/binary/latest/21/ga/linux/x64/jdk/hotspot/normal/eclipse | tar -xz -C ~/.jdks
+export JAVA_HOME="$(echo ~/.jdks/jdk-21*)"   # add to ~/.bashrc to keep it
+```
 
 ### Installing the SDK from a terminal
 
@@ -44,6 +56,37 @@ To skip the local SDK install, use the sandbox image instead: `Dockerfile.sandbo
 `gh`, `bd`) is also what `.devcontainer/devcontainer.json` builds, so VS Code "Reopen in Container" and a plain
 `podman build -f Dockerfile.sandbox -t minimalui-sandbox .` give the same environment. It runs the quality gates; see
 [docs/testing.md](docs/testing.md#agent-sandbox-what-runs-where) for what needs a real device.
+
+### Running it in an emulator on Linux
+
+With JDK 21 and the SDK installed as above, this takes a fresh clone to MinimalUI as the home screen of an emulated
+phone. The emulator needs KVM: `emulator -accel-check` should say `KVM ... is installed and usable`. Put the SDK's
+tools on `PATH` first:
+
+```bash
+export ANDROID_HOME=~/Android/Sdk                                    # the `sdk:` path `android info` prints
+export PATH="$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH"
+
+android sdk install emulator          # the emulator itself
+android emulator create medium_phone  # a phone AVD named medium_phone, hardware keyboard on; fetches its system image
+android emulator start medium_phone   # opens the emulator window, returns once Android has booted
+./gradlew installDebug                # builds and installs the debug APK
+adb shell cmd package set-home-activity dev.buildwithtim.minimalui/.MainActivity
+adb shell input keyevent KEYCODE_HOME
+```
+
+`android emulator start` prints the serial it started as (`emulator-5554` for the first one). With more than one
+device or emulator attached, pick one for both Gradle and `adb` with `export ANDROID_SERIAL=emulator-5554`. After a
+code change, rerun `./gradlew installDebug`; the home setting stays.
+
+The emulator window passes your keyboard through, so arrows, Enter, Esc, Backspace and letters work as on a keyboard
+phone, and the mouse stands in for touch. A PC keyboard has no phone keys, so the emulator maps them to shortcuts:
+
+| Phone key  | In the emulator window      |
+| ---------- | --------------------------- |
+| Menu (`☰`) | Ctrl+M                      |
+| Home       | Ctrl+H                      |
+| Back       | Ctrl+Backspace (or Esc)     |
 
 ## Project layout
 
