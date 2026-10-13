@@ -32,3 +32,12 @@ a plain list, driven entirely by keys, that gets out of the way. It is not a the
 - **Selection:** the inversion is a pill with fully rounded ends that hugs the app's label, as in MinUI and Cannoli.
   Rows are contiguous, with no gap between them. A label too long for the row ends in an ellipsis and never scrolls.
 - **Type:** the system font at 24 sp until a dedicated one is chosen; legible at arm's length on small, square screens.
+- **Icon:** three list rows on black: a label, the selected pill with its label cut out, and a shorter label. It is the
+  launcher's own screen reduced to a mark.
+- **Marketing type:** Roboto, the default system font on stock Android: Regular for labels and body text, Medium for
+  headlines and the wordmark.
+
+## 7. Assets
+
+The icon, wordmark, banners, social images and poster live in [`docs/brand/`](docs/brand/README.md), with the sizes and
+places each one is for.
