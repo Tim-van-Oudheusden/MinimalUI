@@ -2111,6 +2111,31 @@ class MainActivityTest {
     }
 
     @Test
+    @Config(shadows = [GlyphsFound::class, LauncherAppsRecorder::class])
+    fun `a work app whose profile was removed while listed starts nothing, and the list drops it`() {
+        LauncherAppsRecorder.started.clear()
+        install("Alarm", "com.example.alarm")
+        addWorkProfile()
+        installWork("Mail", "com.example.mail")
+        val activity = launch()
+        awaitListed("Alarm")
+        openWorkGroup("Mail")
+
+        // Gone before ACTION_MANAGED_PROFILE_REMOVED reloads the list, so Mail is still on screen.
+        ReflectionHelpers.callInstanceMethod<Boolean>(
+            userManager,
+            "removeUser",
+            ClassParameter.from(Int::class.javaPrimitiveType, WORK_USER),
+        )
+        press(Key.Enter)
+
+        assertTrue(LauncherAppsRecorder.started.isEmpty())
+        assertNull(shadowOf(application).nextStartedActivity)
+        assertTrue(activity.get().recentApps.isEmpty())
+        awaitListed("Mail", listed = false)
+    }
+
+    @Test
     @Config(shadows = [GlyphsFound::class])
     fun `a package change in the work profile reloads the list, whichever LauncherApps reports`() {
         install("Alarm", "com.example.alarm")
