@@ -4,7 +4,6 @@ import android.app.Application
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.pm.ApplicationInfo
-import android.content.pm.ResolveInfo
 import android.os.Build
 import android.provider.Settings
 import androidx.test.core.app.ApplicationProvider
@@ -26,43 +25,34 @@ class InstalledAppsTest {
     private val application: Application = ApplicationProvider.getApplicationContext()
     private val packageManager = application.packageManager
 
-    private fun resolveInfo(
+    private fun activity(
         label: String,
         packageName: String,
         activityName: String,
         category: Int = ApplicationInfo.CATEGORY_UNDEFINED,
-    ) = ResolveInfo().apply {
+    ) = ActivityInfo().apply {
         nonLocalizedLabel = label
-        activityInfo =
-            ActivityInfo().apply {
-                // launchableApps() reads the ResolveInfo's label, systemSettings() the ActivityInfo's.
-                nonLocalizedLabel = label
+        this.packageName = packageName
+        name = activityName
+        applicationInfo =
+            ApplicationInfo().apply {
                 this.packageName = packageName
-                name = activityName
-                applicationInfo =
-                    ApplicationInfo().apply {
-                        this.packageName = packageName
-                        this.category = category
-                    }
+                this.category = category
             }
     }
 
     @Test
     fun `lists every launcher activity by label and component, with the category its app declared`() {
-        val launcherQuery = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
-        val reader = resolveInfo("Reader", "com.example.reader", "com.example.reader.Main", category = 8)
         shadowOf(packageManager).run {
-            addResolveInfoForIntent(launcherQuery, resolveInfo("Notes", "com.example.notes", "com.example.notes.Main"))
-            addResolveInfoForIntent(
-                launcherQuery,
-                resolveInfo(
-                    "Mail",
-                    "com.example.mail",
-                    "com.example.mail.Inbox",
-                    ApplicationInfo.CATEGORY_PRODUCTIVITY,
-                ),
+            val main = Intent.ACTION_MAIN
+            val launcher = Intent.CATEGORY_LAUNCHER
+            installActivity(activity("Notes", "com.example.notes", "com.example.notes.Main"), main, launcher)
+            installActivity(
+                activity("Mail", "com.example.mail", "com.example.mail.Inbox", ApplicationInfo.CATEGORY_PRODUCTIVITY),
+                main,
+                launcher,
             )
-            addResolveInfoForIntent(launcherQuery, reader)
+            installActivity(activity("Reader", "com.example.reader", "com.example.reader.Main", 8), main, launcher)
         }
 
         val apps = packageManager.launchableApps()
@@ -76,9 +66,9 @@ class InstalledAppsTest {
 
     @Test
     fun `finds the activity that opens the system settings`() {
-        shadowOf(packageManager).addResolveInfoForIntent(
-            Intent(Settings.ACTION_SETTINGS),
-            resolveInfo("Settings", "com.android.settings", "com.android.settings.Settings"),
+        shadowOf(packageManager).installActivity(
+            activity("Settings", "com.android.settings", "com.android.settings.Settings"),
+            Settings.ACTION_SETTINGS,
         )
 
         assertEquals(

@@ -3,6 +3,7 @@ plugins {
     // Gives the root project a `check` task, so `./gradlew check` runs spotlessCheck along with every module's checks.
     base
     alias(libs.plugins.android.application) apply false
+    alias(libs.plugins.android.lint) apply false
     alias(libs.plugins.kotlin.jvm) apply false
     alias(libs.plugins.kotlin.compose) apply false
     alias(libs.plugins.kover) apply false

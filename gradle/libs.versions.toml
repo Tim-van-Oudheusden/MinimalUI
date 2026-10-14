@@ -3,6 +3,8 @@ agp = "9.4.1"
 kotlin = "2.4.21"
 activityCompose = "1.13.0"
 composeBom = "2026.09.00"
+# Slack's Compose lint checks, loaded into the app's Android Lint through lintChecks.
+composeLints = "1.6.1"
 # The first detekt release built against Kotlin 2.4 (#135); pinned exactly, an alpha has no compatibility promise.
 detekt = "2.0.0-alpha.6"
 junit = "4.13.2"
@@ -21,6 +23,7 @@ androidx-compose-material3 = { group = "androidx.compose.material3", name = "mat
 androidx-compose-ui = { group = "androidx.compose.ui", name = "ui" }
 androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
+compose-lint-checks = { group = "com.slack.lint.compose", name = "compose-lint-checks", version.ref = "composeLints" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 # Never a dependency: Spotless loads ktlint itself. Listed so Dependabot proposes ktlint updates.
 ktlint-cli = { group = "com.pinterest.ktlint", name = "ktlint-cli", version.ref = "ktlint" }
@@ -28,6 +31,8 @@ robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
+# Standalone Android Lint for the pure Kotlin/JVM modules; AGP's version.
+android-lint = { id = "com.android.lint", version.ref = "agp" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 detekt = { id = "dev.detekt", version.ref = "detekt" }
