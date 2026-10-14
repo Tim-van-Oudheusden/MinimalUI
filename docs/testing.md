@@ -83,7 +83,9 @@ AGP signs debug builds with `~/.android/debug.keystore` and creates a new one wh
 installs over the previous one: `adb install -r` fails with `INSTALL_FAILED_UPDATE_INCOMPATIBLE`, and uninstalling
 to get past it wipes MinimalUI's settings on the device. Mount your host's debug keystore read-only instead. Sandbox
 builds then sign like builds on the host (Android Studio or `./gradlew` with a local JDK), and either installs over the
-other.
+other. The keystore goes inside a tmpfs `/home/dev/.android` that the container can write: AGP's `validateSigning`
+tasks fail with `Unable to create debug keystore … because it is not writable` on an unwritable `~/.android`, even
+when the keystore is there (#159). Nothing written there outlives the container.
 
 If `~/.android/debug.keystore` does not exist yet, create it once with the sandbox's `keytool` (the host needs no
 JDK), from the repository root. These are the values AGP itself uses for a debug key; `*.keystore` is gitignored, and
@@ -104,8 +106,9 @@ debug builds once.
 
 Build the image once (again whenever `Dockerfile.sandbox` changes), then run Gradle in it with
 `scripts/sandbox-gradlew.sh`, from anywhere in the checkout. It passes its arguments to `./gradlew` and mounts the
-repository at `/workspace`, Gradle's caches from the `minimalui-sandbox-gradle` volume and the debug key read-only
-(rootless podman; `--userns=keep-id` maps your host user to `dev` so build outputs stay owned by you):
+repository at `/workspace`, Gradle's caches from the `minimalui-sandbox-gradle` volume and the debug key read-only in a
+tmpfs `~/.android` (rootless podman; `--userns=keep-id` maps your host user to `dev` so build outputs stay owned by
+you):
 
 ```bash
 podman build -f Dockerfile.sandbox -t localhost/minimalui-sandbox .

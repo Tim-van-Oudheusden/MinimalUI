@@ -5,8 +5,8 @@
 #   podman build -f Dockerfile.sandbox -t localhost/minimalui-sandbox .
 #   scripts/sandbox-gradlew.sh check assembleDebug
 #
-# The script mounts the checkout, a Gradle cache volume and the host's debug keystore (read-only, so debug builds
-# install over each other; docs/testing.md#the-debug-signing-key).
+# The script mounts the checkout, a Gradle cache volume and the host's debug keystore (read-only, in a tmpfs ~/.android
+# AGP can write, so debug builds install over each other; docs/testing.md#the-debug-signing-key).
 #
 # Bumping: keep `platforms;android-*` equal to compileSdk in app/build.gradle.kts and `build-tools;*` equal to the
 # default build-tools revision of the AGP version in gradle/libs.versions.toml; otherwise Gradle tries to download them.
