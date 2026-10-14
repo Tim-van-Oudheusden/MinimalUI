@@ -1,15 +1,12 @@
 package dev.buildwithtim.minimalui
 
 import android.app.Application
-import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.pm.ApplicationInfo
-import android.content.pm.ResolveInfo
 import android.graphics.Bitmap
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
-import android.os.BatteryManager
 import android.provider.Settings
 import android.view.KeyEvent
 import androidx.compose.ui.graphics.asAndroidBitmap
@@ -17,11 +14,10 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isFocused
-import androidx.compose.ui.test.junit4.createEmptyComposeRule
+import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onRoot
 import androidx.test.core.app.ApplicationProvider
-import java.io.File
 import org.junit.After
 import org.junit.Rule
 import org.junit.Test
@@ -34,12 +30,14 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import org.robolectric.shadows.ShadowNetwork
 import org.robolectric.shadows.ShadowNetworkCapabilities
+import java.io.File
 
 /**
  * Renders the store and README screenshots (#120) from the real [MainActivity], filled with demo apps, under
  * Robolectric's native graphics, so no phone or emulator is needed. Not a test: `./gradlew test` leaves it out, and
  * `./gradlew :app:testDebugUnitTest -PstoreScreenshots` runs only this and writes the PNGs to the `screenshots.dir`
- * system property (`app/build.gradle.kts` points it at the fastlane listing). The status pill shows the time of the run.
+ * system property (`app/build.gradle.kts` points it at the fastlane listing). The status pill shows the time of the
+ * run.
  *
  * 360 × 540 dp at xxhdpi is 1080 × 1620 px, the 3:2 screen of the keyboard phones MinimalUI is for.
  */
@@ -52,7 +50,6 @@ class StoreScreenshots {
     val rule = createEmptyComposeRule()
 
     private val application: Application = ApplicationProvider.getApplicationContext()
-    private val launcherQuery = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
     private val output = File(checkNotNull(System.getProperty("screenshots.dir")) { "screenshots.dir is not set" })
     private var controller: ActivityController<MainActivity>? = null
 
@@ -61,35 +58,35 @@ class StoreScreenshots {
         controller?.pause()?.stop()?.destroy()
     }
 
-    private fun install(label: String, category: Int = ApplicationInfo.CATEGORY_UNDEFINED) {
+    private fun install(
+        label: String,
+        category: Int = ApplicationInfo.CATEGORY_UNDEFINED,
+    ) {
         val packageName = "com.example.${label.lowercase()}"
-        val info = ResolveInfo().apply {
-            nonLocalizedLabel = label
-            activityInfo = ActivityInfo().apply {
+        val activity =
+            ActivityInfo().apply {
+                nonLocalizedLabel = label
                 this.packageName = packageName
                 name = "$packageName.Main"
-                exported = true
-                applicationInfo = ApplicationInfo().apply {
-                    this.packageName = packageName
-                    this.category = category
-                }
+                applicationInfo =
+                    ApplicationInfo().apply {
+                        this.packageName = packageName
+                        this.category = category
+                    }
             }
-        }
-        shadowOf(application.packageManager).addResolveInfoForIntent(launcherQuery, info)
-        shadowOf(application.packageManager).addActivityIfNotPresent(ComponentName(packageName, "$packageName.Main"))
+        shadowOf(application.packageManager).installActivity(activity, Intent.ACTION_MAIN, Intent.CATEGORY_LAUNCHER)
     }
 
     /** Android's Settings app, which the list always keeps. */
     private fun installSystemSettings() {
-        val settings = ResolveInfo().apply {
-            activityInfo = ActivityInfo().apply {
+        val settings =
+            ActivityInfo().apply {
                 nonLocalizedLabel = "Settings"
                 packageName = "com.example.settings"
                 name = "com.example.settings.Main"
                 applicationInfo = ApplicationInfo().apply { packageName = "com.example.settings" }
             }
-        }
-        shadowOf(application.packageManager).addResolveInfoForIntent(Intent(Settings.ACTION_SETTINGS), settings)
+        shadowOf(application.packageManager).installActivity(settings, Settings.ACTION_SETTINGS)
     }
 
     /** A phone with its apps installed, on Wi-Fi at 80 % charge, showing MinimalUI's home screen. */
@@ -111,12 +108,7 @@ class StoreScreenshots {
         install("Podcasts", ApplicationInfo.CATEGORY_AUDIO)
         install("Weather")
         installSystemSettings()
-        application.sendStickyBroadcast(
-            Intent(Intent.ACTION_BATTERY_CHANGED)
-                .putExtra(BatteryManager.EXTRA_LEVEL, 80)
-                .putExtra(BatteryManager.EXTRA_SCALE, 100)
-                .putExtra(BatteryManager.EXTRA_STATUS, BatteryManager.BATTERY_STATUS_DISCHARGING),
-        )
+        application.broadcastBattery(80)
         val activity = Robolectric.buildActivity(MainActivity::class.java).setup().also { controller = it }
         connectWifi()
         awaitListed("Calculator")
@@ -127,7 +119,8 @@ class StoreScreenshots {
     private fun connectWifi() {
         val wifi = ShadowNetworkCapabilities.newInstance()
         shadowOf(wifi).addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
-        shadowOf(application.getSystemService(ConnectivityManager::class.java)).networkCallbacks
+        shadowOf(application.getSystemService(ConnectivityManager::class.java))
+            .networkCallbacks
             .forEach { it.onCapabilitiesChanged(ShadowNetwork.newInstance(1), wifi) }
     }
 
@@ -135,20 +128,29 @@ class StoreScreenshots {
     private fun awaitListed(label: String) =
         rule.waitUntil(timeoutMillis = 5_000) { rule.onAllNodesWithText(label).fetchSemanticsNodes().isNotEmpty() }
 
-    private fun type(activity: ActivityController<MainActivity>, keyCode: Int) {
+    private fun type(
+        activity: ActivityController<MainActivity>,
+        keyCode: Int,
+    ) {
         activity.get().dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, keyCode))
         activity.get().dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_UP, keyCode))
         rule.waitForIdle()
     }
 
     /** Presses Down until the row [label] is selected; the selected row is the focused one. */
-    private fun select(activity: ActivityController<MainActivity>, label: String) {
+    private fun select(
+        activity: ActivityController<MainActivity>,
+        label: String,
+    ) {
         val selected = hasText(label) and isFocused()
         while (rule.onAllNodes(selected).fetchSemanticsNodes().isEmpty()) type(activity, KeyEvent.KEYCODE_DPAD_DOWN)
     }
 
     /** Makes [label] a favourite through its menu, as a user would. */
-    private fun favourite(activity: ActivityController<MainActivity>, label: String) {
+    private fun favourite(
+        activity: ActivityController<MainActivity>,
+        label: String,
+    ) {
         select(activity, label)
         type(activity, KeyEvent.KEYCODE_MENU)
         awaitListed("Add to favourites")
@@ -158,7 +160,10 @@ class StoreScreenshots {
     }
 
     /** Opens [label] with Enter and comes back from it, so it heads the recently used block. */
-    private fun openAndComeBack(activity: ActivityController<MainActivity>, label: String) {
+    private fun openAndComeBack(
+        activity: ActivityController<MainActivity>,
+        label: String,
+    ) {
         select(activity, label)
         type(activity, KeyEvent.KEYCODE_ENTER)
         activity.pause().stop()

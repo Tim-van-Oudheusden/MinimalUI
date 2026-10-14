@@ -4,7 +4,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class ButtonHintsTest {
-
     private val maps = LauncherApp(label = "Maps", packageName = "pkg.maps", activityName = "pkg.maps.Main")
     private val listed = ListContent.Apps(listOf(RootEntry.App(maps), RootEntry.Blank(), RootEntry.Collections))
 

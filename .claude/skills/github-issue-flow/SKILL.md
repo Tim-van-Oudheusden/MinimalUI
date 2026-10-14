@@ -22,7 +22,8 @@ encodes its workflow into concrete commands.
 
 - Follow repo TDD: one failing test first, confirm it fails for the right
   reason, implement, run the test, then the full suite.
-- Gates before finishing: `./gradlew test lint assembleDebug`.
+- Gates before finishing: `./gradlew check assembleDebug` (`./gradlew spotlessApply`
+  fixes formatting).
 - Conventional Commit per issue, referencing the number:
   `git commit -m "type(scope): summary (#<number>)"`.
 

@@ -14,8 +14,20 @@ trim_trailing_whitespace = false
 [*.{yml,yaml,json,toml}]
 indent_size = 2
 
+# ktlint (run by Spotless) and Android Studio's formatter both read this section, so Reformat Code and
+# `./gradlew spotlessApply` agree.
 [*.{kt,kts}]
 max_line_length = 120
+ktlint_code_style = ktlint_official
+# Composables are named like types (AppList, not appList).
+ktlint_function_naming_ignore_when_annotated_with = Composable
+ij_kotlin_code_style_defaults = KOTLIN_OFFICIAL
+ij_kotlin_allow_trailing_comma = true
+ij_kotlin_allow_trailing_comma_on_call_site = true
+ij_kotlin_imports_layout = *, java.**, javax.**, kotlin.**, ^
+ij_kotlin_name_count_to_use_star_import = 2147483647
+ij_kotlin_name_count_to_use_star_import_for_members = 2147483647
+ij_kotlin_packages_to_use_import_on_demand = unset
 
 [{gradlew,gradlew.bat}]
 indent_size = unset

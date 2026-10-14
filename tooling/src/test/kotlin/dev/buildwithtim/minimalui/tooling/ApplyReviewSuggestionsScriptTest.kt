@@ -9,7 +9,6 @@ import java.io.File
 import java.nio.file.Files
 
 class ApplyReviewSuggestionsScriptTest {
-
     private val sandbox: File = Files.createTempDirectory("apply-review-").toFile()
     private val checkout: File = sandbox.resolve("pr").apply { mkdir() }
 
@@ -32,18 +31,19 @@ class ApplyReviewSuggestionsScriptTest {
 
     private fun suggestion(text: String) = "Nit:\n\n```suggestion\n$text```\n"
 
-    private fun json(text: String) = buildString {
-        append('"')
-        text.forEach { c ->
-            when {
-                c == '"' -> append("\\\"")
-                c == '\\' -> append("\\\\")
-                c < ' ' -> append("\\u%04x".format(c.code))
-                else -> append(c)
+    private fun json(text: String) =
+        buildString {
+            append('"')
+            text.forEach { c ->
+                when {
+                    c == '"' -> append("\\\"")
+                    c == '\\' -> append("\\\\")
+                    c < ' ' -> append("\\u%04x".format(c.code))
+                    else -> append(c)
+                }
             }
+            append('"')
         }
-        append('"')
-    }
 
     private fun apply(vararg comments: String): ScriptResult {
         val commentsFile = sandbox.resolve("comments.json")
@@ -55,7 +55,10 @@ class ApplyReviewSuggestionsScriptTest {
         )
     }
 
-    private fun file(path: String, text: String) = checkout.resolve(path).apply {
+    private fun file(
+        path: String,
+        text: String,
+    ) = checkout.resolve(path).apply {
         parentFile.mkdirs()
         writeText(text)
     }
@@ -76,10 +79,17 @@ class ApplyReviewSuggestionsScriptTest {
         val a = file("src/a.kt", "one\ntwo\n")
         val b = file("b.kt", "x\ny\n")
 
-        val result = apply(
-            comment(id = 1, path = "src/a.kt", line = 1, body = "```suggestion\r\nÉén ✓\r\n```", association = "MEMBER"),
-            comment(id = 2, path = "b.kt", line = 2, body = suggestion("Y\n"), association = "COLLABORATOR"),
-        )
+        val result =
+            apply(
+                comment(
+                    id = 1,
+                    path = "src/a.kt",
+                    line = 1,
+                    body = "```suggestion\r\nÉén ✓\r\n```",
+                    association = "MEMBER",
+                ),
+                comment(id = 2, path = "b.kt", line = 2, body = suggestion("Y\n"), association = "COLLABORATOR"),
+            )
 
         assertEquals(result.stderr, 0, result.exitCode)
         assertEquals("Één ✓\ntwo\n", a.readText())
@@ -92,16 +102,20 @@ class ApplyReviewSuggestionsScriptTest {
     fun `skips suggestions from authors without write access and outdated comments`() {
         val a = file("a.kt", "one\ntwo\nthree\n")
 
-        val result = apply(
-            comment(id = 1, path = "a.kt", line = 1, body = suggestion("ONE\n"), association = "CONTRIBUTOR"),
-            comment(id = 2, path = "a.kt", line = 2, body = suggestion("TWO\n"), association = "NONE"),
-            comment(id = 3, path = "a.kt", line = null, body = suggestion("THREE\n")),
-        )
+        val result =
+            apply(
+                comment(id = 1, path = "a.kt", line = 1, body = suggestion("ONE\n"), association = "CONTRIBUTOR"),
+                comment(id = 2, path = "a.kt", line = 2, body = suggestion("TWO\n"), association = "NONE"),
+                comment(id = 3, path = "a.kt", line = null, body = suggestion("THREE\n")),
+            )
 
         assertEquals(result.stderr, 0, result.exitCode)
         assertEquals("one\ntwo\nthree\n", a.readText())
         assertFalse(result.stdout, result.stdout.contains("applied:"))
-        assertTrue(result.stdout, result.stdout.contains("skipped: comment 1 on a.kt: author CONTRIBUTOR has no write access"))
+        assertTrue(
+            result.stdout,
+            result.stdout.contains("skipped: comment 1 on a.kt: author CONTRIBUTOR has no write access"),
+        )
         assertTrue(result.stdout, result.stdout.contains("skipped: comment 2 on a.kt: author NONE has no write access"))
         assertTrue(result.stdout, result.stdout.contains("skipped: comment 3 on a.kt: outdated"))
     }
@@ -111,10 +125,11 @@ class ApplyReviewSuggestionsScriptTest {
     fun `skips suggestions on the base side of the diff`() {
         val a = file("a.kt", "one\ntwo\n")
 
-        val result = apply(
-            comment(id = 1, path = "a.kt", line = 1, body = suggestion("ONE\n"), side = "LEFT"),
-            comment(id = 2, path = "a.kt", startLine = 1, line = 2, body = suggestion("TWO\n"), startSide = "LEFT"),
-        )
+        val result =
+            apply(
+                comment(id = 1, path = "a.kt", line = 1, body = suggestion("ONE\n"), side = "LEFT"),
+                comment(id = 2, path = "a.kt", startLine = 1, line = 2, body = suggestion("TWO\n"), startSide = "LEFT"),
+            )
 
         assertEquals(result.stderr, 0, result.exitCode)
         assertEquals("one\ntwo\n", a.readText())
@@ -128,17 +143,21 @@ class ApplyReviewSuggestionsScriptTest {
         val workflow = file(".github/workflows/ci.yml", "name: CI\n")
         val a = file("a.kt", "one\n")
 
-        val result = apply(
-            comment(id = 1, path = ".github/workflows/ci.yml", line = 1, body = suggestion("name: Pwned\n")),
-            comment(id = 2, path = "a.kt", line = 1, body = suggestion("ONE\n")),
-        )
+        val result =
+            apply(
+                comment(id = 1, path = ".github/workflows/ci.yml", line = 1, body = suggestion("name: Pwned\n")),
+                comment(id = 2, path = "a.kt", line = 1, body = suggestion("ONE\n")),
+            )
 
         assertEquals(result.stderr, 0, result.exitCode)
         assertEquals("name: CI\n", workflow.readText())
         assertEquals("ONE\n", a.readText())
         assertTrue(
             result.stdout,
-            result.stdout.contains("skipped: comment 1 on .github/workflows/ci.yml: workflow files cannot be pushed with the workflow token"),
+            result.stdout.contains(
+                "skipped: comment 1 on .github/workflows/ci.yml: " +
+                    "workflow files cannot be pushed with the workflow token",
+            ),
         )
     }
 
@@ -146,9 +165,14 @@ class ApplyReviewSuggestionsScriptTest {
     fun `skips a comment holding more than one suggestion block`() {
         val a = file("a.kt", "one\n")
 
-        val result = apply(
-            comment(path = "a.kt", line = 1, body = "Either\n```suggestion\nONE\n```\nor\n```suggestion\nUNO\n```\n"),
-        )
+        val result =
+            apply(
+                comment(
+                    path = "a.kt",
+                    line = 1,
+                    body = "Either\n```suggestion\nONE\n```\nor\n```suggestion\nUNO\n```\n",
+                ),
+            )
 
         assertEquals(result.stderr, 0, result.exitCode)
         assertEquals("one\n", a.readText())
@@ -159,7 +183,8 @@ class ApplyReviewSuggestionsScriptTest {
     fun `keeps backticks inside a suggestion line, ending the block only at a fence that starts a line`() {
         val readme = file("README.md", "# Title\nold\n")
 
-        val result = apply(comment(path = "README.md", line = 2, body = suggestion("Fence code with ```kotlin``` blocks.\n")))
+        val result =
+            apply(comment(path = "README.md", line = 2, body = suggestion("Fence code with ```kotlin``` blocks.\n")))
 
         assertEquals(result.stderr, 0, result.exitCode)
         assertEquals("# Title\nFence code with ```kotlin``` blocks.\n", readme.readText())
@@ -190,17 +215,21 @@ class ApplyReviewSuggestionsScriptTest {
     fun `refuses paths outside the checkout and files that do not exist`() {
         val outside = sandbox.resolve("outside.txt").apply { writeText("secret\n") }
 
-        val result = apply(
-            comment(id = 1, path = "../outside.txt", line = 1, body = suggestion("pwned\n")),
-            comment(id = 2, path = outside.absolutePath, line = 1, body = suggestion("pwned\n")),
-            comment(id = 3, path = "missing.kt", line = 1, body = suggestion("x\n")),
-        )
+        val result =
+            apply(
+                comment(id = 1, path = "../outside.txt", line = 1, body = suggestion("pwned\n")),
+                comment(id = 2, path = outside.absolutePath, line = 1, body = suggestion("pwned\n")),
+                comment(id = 3, path = "missing.kt", line = 1, body = suggestion("x\n")),
+            )
 
         assertEquals(result.stderr, 0, result.exitCode)
         assertEquals("secret\n", outside.readText())
         assertFalse(result.stdout, result.stdout.contains("applied:"))
         listOf(1, 2, 3).forEach {
-            assertTrue(result.stdout, Regex("skipped: comment $it on .*: not a regular file in the checkout").containsMatchIn(result.stdout))
+            assertTrue(
+                result.stdout,
+                Regex("skipped: comment $it on .*: not a regular file in the checkout").containsMatchIn(result.stdout),
+            )
         }
     }
 
@@ -221,16 +250,20 @@ class ApplyReviewSuggestionsScriptTest {
     fun `applies several multi-line suggestions in one file and skips one overlapping an applied range`() {
         val a = file("a.kt", "1\n2\n3\n4\n5\n6\n")
 
-        val result = apply(
-            comment(id = 1, path = "a.kt", startLine = 1, line = 2, body = suggestion("one-two\n")),
-            comment(id = 2, path = "a.kt", startLine = 4, line = 5, body = suggestion("")),
-            comment(id = 3, path = "a.kt", line = 6, body = suggestion("six\nseven\n")),
-            comment(id = 4, path = "a.kt", startLine = 5, line = 6, body = suggestion("clash\n")),
-        )
+        val result =
+            apply(
+                comment(id = 1, path = "a.kt", startLine = 1, line = 2, body = suggestion("one-two\n")),
+                comment(id = 2, path = "a.kt", startLine = 4, line = 5, body = suggestion("")),
+                comment(id = 3, path = "a.kt", line = 6, body = suggestion("six\nseven\n")),
+                comment(id = 4, path = "a.kt", startLine = 5, line = 6, body = suggestion("clash\n")),
+            )
 
         assertEquals(result.stderr, 0, result.exitCode)
         assertEquals("one-two\n3\nsix\nseven\n", a.readText())
-        assertTrue(result.stdout, result.stdout.contains("skipped: comment 4 on a.kt: overlaps another applied suggestion"))
+        assertTrue(
+            result.stdout,
+            result.stdout.contains("skipped: comment 4 on a.kt: overlaps another applied suggestion"),
+        )
         assertTrue(result.stdout, result.stdout.contains("applied: a.kt:4-5 (comment 2)"))
     }
 

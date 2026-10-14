@@ -5,7 +5,9 @@ import androidx.core.content.edit
 import dev.buildwithtim.minimalui.core.Aliases
 
 /** The names the user gave apps (#72) in app-private storage, so they survive the process being killed and updates. */
-class AliasesStore(context: Context) {
+class AliasesStore(
+    context: Context,
+) {
     private val preferences = context.getSharedPreferences("aliases", Context.MODE_PRIVATE)
 
     fun load(): Aliases = Aliases.fromStored(preferences.getString(ALIASES, null))

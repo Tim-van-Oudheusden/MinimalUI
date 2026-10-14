@@ -11,7 +11,6 @@ import java.nio.file.Files
 import java.util.concurrent.TimeUnit
 
 class AutoReviewWorkflowTest {
-
     private val workflow = Yaml.parse(Repo.read(".github/workflows/auto-review.yml")).asMap()
     private val job = workflow.jobs().getValue("apply")
     private val steps = job.steps()
@@ -29,7 +28,10 @@ class AutoReviewWorkflowTest {
         assertTrue(jobIf, jobIf.contains("startsWith(github.event.comment.body, '/apply-suggestions')"))
         assertTrue(
             jobIf,
-            jobIf.contains("""contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)"""),
+            jobIf.contains(
+                """contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), """ +
+                    "github.event.comment.author_association)",
+            ),
         )
     }
 
@@ -37,8 +39,10 @@ class AutoReviewWorkflowTest {
     @Test
     fun `hands GITHUB_TOKEN only to the steps that call GitHub, never to code running in the PR checkout`() {
         val token = Regex("""\$\{\{\s*(github\.token|secrets\.)""")
-        val withToken = steps.filter { step -> step.env().values.any { token.containsMatchIn(it.toString()) } }
-            .map { it["name"] }
+        val withToken =
+            steps
+                .filter { step -> step.env().values.any { token.containsMatchIn(it.toString()) } }
+                .map { it["name"] }
 
         assertFalse(job.env().values.any { token.containsMatchIn(it.toString()) })
         assertEquals(
@@ -64,7 +68,9 @@ class AutoReviewWorkflowTest {
         checkouts.forEach { assertEquals(it["name"].toString(), false, it["with"].asMap()["persist-credentials"]) }
         assertEquals(mapOf("path" to "trusted", "persist-credentials" to false), trusted)
         assertEquals("\${{ steps.pr.outputs.sha }}", step("Check out pull request head")["with"].asMap()["ref"])
-        assertTrue(step("Apply suggestions")["run"].toString().contains("../trusted/scripts/apply-review-suggestions.sh"))
+        assertTrue(
+            step("Apply suggestions")["run"].toString().contains("../trusted/scripts/apply-review-suggestions.sh"),
+        )
     }
 
     @Test
@@ -72,9 +78,15 @@ class AutoReviewWorkflowTest {
         val commit = step("Commit suggestions")["run"].toString()
         val push = step("Push to the pull request branch")
 
-        assertTrue(commit, commit.contains("""git commit -am "chore(review): apply review suggestions (#${'$'}PR_NUMBER)""""))
+        assertTrue(
+            commit,
+            commit.contains("""git commit -am "chore(review): apply review suggestions (#${'$'}PR_NUMBER)""""),
+        )
         assertEquals("steps.commit.outputs.committed == 'true'", push["if"])
-        assertTrue(push["run"].toString(), push["run"].toString().contains("""push origin "HEAD:refs/heads/${'$'}HEAD_REF""""))
+        assertTrue(
+            push["run"].toString(),
+            push["run"].toString().contains("""push origin "HEAD:refs/heads/${'$'}HEAD_REF""""),
+        )
     }
 
     private val workDir: File = Files.createTempDirectory("auto-review-").toFile()
@@ -84,7 +96,11 @@ class AutoReviewWorkflowTest {
         workDir.deleteRecursively()
     }
 
-    private data class StepRun(val exitCode: Int, val output: String, val stepOutputs: String)
+    private data class StepRun(
+        val exitCode: Int,
+        val output: String,
+        val stepOutputs: String,
+    )
 
     /** Runs the "Resolve pull request head" step against a fake `gh` that answers its two REST calls. */
     private fun resolveHead(
@@ -115,19 +131,19 @@ class AutoReviewWorkflowTest {
         val outputs = workDir.resolve("github-output").apply { writeText("") }
         val log = workDir.resolve("log.txt")
 
-        val process = ProcessBuilder("bash", "-c", step("Resolve pull request head")["run"].toString())
-            .directory(workDir)
-            .redirectErrorStream(true)
-            .redirectOutput(log)
-            .apply {
-                environment()["PATH"] = "${workDir.path}:${System.getenv("PATH")}"
-                environment()["FAKE_DIR"] = workDir.path
-                environment()["GITHUB_OUTPUT"] = outputs.path
-                environment()["REPO"] = "owner/minimalui"
-                environment()["PR_NUMBER"] = "7"
-                environment()["COMMENT_AT"] = commentedAt
-            }
-            .start()
+        val process =
+            ProcessBuilder("bash", "-c", step("Resolve pull request head")["run"].toString())
+                .directory(workDir)
+                .redirectErrorStream(true)
+                .redirectOutput(log)
+                .apply {
+                    environment()["PATH"] = "${workDir.path}:${System.getenv("PATH")}"
+                    environment()["FAKE_DIR"] = workDir.path
+                    environment()["GITHUB_OUTPUT"] = outputs.path
+                    environment()["REPO"] = "owner/minimalui"
+                    environment()["PR_NUMBER"] = "7"
+                    environment()["COMMENT_AT"] = commentedAt
+                }.start()
         check(process.waitFor(60, TimeUnit.SECONDS)) { "step did not finish within 60 s" }
         return StepRun(process.exitValue(), log.readText(), outputs.readText())
     }

@@ -21,32 +21,32 @@ fun writeKoverReport(
 ) {
     val (methodsMissed, methodsCovered) = methods
     val (linesMissed, linesCovered) = lines
-    val tags = listOf(
-        """<?xml version="1.0" ?>""",
-        """<report name="Kover Gradle Plugin XML report for :$module">""",
-        """<package name="dev/example">""",
-        """<class name="dev/example/Thing" sourcefilename="Thing.kt">""",
-        """<method name="&lt;init&gt;" desc="()V">""",
-        """<counter type="LINE" missed="0" covered="1"/>""",
-        """</method>""",
-        """<counter type="LINE" missed="0" covered="7"/>""",
-        """<counter type="METHOD" missed="0" covered="3"/>""",
-        """</class>""",
-        """<counter type="LINE" missed="0" covered="7"/>""",
-        """<counter type="METHOD" missed="0" covered="3"/>""",
-        """</package>""",
-        """<counter type="INSTRUCTION" missed="5" covered="5"/>""",
-        """<counter type="LINE" missed="$linesMissed" covered="$linesCovered"/>""",
-        """<counter type="METHOD" missed="$methodsMissed" covered="$methodsCovered"/>""",
-        """</report>""",
-    )
+    val tags =
+        listOf(
+            """<?xml version="1.0" ?>""",
+            """<report name="Kover Gradle Plugin XML report for :$module">""",
+            """<package name="dev/example">""",
+            """<class name="dev/example/Thing" sourcefilename="Thing.kt">""",
+            """<method name="&lt;init&gt;" desc="()V">""",
+            """<counter type="LINE" missed="0" covered="1"/>""",
+            """</method>""",
+            """<counter type="LINE" missed="0" covered="7"/>""",
+            """<counter type="METHOD" missed="0" covered="3"/>""",
+            """</class>""",
+            """<counter type="LINE" missed="0" covered="7"/>""",
+            """<counter type="METHOD" missed="0" covered="3"/>""",
+            """</package>""",
+            """<counter type="INSTRUCTION" missed="5" covered="5"/>""",
+            """<counter type="LINE" missed="$linesMissed" covered="$linesCovered"/>""",
+            """<counter type="METHOD" missed="$methodsMissed" covered="$methodsCovered"/>""",
+            """</report>""",
+        )
     val report = root.resolve("$module/build/reports/kover/report.xml")
     report.parentFile.mkdirs()
     report.writeText(tags.joinToString(if (singleLine) "" else "\n", postfix = "\n"))
 }
 
 class CoverageCheckScriptTest {
-
     private val root: File = Files.createTempDirectory("coverage-check").toFile()
 
     @After

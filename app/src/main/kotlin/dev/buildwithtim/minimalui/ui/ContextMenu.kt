@@ -45,22 +45,23 @@ fun ContextMenu(
 }
 
 private val MenuAction.label: Int
-    get() = when (this) {
-        MenuAction.AppInfo -> R.string.menu_app_info
-        MenuAction.Uninstall -> R.string.menu_uninstall
-        MenuAction.AddToFavourites -> R.string.menu_add_favourite
-        MenuAction.RemoveFromFavourites -> R.string.menu_remove_favourite
-        MenuAction.AddToCollection -> R.string.menu_add_collection
-        MenuAction.RemoveFromCollection -> R.string.menu_remove_collection
-        MenuAction.MoveUp -> R.string.menu_move_up
-        MenuAction.MoveDown -> R.string.menu_move_down
-        MenuAction.AddToGroup -> R.string.menu_add_group
-        MenuAction.RemoveFromGroup -> R.string.menu_remove_group
-        MenuAction.Rename -> R.string.menu_rename
-        MenuAction.Hide -> R.string.menu_hide
-        MenuAction.Unhide -> R.string.menu_unhide
-        MenuAction.RemoveFromRecents -> R.string.menu_remove_recent
-        MenuAction.ClearRecents -> R.string.menu_clear_recents
-        MenuAction.RenameGroup -> R.string.menu_rename_group
-        MenuAction.DeleteGroup -> R.string.menu_delete_group
-    }
+    get() =
+        when (this) {
+            MenuAction.AppInfo -> R.string.menu_app_info
+            MenuAction.Uninstall -> R.string.menu_uninstall
+            MenuAction.AddToFavourites -> R.string.menu_add_favourite
+            MenuAction.RemoveFromFavourites -> R.string.menu_remove_favourite
+            MenuAction.AddToCollection -> R.string.menu_add_collection
+            MenuAction.RemoveFromCollection -> R.string.menu_remove_collection
+            MenuAction.MoveUp -> R.string.menu_move_up
+            MenuAction.MoveDown -> R.string.menu_move_down
+            MenuAction.AddToGroup -> R.string.menu_add_group
+            MenuAction.RemoveFromGroup -> R.string.menu_remove_group
+            MenuAction.Rename -> R.string.menu_rename
+            MenuAction.Hide -> R.string.menu_hide
+            MenuAction.Unhide -> R.string.menu_unhide
+            MenuAction.RemoveFromRecents -> R.string.menu_remove_recent
+            MenuAction.ClearRecents -> R.string.menu_clear_recents
+            MenuAction.RenameGroup -> R.string.menu_rename_group
+            MenuAction.DeleteGroup -> R.string.menu_delete_group
+        }

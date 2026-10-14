@@ -4,14 +4,33 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class ListNavigationTest {
-
     // Pages of 8 rows; lists of 20 apps unless a test says otherwise.
-    private fun up(from: ListPosition, held: Boolean = false, count: Int = 20) = from.stepped(-1, held, count, 8)
-    private fun down(from: ListPosition, held: Boolean = false, count: Int = 20) = from.stepped(1, held, count, 8)
-    private fun left(from: ListPosition, count: Int = 20) = from.paged(-1, count, 8)
-    private fun right(from: ListPosition, count: Int = 20) = from.paged(1, count, 8)
+    private fun up(
+        from: ListPosition,
+        held: Boolean = false,
+        count: Int = 20,
+    ) = from.stepped(-1, held, count, 8)
 
-    private fun at(selected: Int, first: Int) = ListPosition(selected, first)
+    private fun down(
+        from: ListPosition,
+        held: Boolean = false,
+        count: Int = 20,
+    ) = from.stepped(1, held, count, 8)
+
+    private fun left(
+        from: ListPosition,
+        count: Int = 20,
+    ) = from.paged(-1, count, 8)
+
+    private fun right(
+        from: ListPosition,
+        count: Int = 20,
+    ) = from.paged(1, count, 8)
+
+    private fun at(
+        selected: Int,
+        first: Int,
+    ) = ListPosition(selected, first)
 
     @Test
     fun `only whole rows fit and the leftover height is shared between them`() {

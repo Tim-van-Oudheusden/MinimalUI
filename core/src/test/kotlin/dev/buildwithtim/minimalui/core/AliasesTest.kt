@@ -4,13 +4,14 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class AliasesTest {
-
     private fun app(label: String) = LauncherApp(label, "pkg.$label", "pkg.$label.Main")
 
     private val installed = listOf("Alarm", "Bell", "Camera").map(::app)
 
-    private fun Aliases.labels(apps: List<LauncherApp> = installed, settingsPackage: String? = null) =
-        labelled(apps, settingsPackage).map { it.label }
+    private fun Aliases.labels(
+        apps: List<LauncherApp> = installed,
+        settingsPackage: String? = null,
+    ) = labelled(apps, settingsPackage).map { it.label }
 
     @Test
     fun `an alias replaces the label and moves the app to its sort place`() {

@@ -120,7 +120,7 @@ flowchart LR
   end
 
   subgraph app["app: Android shell"]
-    activity["MainActivity<br/>keys, screens, intents"]
+    activity["MainActivity, LauncherState,<br/>AppActions: keys, screens, intents"]
     watcher["StatusWatcher"]
     stores[("Stores<br/>SharedPreferences")]
     ui["ui/<br/>Compose lists, menus,<br/>status pill, hint row"]
@@ -172,7 +172,7 @@ cd MinimalUI
 | `./gradlew :app:testDebugUnitTest -PstoreScreenshots` | Regenerates the screenshots above, without a phone or emulator |
 | `./gradlew assembleRelease` | Release APK, signed only when the release key is passed in ([Releasing](CONTRIBUTING.md#releasing)) |
 
-CI runs `./gradlew test lint assembleDebug` on every pull request. No phone? [Running it in an emulator on
+CI runs `./gradlew check assembleDebug` on every pull request. No phone? [Running it in an emulator on
 Linux](CONTRIBUTING.md#running-it-in-an-emulator-on-linux) sets one up.
 
 ## Documentation

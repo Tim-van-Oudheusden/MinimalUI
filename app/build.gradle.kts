@@ -6,12 +6,16 @@ plugins {
 
 // The commit the APK was built from, shown in Settings > About (#73). "unknown" where git or the repository is
 // missing (a source archive, say), so the build never fails for it.
-val buildCommit: String = runCatching {
-    providers.exec {
-        commandLine("git", "rev-parse", "--short", "HEAD")
-        isIgnoreExitValue = true
-    }.standardOutput.asText.get().trim()
-}.getOrNull().orEmpty().ifEmpty { "unknown" }
+val buildCommit: String =
+    runCatching {
+        providers
+            .exec {
+                commandLine("git", "rev-parse", "--short", "HEAD")
+                isIgnoreExitValue = true
+            }.standardOutput.asText
+            .get()
+            .trim()
+    }.getOrNull().orEmpty().ifEmpty { "unknown" }
 
 // Release signing (#116). The release workflow decodes the keystore from repository secrets and passes it in through
 // these environment variables. Without RELEASE_KEYSTORE_FILE, assembleRelease still builds, but the APK is unsigned.
@@ -69,8 +73,33 @@ android {
     lint {
         abortOnError = true
         warningsAsErrors = true
-        // Version-freshness checks change verdict whenever a library ships; Dependabot owns updates.
-        disable += setOf("GradleDependency", "NewerVersionAvailable", "AndroidGradlePluginVersion", "OldTargetApi")
+        checkAllWarnings = true
+        // App tests run on Robolectric's JVM, where lint's device-runtime checks (MissingPermission, PrivateApi,
+        // RestrictedApi on test-only key dispatch) misfire, so they keep lint's default test-source coverage.
+        checkTestSources = false
+        disable +=
+            setOf(
+                // Version-freshness checks change verdict whenever a library ships; Dependabot owns updates.
+                "GradleDependency",
+                "NewerVersionAvailable",
+                "AndroidGradlePluginVersion",
+                "OldTargetApi",
+                // For AndroidX library authors counting methods; R8 inlines Kotlin's accessors in release builds.
+                "SyntheticAccessor",
+                // A hint and a menu item may share an English word yet need different translations.
+                "DuplicateStrings",
+                // Strong skipping (Kotlin 2.0.20+) skips on instance equality; ImmutableList needs a new dependency.
+                "ComposeUnstableCollections",
+            )
+    }
+}
+
+// AGP's built-in Kotlin registers the `kotlin` extension; compiler warnings fail the build like Android Lint warnings
+// do (#133).
+kotlin {
+    compilerOptions {
+        allWarningsAsErrors.set(true)
+        extraWarnings.set(true)
     }
 }
 
@@ -88,6 +117,8 @@ dependencies {
     testImplementation(libs.androidx.compose.ui.test.junit4)
     // Declares the empty activity that createComposeRule() hosts content in; debug builds only.
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+    // Slack's Compose rules (modifier parameters, state hoisting, naming), run by Android Lint.
+    lintChecks(libs.compose.lint.checks)
 }
 
 // Store and README screenshots (#120). StoreScreenshots renders them instead of asserting anything, so unit test runs

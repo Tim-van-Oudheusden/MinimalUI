@@ -6,9 +6,10 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class AppGroupsTest {
-
-    private fun app(label: String, category: AppCategory? = AppCategory.Other) =
-        LauncherApp(label, "pkg.$label", "pkg.$label.Main", category)
+    private fun app(
+        label: String,
+        category: AppCategory? = AppCategory.Other,
+    ) = LauncherApp(label, "pkg.$label", "pkg.$label.Main", category)
 
     private val chess = app("Chess", AppCategory.Games)
     private val drums = app("Drums", AppCategory.Audio)

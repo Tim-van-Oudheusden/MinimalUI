@@ -52,7 +52,9 @@ sealed interface RootEntry {
      * One empty row that sets a part apart: the block from the full list, or the full list from the Groups row (the
      * two differ by [key]). It still takes a row on every page.
      */
-    data class Blank(override val key: String = "blank") : RootEntry {
+    data class Blank(
+        override val key: String = "blank",
+    ) : RootEntry {
         override val selectable: Boolean get() = false
         override val app: LauncherApp? get() = null
     }
@@ -78,13 +80,16 @@ fun rootEntries(
 ): List<RootEntry> {
     val all = apps.filterNot { it.isWorkApp }.map { RootEntry.App(it, isFavourite = it in favourites) }
     val recent = recents.shownFrom(apps).filterNot { it in favourites }.take(settings.recentlyUsed)
-    val block = favourites.shownFrom(apps).map { RootEntry.App(it, RootSection.Favourite, isFavourite = true) } +
-        recent.map { RootEntry.App(it, RootSection.Recent) } +
-        listOfNotNull(RootEntry.Collections.takeIf { collections.names(apps).isNotEmpty() })
+    val block =
+        favourites.shownFrom(apps).map { RootEntry.App(it, RootSection.Favourite, isFavourite = true) } +
+            recent.map { RootEntry.App(it, RootSection.Recent) } +
+            listOfNotNull(RootEntry.Collections.takeIf { collections.names(apps).isNotEmpty() })
     val top = if (block.isEmpty()) all else block + RootEntry.Blank() + all
-    if (appGroups(apps, groups).isEmpty()) return top
-    if (top.isEmpty()) return listOf(RootEntry.Groups)
-    return top + RootEntry.Blank(GROUPS_BLANK) + RootEntry.Groups
+    return when {
+        appGroups(apps, groups).isEmpty() -> top
+        top.isEmpty() -> listOf(RootEntry.Groups)
+        else -> top + RootEntry.Blank(GROUPS_BLANK) + RootEntry.Groups
+    }
 }
 
 private const val GROUPS_BLANK = "groups-blank"
@@ -94,11 +99,13 @@ private const val GROUPS_BLANK = "groups-blank"
  * under it (a block growing or shrinking above it): the same entry, else the same app in another row (a recent
  * dropped from the block keeps it in the full list), else the same row number.
  */
-fun followedRow(before: List<RootEntry>, selected: Int, now: List<RootEntry>): Int {
+fun followedRow(
+    before: List<RootEntry>,
+    selected: Int,
+    now: List<RootEntry>,
+): Int {
     val entry = before.getOrNull(selected) ?: return selected
-    val same = now.indexOfFirst { it.key == entry.key }
-    if (same >= 0) return same
-    val app = entry.app ?: return selected
-    val sameApp = now.indexOfFirst { it.app?.component == app.component }
-    return if (sameApp >= 0) sameApp else selected
+    return now.indexOfFirst { it.key == entry.key }.takeIf { it >= 0 }
+        ?: entry.app?.let { app -> now.indexOfFirst { it.app?.component == app.component } }?.takeIf { it >= 0 }
+        ?: selected
 }

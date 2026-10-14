@@ -10,14 +10,14 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsFocused
-import androidx.compose.ui.test.assertIsNotFocused
 import androidx.compose.ui.test.assertIsNotDisplayed
+import androidx.compose.ui.test.assertIsNotFocused
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -65,7 +65,10 @@ class AppListTest {
     private fun show(list: List<LauncherApp> = apps) = show(ListContent.Apps(list.map { RootEntry.App(it) }))
 
     /** The root list with [recent] in its block above the blank row, then the full [list]. */
-    private fun root(recent: List<LauncherApp>, list: List<LauncherApp>) = ListContent.Apps(
+    private fun root(
+        recent: List<LauncherApp>,
+        list: List<LauncherApp>,
+    ) = ListContent.Apps(
         recent.map { RootEntry.App(it, RootSection.Recent) } + RootEntry.Blank() + list.map { RootEntry.App(it) },
     )
 
@@ -98,12 +101,16 @@ class AppListTest {
     private fun press(key: Key) = rule.onRoot().performKeyInput { pressKey(key) }
 
     /** The auto-repeat a key sends while it is held down. */
-    private fun holdDown() = rule.onRoot().performKeyPress(
-        KeyEvent(AndroidKeyEvent(0, 0, AndroidKeyEvent.ACTION_DOWN, AndroidKeyEvent.KEYCODE_DPAD_DOWN, 1)),
-    )
+    private fun holdDown() =
+        rule.onRoot().performKeyPress(
+            KeyEvent(AndroidKeyEvent(0, 0, AndroidKeyEvent.ACTION_DOWN, AndroidKeyEvent.KEYCODE_DPAD_DOWN, 1)),
+        )
 
-    private fun send(action: Int, keyCode: Int, repeat: Int = 0) =
-        rule.onRoot().performKeyPress(KeyEvent(AndroidKeyEvent(0, 0, action, keyCode, repeat)))
+    private fun send(
+        action: Int,
+        keyCode: Int,
+        repeat: Int = 0,
+    ) = rule.onRoot().performKeyPress(KeyEvent(AndroidKeyEvent(0, 0, action, keyCode, repeat)))
 
     /** A key held long enough to auto-repeat, then released. */
     private fun longPress(keyCode: Int) {
@@ -117,11 +124,12 @@ class AppListTest {
         val list = rule.onNode(hasScrollAction()).getUnclippedBoundsInRoot()
         val rows = rule.onAllNodes(hasClickAction() and hasAnyAncestor(hasScrollAction()))
         return List(rows.fetchSemanticsNodes().size) { rows[it] }
-            .map { it.fetchSemanticsNode().config[SemanticsProperties.Text].joinToString() to it.getUnclippedBoundsInRoot() }
-            .onEach { (label, row) ->
+            .map {
+                it.fetchSemanticsNode().config[SemanticsProperties.Text].joinToString() to
+                    it.getUnclippedBoundsInRoot()
+            }.onEach { (label, row) ->
                 assertTrue("$label is cut off", row.top >= list.top - Slack && row.bottom <= list.bottom + Slack)
-            }
-            .sortedBy { (_, row) -> row.top }
+            }.sortedBy { (_, row) -> row.top }
             .map { (label, _) -> label }
     }
 
@@ -409,7 +417,10 @@ class AppListTest {
         val shown = rule.onNodeWithText("57%").assertIsDisplayed().getUnclippedBoundsInRoot()
         rule.onNodeWithText("9:41").assertIsDisplayed()
         val root = rule.onRoot().getUnclippedBoundsInRoot()
-        assertTrue("the pill is not at the right edge", root.right - shown.right <= RowMetrics.ListPaddingHorizontal + Slack)
+        assertTrue(
+            "the pill is not at the right edge",
+            root.right - shown.right <= RowMetrics.ListPaddingHorizontal + Slack,
+        )
         assertTrue("the pill is not at the top", shown.top - root.top < shown.bottom - shown.top)
     }
 

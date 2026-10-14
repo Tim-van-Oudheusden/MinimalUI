@@ -5,7 +5,9 @@ import androidx.core.content.edit
 import dev.buildwithtim.minimalui.core.UserGroups
 
 /** The groups the user made (#69) in app-private storage, so they survive the launcher's process being killed. */
-class GroupsStore(context: Context) {
+class GroupsStore(
+    context: Context,
+) {
     private val preferences = context.getSharedPreferences("groups", Context.MODE_PRIVATE)
 
     fun load(): UserGroups = UserGroups.fromStored(preferences.getString(GROUPS, null))

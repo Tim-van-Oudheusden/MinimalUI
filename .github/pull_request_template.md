@@ -19,8 +19,7 @@ Fixes #<!-- issue number -->
 
 ## Quality gates
 
-- [ ] `./gradlew test` passes (full suite)
-- [ ] `./gradlew lint` passes
+- [ ] `./gradlew check` passes (unit tests, lint, formatting; `./gradlew spotlessApply` fixes formatting)
 - [ ] `./gradlew assembleDebug` passes
 
 ## Notes for the reviewer
