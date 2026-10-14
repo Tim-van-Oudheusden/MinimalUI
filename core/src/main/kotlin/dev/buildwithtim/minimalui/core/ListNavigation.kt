@@ -85,6 +85,24 @@ fun ListPosition.selecting(
     return ListPosition(row, first).showingSelected(count, rowsPerPage)
 }
 
+/** The keys that move a list's selection: Up and Down one row, Page up and Page down (Left and Right) a page. */
+enum class ListMove { Up, Down, PageUp, PageDown }
+
+/** Where [move] takes the selection: [stepped] for Up and Down, which a [held] key stops at the ends; else [paged]. */
+fun ListPosition.moved(
+    move: ListMove,
+    held: Boolean,
+    count: Int,
+    rowsPerPage: Int,
+    blank: (Int) -> Boolean,
+): ListPosition =
+    when (move) {
+        ListMove.Up -> stepped(-1, held, count, rowsPerPage, blank)
+        ListMove.Down -> stepped(1, held, count, rowsPerPage, blank)
+        ListMove.PageUp -> paged(-1, count, rowsPerPage, blank)
+        ListMove.PageDown -> paged(1, count, rowsPerPage, blank)
+    }
+
 /** This row if it is not [blank], else the nearest one that is not in [direction], else the other way, else itself. */
 private fun Int.nearestSelectable(
     direction: Int,
