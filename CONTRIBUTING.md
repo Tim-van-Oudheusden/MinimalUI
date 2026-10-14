@@ -309,6 +309,10 @@ release, run the workflow again on `main`: `gh workflow run release.yml`, or **A
 `v<versionName>` tag already exists on another commit, the workflow refuses to release; raise `versionName`, or delete
 the tag with `git push origin :refs/tags/v<versionName>` and run it again.
 
+If a published release turns out to be broken, see
+[`docs/runbooks/bad-release-rollback.md`](docs/runbooks/bad-release-rollback.md) — there is no auto-update channel and
+no downgrade path without uninstalling, so pulling one back is not a `git revert`.
+
 ## Code style
 
 - Kotlin official code style (`kotlin.code.style=official`), 4-space indent, max line length 120 (`.editorconfig`).
