@@ -90,9 +90,9 @@ Agent changes go through the same gates as human ones, with no shortcuts:
 
 ## Reporting
 
-- **Vulnerabilities or leaked secrets:** do not open a public issue. Use GitHub's private vulnerability reporting
-  (Security tab → Report a vulnerability) or contact the maintainer (@Tim-van-Oudheusden) privately, and rotate any
-  exposed credential first.
+- **Vulnerabilities or leaked secrets:** do not open a public issue. Report privately as
+  [`SECURITY.md`](../../SECURITY.md) describes (Security tab → Report a vulnerability), and rotate any exposed
+  credential first.
 - **Agent misbehaviour** that isn't a vulnerability (ignored rules, an injection attempt that got through, an action
   outside scope): open a GitHub issue.
 
