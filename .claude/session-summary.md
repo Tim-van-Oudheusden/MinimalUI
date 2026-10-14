@@ -9,17 +9,20 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 
 ## Latest session
 
-- **Date:** 2026-10-13
-- **Worked:** #74 — button-hint row (stack row 12 of the #60 interface stack, on `feat/78-work-profile`, PR #106).
-- **Outcome:** D12 (b) hint row always shown, keys as glyphs. Core `ButtonHints.kt`: `HintKey` (glyphs `☰ ⌫ ⎋ ⏎`),
-  `HintAction`, `Hint`, `Hints(left, right)`, `HintedScreen` (Root(content, query, selected), SubList(hasMenu,
-  isEmpty), Menu, Choice, Settings(row), About, HiddenApps(isEmpty), Editor), `buttonHints(screen)`,
-  `Hints.fitting(widthDp)` (< 320 dp drops the left group). App: `ui/HintLine.kt` (two `#262626` pills, glyph in a
-  white circle, label upper-cased from sentence-case strings `hint_*`); `TitledList(title, status, hints:
-  HintedScreen, onClose)` and `AppList` reserve the bottom row, so every list has one row fewer per page.
-- **Open follow-ups:** none for #74.
+- **Date:** 2026-10-14
+- **Worked:** #120 — README restructured after the website repo, generated store/README screenshots, fastlane
+  metadata (branch `docs/120-readme-structure`).
+- **Outcome:** README: centred banner, links, badges, four screenshots, then Status, About (video, features),
+  Requirements, Installing, Home screen, Keys, Tech stack, Architecture (two Mermaid diagrams), Building from source,
+  Documentation, Contributing, Acknowledgments, Contact, Licence. The long usage prose moved verbatim to
+  `docs/usage.md` under per-screen headings. `app/src/test/.../StoreScreenshots.kt` renders the real `MainActivity`
+  under Robolectric `@GraphicsMode(NATIVE)` at 1080 × 1620; `-PstoreScreenshots` runs only it, every other test run
+  excludes it. `fastlane/metadata/android/en-US/` holds title, descriptions, `changelogs/1.txt`, icon, feature graphic
+  and screenshots; `tooling` `FastlaneMetadataTest` enforces Play limits and a changelog for the current `versionCode`.
+- **Open follow-ups:** maintainer sets the repository homepage and topics (command in #120).
 - **Notes for next session:**
-  - Lint rejects an all-caps `CANCEL` string (ButtonCase) and `Locale.getDefault()` in a composable
-    (NonObservableLocale): keep strings sentence case and upper-case with `LocalConfiguration.current.locales[0]`.
-  - Tests that need a whole menu or root on one page now run on `@Config(qualifiers = "h514dp")` (one row taller).
-  - No JDK on the host: run Gradle via the podman sandbox (`/tmp/gates.sh`).
+  - Robolectric native graphics renders Compose faithfully here (fonts, glyphs, pills), so screenshots need no device.
+  - The paged list composes only the visible page: wait on a first-page label, and select rows with Down, not by
+    searching the semantics tree for a row further down.
+  - Each return to the launcher re-registers the network callback, so report Wi-Fi again after `restart().resume()`.
+  - No JDK on the host: run Gradle in the sandbox with `--userns=keep-id` and the Gradle home at `/home/dev/.gradle`.

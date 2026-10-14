@@ -1,6 +1,34 @@
-# MinimalUI
+<div align="center">
 
-![MinimalUI: a minimal Android launcher for keyboard-centric phones](docs/brand/banner/readme-banner.svg)
+<img src="docs/brand/banner/readme-banner.svg" alt="MinimalUI: a minimal Android launcher for keyboard-centric phones">
+
+[Download](https://github.com/Tim-van-Oudheusden/MinimalUI/releases/latest) · [Introduction video](https://youtu.be/S72aC8-c0lo) ·
+[Devices](DEVICES.md) · [Project page](https://buildwithtim.dev/projects/minimal-android-launcher)
+
+[![CI](https://github.com/Tim-van-Oudheusden/MinimalUI/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Tim-van-Oudheusden/MinimalUI/actions/workflows/ci.yml)
+[![Coverage gate](https://github.com/Tim-van-Oudheusden/MinimalUI/actions/workflows/coverage-gate.yml/badge.svg?branch=main)](https://github.com/Tim-van-Oudheusden/MinimalUI/actions/workflows/coverage-gate.yml)
+[![Latest release](https://img.shields.io/github/v/release/Tim-van-Oudheusden/MinimalUI?include_prereleases)](https://github.com/Tim-van-Oudheusden/MinimalUI/releases/latest)
+[![Android 9+](https://img.shields.io/badge/Android-9%2B%20(API%2028)-3DDC84?logo=android&logoColor=white)](#requirements)
+[![Licence](https://img.shields.io/github/license/Tim-van-Oudheusden/MinimalUI)](LICENSE)
+[![Last commit](https://img.shields.io/github/last-commit/Tim-van-Oudheusden/MinimalUI)](https://github.com/Tim-van-Oudheusden/MinimalUI/commits/main)
+
+</div>
+
+<p align="center">
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/1_home.png" width="190" alt="The home screen: two favourites marked with a star, two recently used apps, then every app in alphabetical order, with the status pill at the top and MENU and OPEN hints at the bottom">
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/2_filter.png" width="190" alt="Typing ca filters the list to Calculator, Calendar and Camera">
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/3_app_menu.png" width="190" alt="The app menu for Calendar: App info, Uninstall, Add to favourites, Add to collection, Add to group, Rename, Hide and Clear recently used">
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/4_settings.png" width="190" alt="MinimalUI settings: Clock On, Battery percentage On, Recently used 3, Hidden apps and About">
+</p>
+
+## Status
+
+Early development (version 0.1.0). No phone is listed as supported until it has been tested on one:
+[`DEVICES.md`](DEVICES.md) lists the phones reported so far and how to report yours. Today the launcher
+shows every installed app in one alphabetical list and opens the one you pick. It hides Android's status bar and shows
+its own pill in the top-right corner instead: Wi-Fi (when connected), battery level and the time.
+
+## About
 
 A minimal Android launcher for keyboard-centric phones, such as those from Zinwa, Clicks and Unihertz. Inspired by
 [MinUI](https://github.com/shauninman/MinUI) and [Cannoli](https://github.com/CannoliHQ/cannoli): a plain list of
@@ -10,12 +38,15 @@ apps, driven entirely by keys.
 
 Watch the [introduction video](https://youtu.be/S72aC8-c0lo) on YouTube.
 
-## Status
-
-Early development (version 0.1.0). No phone is listed as supported until it has been tested on one:
-[`DEVICES.md`](DEVICES.md) lists the phones reported so far and how to report yours. Today the launcher
-shows every installed app in one alphabetical list and opens the one you pick. It hides Android's status bar and shows
-its own pill in the top-right corner instead: Wi-Fi (when connected), battery level and the time.
+- **Keyboard first.** Every action has a key, and the bottom row of each screen names the keys that work there. Touch
+  works too, but is never needed.
+- **One list.** Favourites, then the apps you opened last, then every app in alphabetical order. Type to filter it.
+- **Collections and groups.** Named lists of apps in your own order, and groups by the category each app declares, with
+  work-profile apps in a group of their own.
+- **Your names, your list.** Rename or hide any app; hidden apps stay findable by typing their name.
+- **Less on screen.** Black and white, no icons, no transition animations. A small pill replaces Android's status bar
+  with Wi-Fi, battery and the time.
+- **Offline.** No internet permission, and no permission that needs your approval.
 
 ## Requirements
 
@@ -67,81 +98,120 @@ the keys also work by touch. Screens narrower than 320 dp show only the right-ha
 | Back or Esc                  | Close the open list, one at a time; does nothing on the home screen           |
 | Home                         | Close every open list and return to the top of the home screen                |
 
-The home screen is one list. At its top, your favourites, marked `★`, in alphabetical order; then the apps you opened
-last from MinimalUI, newest first (leaving out favourites); then a **Collections** row once you have a collection;
-then one blank row, then every app in alphabetical order (those at the top too), then another blank row and a
-**Groups** row last, so Up from the first app reaches it at once. Up and Down skip the blank rows. The
-**Recently used** setting picks how many recent apps show there: Off, 3 (the default), 5 or 15. Typing filters all
-apps by their name (the `★` is not part of it), favourites first, and hides the block and the Groups row until the
-filter is cleared. Hidden apps still match, listed in grey after the others; Enter opens them as usual.
+How each screen behaves (the home screen's blocks, the app menu, renaming, hiding, collections, groups, work apps and
+MinimalUI's own settings) is described in [`docs/usage.md`](docs/usage.md).
 
-The list updates on its own when apps are installed or removed. Apps open without a transition animation. Coming
-back from an app by Back, Recents or the app closing selects that app again, so one press reopens it; the filter
-stays. Home instead clears the filter and returns to the top.
+## Tech stack
 
-The app menu replaces the list until it is closed: App info, Uninstall (dim and inactive for system apps, work apps and
-the Settings entry), Add to favourites or Remove from favourites, Add to collection, Add to group, Rename (dim and
-inactive for the MinimalUI settings row), Hide or Unhide (dim and inactive for Android's Settings and the MinimalUI
-settings row, so the way back to another home app always stays listed), and, when there are recently used apps, Remove
-from recently used and Clear recently used. After an action, Back or Esc, the list comes back with the same app
-highlighted.
+- **App:** Kotlin, Jetpack Compose with Material 3, AndroidX Activity
+- **Modules:** `app` (the Android shell and Compose UI), `core` (plain Kotlin/JVM logic, no Android dependencies),
+  `tooling` (tests over the CI workflows and scripts)
+- **Build:** Gradle with the Kotlin DSL and a version catalog (`gradle/libs.versions.toml`), Android Gradle Plugin, JDK 21
+- **Testing:** JUnit, Robolectric with Compose UI tests on the JVM (no emulator), Kover coverage floors
+- **CI/CD:** GitHub Actions, GitHub Releases for signed APKs, Dependabot
 
-**Rename** opens the text editor on the app's current name, the cursor at its end: type the new one (any characters,
-spaces included) and press Enter, or Esc to cancel and return to the menu. The app is then listed, sorted, filtered
-and shown in the recently used block, favourites, collections and Hidden apps by that name, and stays highlighted at
-its new place. An empty name, or the app's own, gives it back its own name. Names are kept by app in the app's private
-storage, so they survive app updates and reinstalls. When two apps are listed under the same name (letter case
-ignored), each shows its package name after it, smaller and in grey (or its activity's name when both come from one
-package); a work app shows `Work` there instead, and an app whose name only work apps share shows nothing. Typing
-never matches that part.
+## Architecture
 
-**Hide** takes an app off the home screen, its favourites and recently used block, every collection and every group;
-it stays a favourite, recent and in its collections and groups, so **Unhide** brings it back where it was. Two ways
-lead back to a hidden app: type its name and open its menu, or open **MinimalUI settings → Hidden apps**, which lists
-the hidden apps alphabetically (or says `No hidden apps`) and unhides the highlighted one with Enter. Uninstalling a
-hidden app does not forget it: reinstalled, it stays hidden until you unhide it. Hidden apps are kept in the app's
-private storage.
+```mermaid
+flowchart LR
+  subgraph android["Android"]
+    pm["PackageManager<br/>LauncherApps"]
+    system["Battery, network,<br/>clock broadcasts"]
+  end
 
-Collections are named lists of apps in your own order, as in MinUI. **Add to collection** lists the collections that
-do not hold the app yet and a last row, **New collection**: type a name in the text editor (spaces and punctuation
-allowed) and press Enter to make it with the app, or Esc to cancel. Enter on the home screen's **Collections** row
-lists them by name; Enter on a name lists its apps, which open like any other. Inside a collection the app menu also
-offers Remove from collection, Move up and Move down; a collection goes away with its last app. Favourites and
-collections are kept in the app's private storage.
+  subgraph app["app: Android shell"]
+    activity["MainActivity<br/>keys, screens, intents"]
+    watcher["StatusWatcher"]
+    stores[("Stores<br/>SharedPreferences")]
+    ui["ui/<br/>Compose lists, menus,<br/>status pill, hint row"]
+  end
 
-Groups gather apps the way MinUI's systems gather games. Every app falls in an automatic group from the category its
-developer declared: Games, Audio, Video, Images, Social, News, Maps, Productivity, Accessibility, or Other when it
-declared none (the MinimalUI settings row is in none). **Add to group** lists your own groups that do not hold the app
-and a last row, **New group**, which makes one with the app from a name typed in the text editor. Enter on the
-**Groups** row lists the groups by name, alphabetical with Other last; a group of yours named like an automatic one is
-one entry holding the apps of both. Enter on a name lists its apps in the home screen's order (renamed apps by their
-new name, favourites with their `★`); they open like any other, and coming back keeps the group open on that app.
-Inside a group of yours the app menu also offers Remove from group; a group goes away with its last app. The Menu key
-on a group in the list opens its menu: **Rename group** (the text editor, prefilled; a name another group of yours has
-merges the two) and **Delete group**, which forgets only your group, never the apps or an automatic group. For an
-automatic group both rows show grey and do nothing. A group whose apps are all hidden or uninstalled is not listed but
-kept until you delete it. Your groups are kept in the app's private storage.
+  core["core: plain Kotlin<br/>ordering, filtering, groups,<br/>navigation, menus, settings"]
 
-Apps of a work profile are listed in one more automatic group, **Work**, and nowhere else on their own: not in the
-home screen's full list nor in their category's group. They still show in the favourites and recently used block when
-you make one a favourite or open it, typing finds them like any app, and you can add them to collections and your own
-groups, rename or hide them. A work app opens in its profile; App info shows its profile's details, and Uninstall is
-inactive (remove work apps from the work profile's own settings). A work app and the personal app it copies are two
-apps everywhere. While work apps are turned off (work mode paused), the Work group still lists them in grey; opening
-one lets Android offer to turn work apps back on. The list updates when a work profile is added or removed, work mode
-is paused or resumed, or an app is installed or removed in the profile.
+  pm -->|"installed apps"| activity
+  system --> watcher -->|"status pill"| activity
+  activity <-->|"favourites, recents, names,<br/>hidden apps, groups, settings"| stores
+  activity <-->|"state and keys in,<br/>rows, hints, next screen out"| core
+  activity --> ui
+  activity -->|"open, App info, Uninstall"| pm
+```
 
-MinimalUI's own settings open from the **MinimalUI settings** row, listed right after Android's Settings (type `min`
-to find it). They replace the list until closed, the way the app menu does: Clock and Battery percentage show or hide
-those items in the status pill (both on by default), Recently used sizes the block at the top of the list, Hidden apps
-lists the apps you hid, and About at the bottom shows the version and the commit the app was built from. Settings are
-kept in the app's private storage.
+Everything that can be decided without the Android framework lives in `core` and is tested with plain JUnit; `app` reads
+from Android, keeps state and renders it.
+
+```mermaid
+flowchart LR
+  pr["Pull request"] --> ci["CI: test, lint,<br/>assembleDebug"]
+  ci --> artifact["Debug APK artifact<br/>(14 days)"]
+  pr -->|"merge"| main["main"]
+  main -->|"new versionName"| release["Release workflow"]
+  release --> gh["GitHub Release<br/>signed minimalui-vX.Y.Z.apk"]
+```
+
+`main` changes only through pull requests whose required checks pass. A merge that raises `versionName` in
+`app/build.gradle.kts` publishes a release signed with the release key; see [Releasing](CONTRIBUTING.md#releasing).
+
+## Building from source
+
+Prerequisites: JDK 21 and the Android SDK, set up as in [Getting started](CONTRIBUTING.md#getting-started). Gradle itself
+comes with the wrapper.
+
+```bash
+git clone https://github.com/Tim-van-Oudheusden/MinimalUI.git
+cd MinimalUI
+./gradlew installDebug   # build and install on the connected phone
+```
+
+| Command | What it does |
+| --- | --- |
+| `./gradlew assembleDebug` | Debug APK at `app/build/outputs/apk/debug/app-debug.apk` |
+| `./gradlew installDebug` | Builds the debug APK and installs it on the connected phone or emulator |
+| `./gradlew test` | Unit tests of every module: `core`, `app` (Robolectric) and `tooling` |
+| `./gradlew lint` | Android lint, with warnings as errors |
+| `./gradlew :core:koverXmlReport` | Coverage report the coverage gate checks (also `:app:koverXmlReport`) |
+| `./gradlew :app:testDebugUnitTest -PstoreScreenshots` | Regenerates the screenshots above, without a phone or emulator |
+| `./gradlew assembleRelease` | Release APK, signed only when the release key is passed in ([Releasing](CONTRIBUTING.md#releasing)) |
+
+CI runs `./gradlew test lint assembleDebug` on every pull request. No phone? [Running it in an emulator on
+Linux](CONTRIBUTING.md#running-it-in-an-emulator-on-linux) sets one up.
+
+## Documentation
+
+| Document | Covers |
+| --- | --- |
+| [`docs/usage.md`](docs/usage.md) | Every screen in detail: the home screen, menus, collections, groups, work apps, settings |
+| [`DEVICES.md`](DEVICES.md) | Phones MinimalUI has been tried on, and how to report yours |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | Setup, emulator, project layout, workflow, quality gates, releasing |
+| [`docs/testing.md`](docs/testing.md) | Where each test runs, coverage floors, quality reports, store screenshots |
+| [`docs/risk-tiers.md`](docs/risk-tiers.md) | How pull requests are classified by risk |
+| [`docs/metrics/README.md`](docs/metrics/README.md) | Quality, coverage and agent-work metrics |
+| [`docs/security/SECURITY-AI.md`](docs/security/SECURITY-AI.md) | Security model for AI agents in this repository |
+| [`docs/research/minui-cannoli-ui.md`](docs/research/minui-cannoli-ui.md) | Research on the MinUI and Cannoli interfaces |
+| [`BRANDING.md`](BRANDING.md) | Name, voice, colours and type |
+| [`docs/brand/README.md`](docs/brand/README.md) | Icon, wordmark, banners, social images and poster |
+| [`fastlane/metadata/android/`](fastlane/metadata/android/en-US) | Store listing for F-Droid, IzzyOnDroid and Google Play |
 
 ## Contributing
 
 See [`CONTRIBUTING.md`](CONTRIBUTING.md) for setup, project layout and the quality gates. AI agents follow
 [`AGENTS.md`](AGENTS.md).
 
+## Acknowledgments
+
+- [MinUI](https://github.com/shauninman/MinUI) by Shaun Inman, for the one-list interface, the inverted selection and
+  the hint row.
+- [Cannoli](https://github.com/CannoliHQ/cannoli), which brought MinUI's experience to Android as a retro gaming setup,
+  for its Android take on the status pill, the settings list and launching apps without a transition.
+
+## Contact
+
+- [GitHub](https://github.com/Tim-van-Oudheusden)
+- [LinkedIn](https://www.linkedin.com/in/tim-van-oudheusden)
+- [buildwithtim.dev](https://buildwithtim.dev)
+
 ## Licence
 
-[GNU General Public License v3.0](LICENSE).
+| Path | Licence |
+| --- | --- |
+| Code and everything not listed below | [GNU General Public License v3.0](LICENSE) |
+| `docs/brand/` and its copies in `fastlane/metadata/android/en-US/images/` | [GPL-3.0](LICENSE); the outlined text is [Roboto](https://github.com/googlefonts/roboto-2), © Google, Apache License 2.0 |

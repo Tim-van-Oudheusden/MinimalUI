@@ -1,0 +1,1 @@
+A minimal launcher for keyboard phones: one plain list of apps, driven by keys

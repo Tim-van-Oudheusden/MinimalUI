@@ -51,11 +51,13 @@ Every image has an SVG master next to it under the same name.
 
 - **GitHub social preview:** repository **Settings → General → Social preview → Edit → Upload an image**, then choose
   `social/social-preview.png`. GitHub cannot read this from the repository; a maintainer has to upload it once.
-- **README:** the banner is linked as the SVG, so it stays sharp on any screen.
-- **Google Play:** `icon/icon-512.png` is the app icon and `banner/play-feature-graphic.png` the feature graphic. Phone
-  screenshots should come from the app itself, not from these mock-ups.
-- **F-Droid:** if the repository adopts fastlane metadata, copy `icon/icon-512.png` to
-  `fastlane/metadata/android/en-US/images/icon.png` and the feature graphic to `featureGraphic.png` in the same folder.
+- **README:** the banner is linked as the SVG, so it stays sharp on any screen. The screenshots under it are the store
+  screenshots below, rendered from the app itself.
+- **Store listing:** `fastlane/metadata/android/en-US/` holds the listing that F-Droid, IzzyOnDroid and Google Play
+  (fastlane `supply`) read. `images/icon.png` is a copy of `icon/icon-512.png` and `images/featureGraphic.png` a copy
+  of `banner/play-feature-graphic.png`; copy them again after re-exporting either. Phone screenshots come from the app
+  itself, not from these mock-ups: `./gradlew :app:testDebugUnitTest -PstoreScreenshots` renders them into
+  `images/phoneScreenshots/` (see [`docs/testing.md`](../testing.md#store-screenshots)).
 
 ## Changing them
 

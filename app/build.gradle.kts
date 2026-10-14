@@ -89,3 +89,18 @@ dependencies {
     // Declares the empty activity that createComposeRule() hosts content in; debug builds only.
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 }
+
+// Store and README screenshots (#120). StoreScreenshots renders them instead of asserting anything, so unit test runs
+// leave it out; `./gradlew :app:testDebugUnitTest -PstoreScreenshots` runs only it and writes the PNGs to the fastlane
+// listing, where the README links them.
+val storeScreenshots = providers.gradleProperty("storeScreenshots").isPresent
+val screenshotsDir = rootProject.layout.projectDirectory.dir("fastlane/metadata/android/en-US/images/phoneScreenshots")
+tasks.withType<Test>().configureEach {
+    if (storeScreenshots) {
+        filter.includeTestsMatching("dev.buildwithtim.minimalui.StoreScreenshots")
+        systemProperty("screenshots.dir", screenshotsDir.asFile.absolutePath)
+        outputs.upToDateWhen { false }
+    } else {
+        filter.excludeTestsMatching("dev.buildwithtim.minimalui.StoreScreenshots")
+    }
+}
