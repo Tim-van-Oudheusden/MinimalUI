@@ -11,7 +11,6 @@ import android.content.pm.ApplicationInfo
 import android.content.pm.LauncherActivityInfo
 import android.content.pm.LauncherApps
 import android.content.pm.PackageInfo
-import android.content.pm.ResolveInfo
 import android.graphics.Paint
 import android.graphics.Rect
 import android.net.ConnectivityManager
@@ -38,7 +37,7 @@ import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isFocused
-import androidx.compose.ui.test.junit4.createEmptyComposeRule
+import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -88,7 +87,6 @@ class MainActivityTest {
     val rule = createEmptyComposeRule()
 
     private val application: Application = ApplicationProvider.getApplicationContext()
-    private val launcherQuery = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
     private var controller: ActivityController<MainActivity>? = null
 
     @After
@@ -101,27 +99,21 @@ class MainActivityTest {
         packageName: String,
         category: Int = ApplicationInfo.CATEGORY_UNDEFINED,
     ) {
-        val info =
-            ResolveInfo().apply {
+        val activity =
+            ActivityInfo().apply {
                 nonLocalizedLabel = label
-                activityInfo =
-                    ActivityInfo().apply {
+                this.packageName = packageName
+                name = "$packageName.Main"
+                applicationInfo =
+                    ApplicationInfo().apply {
                         this.packageName = packageName
-                        name = "$packageName.Main"
-                        exported = true
-                        applicationInfo =
-                            ApplicationInfo().apply {
-                                this.packageName = packageName
-                                this.category = category
-                            }
+                        this.category = category
                     }
             }
-        shadowOf(application.packageManager).addResolveInfoForIntent(launcherQuery, info)
-        shadowOf(application.packageManager).addActivityIfNotPresent(ComponentName(packageName, "$packageName.Main"))
+        shadowOf(application.packageManager).installActivity(activity, Intent.ACTION_MAIN, Intent.CATEGORY_LAUNCHER)
     }
 
     private fun uninstall(packageName: String) {
-        shadowOf(application.packageManager).removeResolveInfosForIntent(launcherQuery, packageName)
         shadowOf(application.packageManager).removeActivity(ComponentName(packageName, "$packageName.Main"))
     }
 
@@ -176,7 +168,8 @@ class MainActivityTest {
         }
     }
 
-    private fun Bundle?.contents(): Map<String, Any?>? = this?.let { b -> b.keySet().associateWith { b.get(it) } }
+    // Bundle has no equals; its string form lists every entry. Neither bundle here was parcelled, so both list theirs.
+    private fun Bundle?.contents(): String? = this?.toString()
 
     @Test
     fun `Enter opens the focused app in its own task`() {
@@ -598,17 +591,7 @@ class MainActivityTest {
 
     @Test
     fun `Uninstall is disabled for the Settings entry the list always keeps`() {
-        val settings =
-            ResolveInfo().apply {
-                activityInfo =
-                    ActivityInfo().apply {
-                        nonLocalizedLabel = "Settings"
-                        packageName = "com.example.settings"
-                        name = "com.example.settings.Main"
-                        applicationInfo = ApplicationInfo().apply { packageName = "com.example.settings" }
-                    }
-            }
-        shadowOf(application.packageManager).addResolveInfoForIntent(Intent(Settings.ACTION_SETTINGS), settings)
+        installSystemSettings()
         val activity = launch()
         awaitListed("Settings")
         type(activity, KeyEvent.KEYCODE_S)
@@ -695,16 +678,6 @@ class MainActivityTest {
         rule.onNodeWithText("Alarm").assertIsFocused()
     }
 
-    private fun batteryAt(
-        level: Int,
-        status: Int = BatteryManager.BATTERY_STATUS_DISCHARGING,
-    ) = application.sendStickyBroadcast(
-        Intent(Intent.ACTION_BATTERY_CHANGED)
-            .putExtra(BatteryManager.EXTRA_LEVEL, level)
-            .putExtra(BatteryManager.EXTRA_SCALE, 100)
-            .putExtra(BatteryManager.EXTRA_STATUS, status),
-    )
-
     private fun texts(): List<String> =
         rule
             .onAllNodes(SemanticsMatcher.keyIsDefined(SemanticsProperties.Text), true)
@@ -716,12 +689,12 @@ class MainActivityTest {
     @Test
     fun `the status pill shows the battery charge, and follows it`() {
         install("Alarm", "com.example.alarm")
-        batteryAt(42)
+        application.broadcastBattery(42)
         launch()
         awaitListed("Alarm")
         rule.onNodeWithText("42%").assertExists()
 
-        batteryAt(41, BatteryManager.BATTERY_STATUS_CHARGING)
+        application.broadcastBattery(41, BatteryManager.BATTERY_STATUS_CHARGING)
 
         awaitListed("41%")
         rule.onNodeWithContentDescription("Charging", useUnmergedTree = true).assertExists()
@@ -789,16 +762,13 @@ class MainActivityTest {
     /** Android's Settings app, which the list always keeps, as a device that has one resolves it. */
     private fun installSystemSettings() {
         val settings =
-            ResolveInfo().apply {
-                activityInfo =
-                    ActivityInfo().apply {
-                        nonLocalizedLabel = "Settings"
-                        packageName = "com.example.settings"
-                        name = "com.example.settings.Main"
-                        applicationInfo = ApplicationInfo().apply { packageName = "com.example.settings" }
-                    }
+            ActivityInfo().apply {
+                nonLocalizedLabel = "Settings"
+                packageName = "com.example.settings"
+                name = "com.example.settings.Main"
+                applicationInfo = ApplicationInfo().apply { packageName = "com.example.settings" }
             }
-        shadowOf(application.packageManager).addResolveInfoForIntent(Intent(Settings.ACTION_SETTINGS), settings)
+        shadowOf(application.packageManager).installActivity(settings, Settings.ACTION_SETTINGS)
     }
 
     /** The labels of the list's rows, top to bottom, as filtered by the [query] typed into [activity]. */
@@ -903,7 +873,7 @@ class MainActivityTest {
 
     @Test
     fun `the status pill follows the settings at once`() {
-        batteryAt(42)
+        application.broadcastBattery(42)
         Settings.System.putString(application.contentResolver, Settings.System.TIME_12_24, "24")
         launch()
         openSettings()

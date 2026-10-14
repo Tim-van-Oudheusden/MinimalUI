@@ -700,9 +700,8 @@ class MainActivity : ComponentActivity() {
                 saveRecents(recents.cleared())
             }
 
-            // Only a group's menu lists these, and it has its own handler.
             MenuAction.RenameGroup, MenuAction.DeleteGroup -> {
-                Unit
+                // Only a group's menu lists these, and it has its own handler.
             }
         }
     }

@@ -14,6 +14,9 @@ java {
 kotlin {
     compilerOptions {
         jvmTarget.set(JvmTarget.fromTarget(libs.versions.jvmTarget.get()))
+        // Compiler warnings fail the build like Android Lint warnings do (#133).
+        allWarningsAsErrors.set(true)
+        extraWarnings.set(true)
     }
 }
 
