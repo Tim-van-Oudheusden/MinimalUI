@@ -7,7 +7,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class StatusPillTest {
-
     @Test
     fun `the charge is the battery level as a whole percentage of its scale`() {
         assertEquals(Battery(percent = 57, charging = false), battery(level = 57, scale = 100, charging = false))

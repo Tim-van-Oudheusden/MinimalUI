@@ -9,8 +9,9 @@ package dev.buildwithtim.minimalui.core
  * An uninstalled app is never dropped from here, so reinstalling a hidden app keeps it hidden: the user hid it on
  * purpose, and an app update that reinstalls should not undo that.
  */
-data class HiddenApps(val components: Set<String> = emptySet()) {
-
+data class HiddenApps(
+    val components: Set<String> = emptySet(),
+) {
     operator fun contains(app: LauncherApp): Boolean = app.component in components
 
     /**
@@ -18,8 +19,17 @@ data class HiddenApps(val components: Set<String> = emptySet()) {
      * settings app) or MinimalUI's own settings row: those keep the way back to another home app and to these
      * settings, so they are never hidden.
      */
-    fun hidden(app: LauncherApp, settingsPackage: String?): HiddenApps =
-        if (app.isLauncherSettings || app.packageName == settingsPackage) this else HiddenApps(components + app.component)
+    fun hidden(
+        app: LauncherApp,
+        settingsPackage: String?,
+    ): HiddenApps =
+        if (app.isLauncherSettings ||
+            app.packageName == settingsPackage
+        ) {
+            this
+        } else {
+            HiddenApps(components + app.component)
+        }
 
     /** [app] shown again. */
     fun unhidden(app: LauncherApp): HiddenApps = HiddenApps(components - app.component)
@@ -35,6 +45,13 @@ data class HiddenApps(val components: Set<String> = emptySet()) {
 
     companion object {
         /** The hidden apps [stored] wrote; lines that are not a component are skipped. */
-        fun fromStored(text: String?): HiddenApps = HiddenApps(text.orEmpty().lines().filter(::isComponent).toSet())
+        fun fromStored(text: String?): HiddenApps =
+            HiddenApps(
+                text
+                    .orEmpty()
+                    .lines()
+                    .filter(::isComponent)
+                    .toSet(),
+            )
     }
 }

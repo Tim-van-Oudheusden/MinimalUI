@@ -55,10 +55,16 @@ enum class MenuAction {
 }
 
 /** One row of the context menu. A disabled row is still listed, drawn dim, and does nothing when chosen. */
-data class MenuItem(val action: MenuAction, val enabled: Boolean = true)
+data class MenuItem(
+    val action: MenuAction,
+    val enabled: Boolean = true,
+)
 
 /** The app's [row] in a collection of [count] apps, as listed on screen. */
-data class CollectionPlace(val row: Int, val count: Int)
+data class CollectionPlace(
+    val row: Int,
+    val count: Int,
+)
 
 /**
  * What the menu needs to know about the app it was opened on: whether it is a system app ([isSystem]), the Settings
@@ -91,23 +97,24 @@ data class AppFacts(
  * hides the app or shows it again, by its state; disabled for the Settings entry, which is never hidden.
  * The recents rows show only when they would change something.
  */
-fun contextMenu(facts: AppFacts): List<MenuItem> = buildList {
-    add(MenuItem(MenuAction.AppInfo))
-    add(MenuItem(MenuAction.Uninstall, enabled = !facts.isSystem && !facts.isSettingsEntry && !facts.isWorkApp))
-    add(MenuItem(if (facts.isFavourite) MenuAction.RemoveFromFavourites else MenuAction.AddToFavourites))
-    add(MenuItem(MenuAction.AddToCollection))
-    add(MenuItem(MenuAction.AddToGroup))
-    facts.place?.let { place ->
-        add(MenuItem(MenuAction.RemoveFromCollection))
-        add(MenuItem(MenuAction.MoveUp, enabled = place.row > 0))
-        add(MenuItem(MenuAction.MoveDown, enabled = place.row < place.count - 1))
+fun contextMenu(facts: AppFacts): List<MenuItem> =
+    buildList {
+        add(MenuItem(MenuAction.AppInfo))
+        add(MenuItem(MenuAction.Uninstall, enabled = !facts.isSystem && !facts.isSettingsEntry && !facts.isWorkApp))
+        add(MenuItem(if (facts.isFavourite) MenuAction.RemoveFromFavourites else MenuAction.AddToFavourites))
+        add(MenuItem(MenuAction.AddToCollection))
+        add(MenuItem(MenuAction.AddToGroup))
+        facts.place?.let { place ->
+            add(MenuItem(MenuAction.RemoveFromCollection))
+            add(MenuItem(MenuAction.MoveUp, enabled = place.row > 0))
+            add(MenuItem(MenuAction.MoveDown, enabled = place.row < place.count - 1))
+        }
+        if (facts.isGroupMember) add(MenuItem(MenuAction.RemoveFromGroup))
+        add(MenuItem(MenuAction.Rename, enabled = !facts.isLauncherSettings))
+        add(MenuItem(if (facts.isHidden) MenuAction.Unhide else MenuAction.Hide, enabled = !facts.isSettingsEntry))
+        if (facts.isRecent) add(MenuItem(MenuAction.RemoveFromRecents))
+        if (facts.hasRecents) add(MenuItem(MenuAction.ClearRecents))
     }
-    if (facts.isGroupMember) add(MenuItem(MenuAction.RemoveFromGroup))
-    add(MenuItem(MenuAction.Rename, enabled = !facts.isLauncherSettings))
-    add(MenuItem(if (facts.isHidden) MenuAction.Unhide else MenuAction.Hide, enabled = !facts.isSettingsEntry))
-    if (facts.isRecent) add(MenuItem(MenuAction.RemoveFromRecents))
-    if (facts.hasRecents) add(MenuItem(MenuAction.ClearRecents))
-}
 
 /**
  * The menu of a group in the Groups list (#69): Rename group and Delete group. A purely automatic group has nothing

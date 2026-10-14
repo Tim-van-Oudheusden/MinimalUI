@@ -33,16 +33,18 @@ class InstalledAppsTest {
         category: Int = ApplicationInfo.CATEGORY_UNDEFINED,
     ) = ResolveInfo().apply {
         nonLocalizedLabel = label
-        activityInfo = ActivityInfo().apply {
-            // launchableApps() reads the ResolveInfo's label, systemSettings() the ActivityInfo's.
-            nonLocalizedLabel = label
-            this.packageName = packageName
-            name = activityName
-            applicationInfo = ApplicationInfo().apply {
+        activityInfo =
+            ActivityInfo().apply {
+                // launchableApps() reads the ResolveInfo's label, systemSettings() the ActivityInfo's.
+                nonLocalizedLabel = label
                 this.packageName = packageName
-                this.category = category
+                name = activityName
+                applicationInfo =
+                    ApplicationInfo().apply {
+                        this.packageName = packageName
+                        this.category = category
+                    }
             }
-        }
     }
 
     @Test
@@ -53,7 +55,12 @@ class InstalledAppsTest {
             addResolveInfoForIntent(launcherQuery, resolveInfo("Notes", "com.example.notes", "com.example.notes.Main"))
             addResolveInfoForIntent(
                 launcherQuery,
-                resolveInfo("Mail", "com.example.mail", "com.example.mail.Inbox", ApplicationInfo.CATEGORY_PRODUCTIVITY),
+                resolveInfo(
+                    "Mail",
+                    "com.example.mail",
+                    "com.example.mail.Inbox",
+                    ApplicationInfo.CATEGORY_PRODUCTIVITY,
+                ),
             )
             addResolveInfoForIntent(launcherQuery, reader)
         }

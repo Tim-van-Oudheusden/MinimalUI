@@ -9,7 +9,6 @@ import java.io.File
 import java.nio.file.Files
 
 class QualityReportScriptTest {
-
     private val dir: File = Files.createTempDirectory("quality-report").toFile()
     private val fixtures = dir.resolve("fixtures")
     private val coverageRoot = dir.resolve("root")
@@ -20,26 +19,27 @@ class QualityReportScriptTest {
      * Fake `./gradlew`: logs each call, fails a task named in FAIL_TASKS, and for `:<module>:koverXmlReport` copies
      * the module's fixture report into COVERAGE_ROOT, as Kover would write it.
      */
-    private val gradle = dir.resolve("gradlew").apply {
-        writeText(
-            """
-            #!/usr/bin/env bash
-            echo "${'$'}*" >> "${calls.path}"
-            echo "gradle output for ${'$'}*"
-            for task in ${'$'}{FAIL_TASKS:-}; do
-              [ "${'$'}task" = "${'$'}1" ] && exit 1
-            done
-            if [[ "${'$'}1" =~ ^:([a-z]+):koverXmlReport${'$'} ]]; then
-              module="${'$'}{BASH_REMATCH[1]}"
-              mkdir -p "${coverageRoot.path}/${'$'}module"
-              cp -R "${fixtures.path}/${'$'}module/build" "${coverageRoot.path}/${'$'}module/"
-            fi
-            exit 0
+    private val gradle =
+        dir.resolve("gradlew").apply {
+            writeText(
+                """
+                #!/usr/bin/env bash
+                echo "${'$'}*" >> "${calls.path}"
+                echo "gradle output for ${'$'}*"
+                for task in ${'$'}{FAIL_TASKS:-}; do
+                  [ "${'$'}task" = "${'$'}1" ] && exit 1
+                done
+                if [[ "${'$'}1" =~ ^:([a-z]+):koverXmlReport${'$'} ]]; then
+                  module="${'$'}{BASH_REMATCH[1]}"
+                  mkdir -p "${coverageRoot.path}/${'$'}module"
+                  cp -R "${fixtures.path}/${'$'}module/build" "${coverageRoot.path}/${'$'}module/"
+                fi
+                exit 0
 
-            """.trimIndent(),
-        )
-        setExecutable(true)
-    }
+                """.trimIndent(),
+            )
+            setExecutable(true)
+        }
 
     init {
         config.writeText(
@@ -54,16 +54,18 @@ class QualityReportScriptTest {
         dir.deleteRecursively()
     }
 
-    private fun report(failTasks: String = "") = runScript(
-        "scripts/quality-report.sh",
-        env = mapOf(
-            "GRADLE" to gradle.path,
-            "COVERAGE_ROOT" to coverageRoot.path,
-            "QA_TUNING_CONFIG" to config.path,
-            "GITHUB_SHA" to "abc1234",
-            "FAIL_TASKS" to failTasks,
-        ),
-    )
+    private fun report(failTasks: String = "") =
+        runScript(
+            "scripts/quality-report.sh",
+            env =
+                mapOf(
+                    "GRADLE" to gradle.path,
+                    "COVERAGE_ROOT" to coverageRoot.path,
+                    "QA_TUNING_CONFIG" to config.path,
+                    "GITHUB_SHA" to "abc1234",
+                    "FAIL_TASKS" to failTasks,
+                ),
+        )
 
     @Test
     fun `reports every gate as passing and each module's coverage`() {
@@ -140,11 +142,14 @@ class QualityReportScriptTest {
     fun `the tuner reads the coverage rows the report prints`() {
         val qualityReport = dir.resolve("quality-report.md").apply { writeText(report().stdout) }
 
-        val result = runScript(
-            "scripts/auto-qa-tuner.sh",
-            "--config", config.path,
-            "--report", qualityReport.path,
-        )
+        val result =
+            runScript(
+                "scripts/auto-qa-tuner.sh",
+                "--config",
+                config.path,
+                "--report",
+                qualityReport.path,
+            )
 
         assertEquals(result.stderr, 0, result.exitCode)
         assertTrue(result.stdout, result.stdout.contains("| app | functions | 0% | 16.67% | 14% ⬆️ |"))

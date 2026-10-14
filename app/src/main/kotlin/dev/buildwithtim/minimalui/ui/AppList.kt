@@ -75,10 +75,11 @@ fun AppList(
     val groups = stringResource(R.string.groups)
 
     BoxWithConstraints(
-        modifier = modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .windowInsetsPadding(WindowInsets.safeDrawing),
+        modifier =
+            modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+                .windowInsetsPadding(WindowInsets.safeDrawing),
     ) {
         val density = LocalDensity.current
         val rhythm = listRhythm(constraints.maxHeight, with(density) { RowMetrics.rowHeight().roundToPx() })
@@ -106,10 +107,12 @@ fun AppList(
                     state.returned = returned
                     if (hasApps) list.select(ListPosition(0, 0))
                 }
+
                 returned != null && returned != state.returned && hasApps -> {
                     state.returned = returned
                     select(returned.row)
                 }
+
                 // The block above grew or shrank: the selection stays on what it was on. When that row is gone and
                 // the blank row now takes its number (the Collections row's last collection removed), it moves on.
                 hasApps && entries != before -> {
@@ -123,52 +126,55 @@ fun AppList(
             if (shownStatus != null) StatusLine(shownStatus, rowHeight)
             // The trailing underscore marks it as typed text rather than another app.
             if (query.isNotEmpty()) HeaderLine("${query}_", rowHeight)
-            if (hasApps) PillList(
-                state = list,
-                items = entries,
-                key = { it.key },
-                label = { entry ->
-                    when (entry) {
-                        is RootEntry.App -> shownLabel(entry.app, entry.isFavourite)
-                        RootEntry.Collections -> collections
-                        RootEntry.Groups -> groups
-                        is RootEntry.Blank -> ""
-                    }
-                },
-                rowHeight = rowHeight,
-                rowsPerPage = rowsPerPage,
-                onConfirm = { entry ->
-                    when (entry) {
-                        is RootEntry.App -> onOpen(entry.app)
-                        RootEntry.Collections -> onCollections()
-                        RootEntry.Groups -> onGroups()
-                        is RootEntry.Blank -> Unit
-                    }
-                },
-                selectable = { it.selectable },
-                onLongPress = { it.app?.let(onMenu) },
-                onKey = { key, entry ->
-                    val app = entry.app
-                    if (key == Key.Menu && app != null) {
-                        onMenu(app)
-                        true
-                    } else {
-                        false
-                    }
-                },
-                dim = { entry -> (entry as? RootEntry.App)?.isHidden == true || entry.app?.let(paused) == true },
-                suffix = { entry -> entry.app?.let(suffix) },
-            )
+            if (hasApps) {
+                PillList(
+                    state = list,
+                    items = entries,
+                    key = { it.key },
+                    label = { entry ->
+                        when (entry) {
+                            is RootEntry.App -> shownLabel(entry.app, entry.isFavourite)
+                            RootEntry.Collections -> collections
+                            RootEntry.Groups -> groups
+                            is RootEntry.Blank -> ""
+                        }
+                    },
+                    rowHeight = rowHeight,
+                    rowsPerPage = rowsPerPage,
+                    onConfirm = { entry ->
+                        when (entry) {
+                            is RootEntry.App -> onOpen(entry.app)
+                            RootEntry.Collections -> onCollections()
+                            RootEntry.Groups -> onGroups()
+                            is RootEntry.Blank -> Unit
+                        }
+                    },
+                    selectable = { it.selectable },
+                    onLongPress = { it.app?.let(onMenu) },
+                    onKey = { key, entry ->
+                        val app = entry.app
+                        if (key == Key.Menu && app != null) {
+                            onMenu(app)
+                            true
+                        } else {
+                            false
+                        }
+                    },
+                    dim = { entry -> (entry as? RootEntry.App)?.isHidden == true || entry.app?.let(paused) == true },
+                    suffix = { entry -> entry.app?.let(suffix) },
+                )
+            }
             Spacer(Modifier.weight(1f))
             val selected = entries.getOrNull(list.position.selected)
             HintLine(buttonHints(HintedScreen.Root(content, query, selected)), rowHeight)
         }
         // Centred on the whole screen, as MinUI does, whether or not the query line is showing above it.
-        val message = when (content) {
-            ListContent.Loading, is ListContent.Apps -> null
-            ListContent.NoApps -> R.string.no_apps
-            ListContent.NoMatch -> R.string.no_match
-        }
+        val message =
+            when (content) {
+                ListContent.Loading, is ListContent.Apps -> null
+                ListContent.NoApps -> R.string.no_apps
+                ListContent.NoMatch -> R.string.no_match
+            }
         if (message != null) Message(stringResource(message))
     }
 }
@@ -192,15 +198,23 @@ class AppListState {
 fun rememberAppListState(): AppListState = remember { AppListState() }
 
 /** The user came back to the launcher by a route other than Home, for the [count]th time: the list selects [row]. */
-data class Returned(val row: Int, val count: Int)
+data class Returned(
+    val row: Int,
+    val count: Int,
+)
 
 /** [app]'s name as listed: a favourite's with Cannoli's `★` before it (#68). Drawn only; filtering never sees it. */
-internal fun shownLabel(app: LauncherApp, isFavourite: Boolean): String =
-    if (isFavourite) "★ ${app.label}" else app.label
+internal fun shownLabel(
+    app: LauncherApp,
+    isFavourite: Boolean,
+): String = if (isFavourite) "★ ${app.label}" else app.label
 
 /** Centred on the space it is given (the whole screen for the root list), in the rows' text style. */
 @Composable
-internal fun Message(text: String, modifier: Modifier = Modifier) {
+internal fun Message(
+    text: String,
+    modifier: Modifier = Modifier,
+) {
     Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Text(text = text, color = MaterialTheme.colorScheme.onBackground, style = RowMetrics.TextStyle)
     }

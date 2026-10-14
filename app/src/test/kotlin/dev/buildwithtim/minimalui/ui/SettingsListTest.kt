@@ -31,7 +31,10 @@ class SettingsListTest {
     private val opened = mutableListOf<SettingsLink>()
     private var closed = 0
 
-    private fun show(settings: Settings = Settings(), status: StatusPill? = null) {
+    private fun show(
+        settings: Settings = Settings(),
+        status: StatusPill? = null,
+    ) {
         rule.setContent {
             MinimalTheme {
                 SettingsList(

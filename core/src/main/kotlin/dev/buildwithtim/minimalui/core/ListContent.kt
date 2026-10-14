@@ -12,7 +12,9 @@ sealed interface ListContent {
     data object NoMatch : ListContent
 
     /** The rows to list, in order: the root list, or the apps the query keeps. Never empty. */
-    data class Apps(val entries: List<RootEntry>) : ListContent
+    data class Apps(
+        val entries: List<RootEntry>,
+    ) : ListContent
 }
 
 /**
@@ -36,14 +38,15 @@ fun listContent(
 ): ListContent {
     if (installed == null) return ListContent.Loading
     val visible = hidden.visibleFrom(installed)
-    if (installed.isEmpty() || query.isEmpty() && visible.isEmpty()) return ListContent.NoApps
+    if (installed.isEmpty() || (query.isEmpty() && visible.isEmpty())) return ListContent.NoApps
     if (query.isEmpty()) {
         return ListContent.Apps(rootEntries(visible, recents, settings, favourites, collections, groups))
     }
     val (starred, others) = visible.filteredBy(query).partition { it in favourites }
     val found = installed.filteredBy(query).filter { it in hidden }
-    val shown = starred.map { RootEntry.App(it, isFavourite = true) } + others.map { RootEntry.App(it) } +
-        found.map { RootEntry.App(it, isFavourite = it in favourites, isHidden = true) }
+    val shown =
+        starred.map { RootEntry.App(it, isFavourite = true) } + others.map { RootEntry.App(it) } +
+            found.map { RootEntry.App(it, isFavourite = it in favourites, isHidden = true) }
     return if (shown.isEmpty()) ListContent.NoMatch else ListContent.Apps(shown)
 }
 

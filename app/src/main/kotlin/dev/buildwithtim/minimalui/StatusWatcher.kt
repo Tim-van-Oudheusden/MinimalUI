@@ -23,38 +23,50 @@ import java.time.LocalTime
  * the default network, and the clock on every minute tick, clock or time-zone change. Nothing is polled, and no
  * dangerous permission is needed. Each change [publish]es a new pill on the main thread.
  */
-internal class StatusWatcher(private val context: Context, private val publish: (StatusPill) -> Unit) {
+internal class StatusWatcher(
+    private val context: Context,
+    private val publish: (StatusPill) -> Unit,
+) {
     private var battery: Battery? = null
     private var wifi = false
     private val connectivity = context.getSystemService(ConnectivityManager::class.java)
 
-    private val broadcasts = object : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent) {
-            if (intent.action == Intent.ACTION_BATTERY_CHANGED) battery = intent.toBattery()
-            update()
-        }
-    }
-
-    private val network = object : ConnectivityManager.NetworkCallback() {
-        override fun onCapabilitiesChanged(network: Network, capabilities: NetworkCapabilities) {
-            wifi = capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
-            update()
+    private val broadcasts =
+        object : BroadcastReceiver() {
+            override fun onReceive(
+                context: Context,
+                intent: Intent,
+            ) {
+                if (intent.action == Intent.ACTION_BATTERY_CHANGED) battery = intent.toBattery()
+                update()
+            }
         }
 
-        override fun onLost(network: Network) {
-            wifi = false
-            update()
+    private val network =
+        object : ConnectivityManager.NetworkCallback() {
+            override fun onCapabilitiesChanged(
+                network: Network,
+                capabilities: NetworkCapabilities,
+            ) {
+                wifi = capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
+                update()
+            }
+
+            override fun onLost(network: Network) {
+                wifi = false
+                update()
+            }
         }
-    }
 
     fun start() {
-        val filter = IntentFilter().apply {
-            addAction(Intent.ACTION_BATTERY_CHANGED)
-            addAction(Intent.ACTION_TIME_TICK)
-            // Also sent when the user switches between 12- and 24-hour time.
-            addAction(Intent.ACTION_TIME_CHANGED)
-            addAction(Intent.ACTION_TIMEZONE_CHANGED)
-        }
+        val filter =
+            IntentFilter().apply {
+                addAction(Intent.ACTION_BATTERY_CHANGED)
+                addAction(Intent.ACTION_TIME_TICK)
+                // Also sent when the user switches between 12- and 24-hour time.
+                addAction(Intent.ACTION_TIME_CHANGED)
+                addAction(Intent.ACTION_TIMEZONE_CHANGED)
+            }
         // The battery broadcast is sticky: registering returns the current charge, so the first frame shows it.
         battery = context.registerReceiver(broadcasts, filter)?.toBattery()
         // The callback reports the current default network right away; until it does, assume none.
@@ -78,6 +90,10 @@ internal class StatusWatcher(private val context: Context, private val publish: 
     private fun Intent.toBattery(): Battery? {
         val status = getIntExtra(BatteryManager.EXTRA_STATUS, BatteryManager.BATTERY_STATUS_UNKNOWN)
         val charging = status == BatteryManager.BATTERY_STATUS_CHARGING || status == BatteryManager.BATTERY_STATUS_FULL
-        return battery(getIntExtra(BatteryManager.EXTRA_LEVEL, -1), getIntExtra(BatteryManager.EXTRA_SCALE, -1), charging)
+        return battery(
+            getIntExtra(BatteryManager.EXTRA_LEVEL, -1),
+            getIntExtra(BatteryManager.EXTRA_SCALE, -1),
+            charging,
+        )
     }
 }

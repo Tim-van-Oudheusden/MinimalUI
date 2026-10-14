@@ -6,7 +6,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class RootEntriesTest {
-
     private fun app(label: String) = LauncherApp(label, "pkg.$label", "pkg.$label.Main")
 
     private val apps = listOf("Alarm", "Bell", "Camera", "Drums", "Easel", "Flute").map(::app)

@@ -6,7 +6,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class UserGroupsTest {
-
     private fun app(label: String) = LauncherApp(label, "pkg.$label", "pkg.$label.Main")
 
     private val work = UserGroups().added("Work", app("Mail")).added("Work", app("Notes"))

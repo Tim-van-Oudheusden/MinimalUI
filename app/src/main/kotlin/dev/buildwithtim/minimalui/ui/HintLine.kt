@@ -49,7 +49,11 @@ private val GlyphStyle = RowMetrics.TextStyle.copy(fontSize = 16.sp, lineHeight 
  * screen; a hint never takes focus, so the selection stays where it was. With no hints, the row stays empty.
  */
 @Composable
-internal fun HintLine(hints: Hints, height: Dp, modifier: Modifier = Modifier) {
+internal fun HintLine(
+    hints: Hints,
+    height: Dp,
+    modifier: Modifier = Modifier,
+) {
     BoxWithConstraints(modifier.fillMaxWidth().height(height)) {
         val shown = hints.fitting(maxWidth.value.toInt())
         Box(Modifier.fillMaxSize().padding(horizontal = RowMetrics.ListPaddingHorizontal)) {
@@ -61,7 +65,10 @@ internal fun HintLine(hints: Hints, height: Dp, modifier: Modifier = Modifier) {
 
 /** One group of hints in a dark-grey pill, as tall as the selection pill. */
 @Composable
-private fun HintPill(hints: List<Hint>, modifier: Modifier) {
+private fun HintPill(
+    hints: List<Hint>,
+    modifier: Modifier,
+) {
     val line = with(LocalDensity.current) { RowMetrics.LineHeight.toDp() }
     // The circle sits as far from the pill's top, bottom and left edges as can be: MinUI's button in its pill.
     val circle = line - 4.dp
@@ -70,9 +77,10 @@ private fun HintPill(hints: List<Hint>, modifier: Modifier) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(RowMetrics.PillPaddingHorizontal),
-        modifier = modifier
-            .background(PillColor, RowMetrics.PillShape)
-            .padding(start = edge, end = RowMetrics.PillPaddingHorizontal),
+        modifier =
+            modifier
+                .background(PillColor, RowMetrics.PillShape)
+                .padding(start = edge, end = RowMetrics.PillPaddingHorizontal),
     ) {
         val colors = MaterialTheme.colorScheme
         val locale = LocalConfiguration.current.locales[0]
@@ -81,10 +89,11 @@ private fun HintPill(hints: List<Hint>, modifier: Modifier) {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 // The pill's whole height is the touch target. No ripple, as on the rows.
-                modifier = Modifier
-                    .focusProperties { canFocus = false }
-                    .clickable(interactionSource = null, indication = null) { activity?.press(hint.key) }
-                    .padding(vertical = RowMetrics.PillPaddingVertical),
+                modifier =
+                    Modifier
+                        .focusProperties { canFocus = false }
+                        .clickable(interactionSource = null, indication = null) { activity?.press(hint.key) }
+                        .padding(vertical = RowMetrics.PillPaddingVertical),
             ) {
                 Box(
                     contentAlignment = Alignment.Center,
@@ -112,22 +121,24 @@ private fun Activity.press(key: HintKey) {
 
 /** The Android key a hint names: `⎋` is Esc, which every screen with a Back hint takes as Back. */
 private val HintKey.keyCode: Int
-    get() = when (this) {
-        HintKey.Menu -> KeyEvent.KEYCODE_MENU
-        HintKey.Delete -> KeyEvent.KEYCODE_DEL
-        HintKey.Back -> KeyEvent.KEYCODE_ESCAPE
-        HintKey.Enter -> KeyEvent.KEYCODE_ENTER
-    }
+    get() =
+        when (this) {
+            HintKey.Menu -> KeyEvent.KEYCODE_MENU
+            HintKey.Delete -> KeyEvent.KEYCODE_DEL
+            HintKey.Back -> KeyEvent.KEYCODE_ESCAPE
+            HintKey.Enter -> KeyEvent.KEYCODE_ENTER
+        }
 
 private val HintAction.label: Int
-    get() = when (this) {
-        HintAction.Menu -> R.string.hint_menu
-        HintAction.Delete -> R.string.hint_delete
-        HintAction.Back -> R.string.hint_back
-        HintAction.Cancel -> R.string.hint_cancel
-        HintAction.Open -> R.string.hint_open
-        HintAction.Select -> R.string.hint_select
-        HintAction.Change -> R.string.hint_change
-        HintAction.Unhide -> R.string.hint_unhide
-        HintAction.Save -> R.string.hint_save
-    }
+    get() =
+        when (this) {
+            HintAction.Menu -> R.string.hint_menu
+            HintAction.Delete -> R.string.hint_delete
+            HintAction.Back -> R.string.hint_back
+            HintAction.Cancel -> R.string.hint_cancel
+            HintAction.Open -> R.string.hint_open
+            HintAction.Select -> R.string.hint_select
+            HintAction.Change -> R.string.hint_change
+            HintAction.Unhide -> R.string.hint_unhide
+            HintAction.Save -> R.string.hint_save
+        }

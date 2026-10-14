@@ -45,27 +45,36 @@ private val StatusTextStyle = RowMetrics.TextStyle.copy(fontSize = 20.sp)
  * the row stays empty.
  */
 @Composable
-fun StatusLine(pill: StatusPill, height: Dp, modifier: Modifier = Modifier) {
+fun StatusLine(
+    pill: StatusPill,
+    height: Dp,
+    modifier: Modifier = Modifier,
+) {
     Box(
         contentAlignment = Alignment.CenterEnd,
-        modifier = modifier
-            .fillMaxWidth()
-            .height(height)
-            .padding(horizontal = RowMetrics.ListPaddingHorizontal),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .height(height)
+                .padding(horizontal = RowMetrics.ListPaddingHorizontal),
     ) {
         if (pill.isEmpty) return@Box
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp),
-            modifier = Modifier
-                .semantics(mergeDescendants = true) {}
-                .background(PillColor, RowMetrics.PillShape)
-                .padding(horizontal = RowMetrics.PillPaddingHorizontal, vertical = RowMetrics.PillPaddingVertical),
+            modifier =
+                Modifier
+                    .semantics(mergeDescendants = true) {}
+                    .background(PillColor, RowMetrics.PillShape)
+                    .padding(horizontal = RowMetrics.PillPaddingHorizontal, vertical = RowMetrics.PillPaddingVertical),
         ) {
             val color = MaterialTheme.colorScheme.onBackground
             if (pill.wifi) WifiGlyph(color)
             pill.battery?.let { battery ->
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
                     BatteryGlyph(battery, color)
                     if (pill.percentage) Text(text = battery.text, color = color, style = StatusTextStyle, maxLines = 1)
                 }
@@ -104,7 +113,10 @@ private fun WifiGlyph(color: Color) {
  * charging; the fill turns red at 20% and the outline too at 10% (MinUI's thresholds, decided in core).
  */
 @Composable
-private fun BatteryGlyph(battery: Battery, color: Color) {
+private fun BatteryGlyph(
+    battery: Battery,
+    color: Color,
+) {
     val description = if (battery.bolt) stringResource(R.string.status_charging) else null
     Canvas(Modifier.size(26.dp, 14.dp).semantics { if (description != null) contentDescription = description }) {
         val stroke = 1.5.dp.toPx()
@@ -127,14 +139,18 @@ private fun BatteryGlyph(battery: Battery, color: Color) {
         val inset = stroke + 1.5.dp.toPx()
         val inner = Size(body.width - inset * 2, body.height - inset * 2)
         if (battery.bolt) {
-            val bolt = Path().apply {
-                fun point(x: Float, y: Float) = Offset(inset + inner.width * x, inset + inner.height * y)
-                point(0.62f, -0.1f).let { moveTo(it.x, it.y) }
-                listOf(0.28f to 0.58f, 0.5f to 0.58f, 0.4f to 1.1f, 0.74f to 0.4f, 0.52f to 0.4f)
-                    .map { (x, y) -> point(x, y) }
-                    .forEach { lineTo(it.x, it.y) }
-                close()
-            }
+            val bolt =
+                Path().apply {
+                    fun point(
+                        x: Float,
+                        y: Float,
+                    ) = Offset(inset + inner.width * x, inset + inner.height * y)
+                    point(0.62f, -0.1f).let { moveTo(it.x, it.y) }
+                    listOf(0.28f to 0.58f, 0.5f to 0.58f, 0.4f to 1.1f, 0.74f to 0.4f, 0.52f to 0.4f)
+                        .map { (x, y) -> point(x, y) }
+                        .forEach { lineTo(it.x, it.y) }
+                    close()
+                }
             drawPath(bolt, color)
         } else if (battery.fill > 0f) {
             drawRoundRect(
