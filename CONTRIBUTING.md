@@ -143,9 +143,11 @@ We favour small, focused changes tied to a tracked issue.
 4. Open a pull request and fill in the template (link the issue with `Fixes #<number>`, paste evidence).
 
 `main` is protected by the ruleset in [`.github/rulesets/main.json`](.github/rulesets/main.json): no direct pushes,
-force-pushes or deletion; changes land only through pull requests whose `PR review rubric` and `Build, lint, test`
-checks pass. Pull requests merge with a merge commit only (no squash or rebase), so each issue's single commit lands on
-`main` unchanged, and the head branch is deleted on merge.
+force-pushes or deletion; changes land only through pull requests whose `PR review rubric`, `Build, lint, test`,
+`Unit-test coverage floors` and `Static checks` checks pass. Pull requests merge with a merge commit only (no squash or
+rebase), so each issue's single commit lands on `main` unchanged, and the head branch is deleted on merge. The file is
+the source of truth: a change to it lands by PR, then a maintainer applies it with
+`gh api -X PUT repos/Tim-van-Oudheusden/MinimalUI/rulesets/<id> --input .github/rulesets/main.json`.
 
 [conventional-commits]: https://www.conventionalcommits.org/
 
@@ -180,6 +182,23 @@ runs `./gradlew :<module>:koverXmlReport` for every module in `.github/auto-qa-t
 module's function or line coverage drops below its floor there. Check locally with
 `./gradlew :core:koverXmlReport && scripts/coverage-check.sh core <functions> <lines>`; see
 [`docs/testing.md`](docs/testing.md#coverage-floors).
+
+### Shell scripts and workflows
+
+The `main` ruleset also requires the **Static checks** job in `.github/workflows/ci.yml`. It downloads pinned
+[shellcheck](https://www.shellcheck.net/) and [actionlint](https://github.com/rhysd/actionlint) releases (versions and
+SHA-256 checksums in the job's `env:`) and runs `shellcheck -x` on every tracked `*.sh` file and every extensionless
+sh/bash script under `scripts/`, then `actionlint` on `.github/workflows/`. actionlint reads `.github/actionlint.yaml`
+and runs shellcheck on each `run:` block too. `gradlew` (Gradle's) and the generated `.beads/hooks/` are not linted.
+Run the same locally, with both tools at the versions in `ci.yml` on your `PATH`:
+
+```bash
+shellcheck -x scripts/*.sh scripts/lib/*.sh
+actionlint
+```
+
+Fix a finding rather than silencing it. A check that cannot apply to this repository is turned off in
+`.github/actionlint.yaml` with a comment saying why.
 
 ### Formatting
 

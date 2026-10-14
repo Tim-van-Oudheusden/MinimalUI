@@ -54,10 +54,13 @@ Work is NOT complete until the issue branch is pushed and its pull request is op
 
 1. **File issues for remaining work** — `gh issue create` for anything that needs follow-up
 2. **Run quality gates** (if code changed) — `./gradlew check assembleDebug` (unit tests, Android lint, formatting,
-   debug build); `./gradlew spotlessApply` fixes formatting
+   debug build); `./gradlew spotlessApply` fixes formatting. After touching `scripts/` or `.github/workflows/`, also
+   run `shellcheck -x scripts/*.sh scripts/lib/*.sh` and `actionlint` at the versions pinned in `ci.yml`'s
+   `Static checks` job
 3. **Update issue status** — comment progress on the GitHub issue; run `bd github sync --pull-only`
 4. **Push the branch and open a PR** — `main` is protected by `.github/rulesets/main.json`: it only changes through
-   merged pull requests with passing checks (`PR review rubric`, `Build, lint, test`):
+   merged pull requests with passing checks (`PR review rubric`, `Build, lint, test`, `Unit-test coverage floors`,
+   `Static checks`):
    ```bash
    bd dolt push
    git push -u origin HEAD
