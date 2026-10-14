@@ -66,6 +66,9 @@ class SandboxGradlewScriptTest {
                 "${Repo.root.canonicalPath}:/workspace:z",
                 "-v",
                 "minimalui-sandbox-gradle:/home/dev/.gradle",
+                // AGP needs ~/.android writable even when the keystore exists (#159); the key stays read-only.
+                "--tmpfs",
+                "/home/dev/.android:rw,U",
                 "-v",
                 "${keystore.path}:/home/dev/.android/debug.keystore:ro,z",
                 "localhost/minimalui-sandbox",
