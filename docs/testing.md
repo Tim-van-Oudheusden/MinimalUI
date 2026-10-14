@@ -32,6 +32,16 @@ through the `vulnerability-alerts: read` permission
 so no secret is needed. actionlint 1.7.12 does not know that scope yet; `.github/actionlint.yaml` ignores that one
 message for this workflow ([rhysd/actionlint#713](https://github.com/rhysd/actionlint/issues/713)).
 
+### Advisories in build tools
+
+An advisory in a library that only a build tool pulls in (AGP, Kover, Android Lint) cannot be fixed by Dependabot: no
+build file declares it, so its security update ends in `security_update_dependency_not_found`. Raise it instead with
+the `build-tool-floors` bundle in `gradle/libs.versions.toml`: `build.gradle.kts` adds each library of the bundle as a
+constraint to the plugin classpath and every module's `androidLintTool`, so the patched version resolves there unless a
+tool brings a newer one (#147). Check the result with `./gradlew buildEnvironment` and
+`./gradlew :<module>:dependencies --configuration androidLintTool`. Drop a floor once every tool that pulled the library
+in ships the patched version itself.
+
 ### Accepting an advisory
 
 Add its GHSA id to `DEFAULT_ALERTS_IGNORE` in `scripts/nightly-compliance.sh`, with a comment on the line above that gives

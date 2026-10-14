@@ -2,11 +2,19 @@
 agp = "9.4.1"
 kotlin = "2.4.21"
 activityCompose = "1.13.0"
+# bouncycastle, commonsLang3, freemarker, httpclient, jdom2, jose4j: floors for build-tool transitives with published
+# advisories (#147), applied from the build-tool-floors bundle in build.gradle.kts.
+bouncycastle = "1.85"
+commonsLang3 = "3.18.0"
 composeBom = "2026.09.00"
 # Slack's Compose lint checks, loaded into the app's Android Lint through lintChecks.
 composeLints = "1.6.1"
 # The first detekt release built against Kotlin 2.4 (#135); pinned exactly, an alpha has no compatibility promise.
 detekt = "2.0.0-alpha.6"
+freemarker = "2.3.35"
+httpclient = "4.5.14"
+jdom2 = "2.0.6.1"
+jose4j = "0.9.6"
 junit = "4.13.2"
 jvmTarget = "17"
 kover = "0.9.11"
@@ -28,6 +36,28 @@ junit = { group = "junit", name = "junit", version.ref = "junit" }
 # Never a dependency: Spotless loads ktlint itself. Listed so Dependabot proposes ktlint updates.
 ktlint-cli = { group = "com.pinterest.ktlint", name = "ktlint-cli", version.ref = "ktlint" }
 robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
+# Never dependencies: constraints raising what AGP, Kover and Android Lint pull onto the build classpath (#147).
+bouncycastle-bcpkix = { group = "org.bouncycastle", name = "bcpkix-jdk18on", version.ref = "bouncycastle" }
+bouncycastle-bcprov = { group = "org.bouncycastle", name = "bcprov-jdk18on", version.ref = "bouncycastle" }
+bouncycastle-bcutil = { group = "org.bouncycastle", name = "bcutil-jdk18on", version.ref = "bouncycastle" }
+commons-lang3 = { group = "org.apache.commons", name = "commons-lang3", version.ref = "commonsLang3" }
+freemarker = { group = "org.freemarker", name = "freemarker", version.ref = "freemarker" }
+httpclient = { group = "org.apache.httpcomponents", name = "httpclient", version.ref = "httpclient" }
+jdom2 = { group = "org.jdom", name = "jdom2", version.ref = "jdom2" }
+jose4j = { group = "org.bitbucket.b_c", name = "jose4j", version.ref = "jose4j" }
+
+[bundles]
+# The floors build.gradle.kts puts on the build classpath and Android Lint's (#147).
+build-tool-floors = [
+    "bouncycastle-bcpkix",
+    "bouncycastle-bcprov",
+    "bouncycastle-bcutil",
+    "commons-lang3",
+    "freemarker",
+    "httpclient",
+    "jdom2",
+    "jose4j",
+]
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
