@@ -1,5 +1,7 @@
 package dev.buildwithtim.minimalui.core
 
+import java.util.TreeSet
+
 /**
  * The automatic group an app falls in (#69), from the category its developer declared (Android's
  * `ApplicationInfo.category`); [Other] for an app that declared none, or one this launcher does not know. The enum
@@ -36,17 +38,20 @@ data class AppGroup(
 /**
  * The groups to list for [apps] (the installed apps the user did not hide, in the main list's order, by their shown
  * names): every automatic group and every one of the [user] groups that holds one of them, alphabetical as apps are,
- * with Other last. A user group named as an automatic group is one group with the apps of both, as MinUI merges
- * folders that share a name. A group with none of [apps] is left out.
+ * with Other last. A user group named as an automatic group, in any letter case, is one group under the automatic
+ * group's name with the apps of both, as MinUI merges folders that share a name. A group with none of [apps] is left
+ * out.
  */
 fun appGroups(
     apps: List<LauncherApp>,
     user: UserGroups = UserGroups(),
 ): List<AppGroup> {
-    val names = (apps.flatMap { it.automaticGroups } + user.byName.keys).distinct()
+    // Automatic names come first, so a user group's own spelling only shows when no automatic group shares its name.
+    val names = (apps.flatMap { it.automaticGroups } + user.byName.keys).filter(TreeSet<String>(labelCollator())::add)
     val groups =
         names.map { name ->
-            AppGroup(name, apps.filter { name in it.automaticGroups || user.holds(name, it) }, name in user.byName)
+            val isUserGroup = user.byName.keyNamed(name) != null
+            AppGroup(name, apps.filter { name in it.automaticGroups || user.holds(name, it) }, isUserGroup)
         }
     return groups
         .filter { it.apps.isNotEmpty() }

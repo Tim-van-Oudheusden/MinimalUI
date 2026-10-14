@@ -58,6 +58,16 @@ class AppGroupsTest {
     }
 
     @Test
+    fun `a user group named as an automatic group in another case is that group, under the automatic name`() {
+        val user = UserGroups().added("games", notes)
+        val groups = appGroups(apps, user)
+
+        assertEquals(listOf("Audio", "Games", "Productivity", "Other"), groups.names())
+        assertEquals(listOf("Chess", "Notes", "Zebra"), groups.labelsIn("Games"))
+        assertTrue(groups.single { it.name == "Games" }.isUserGroup)
+    }
+
+    @Test
     fun `groups with no listed app are hidden, so uninstalled and hidden apps leave their groups`() {
         val user = UserGroups().added("Work", mail).added("Music", drums)
         val listed = listOf(chess, notes)
