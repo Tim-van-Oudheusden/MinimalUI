@@ -3,8 +3,12 @@
 # .devcontainer/devcontainer.json builds from this file, so there is one recipe for both.
 #
 #   podman build -f Dockerfile.sandbox -t localhost/minimalui-sandbox .
-#   podman run --rm -it --userns=keep-id -v "$PWD":/workspace:z localhost/minimalui-sandbox \
+#   podman run --rm -it --userns=keep-id -v "$PWD":/workspace:z \
+#     -v ~/.android/debug.keystore:/home/dev/.android/debug.keystore:ro,z localhost/minimalui-sandbox \
 #     ./gradlew --no-daemon check assembleDebug
+#
+# The keystore mount signs debug builds with the host's debug key, so they install over each other; without it every
+# container makes a new key (docs/testing.md#the-debug-signing-key).
 #
 # Bumping: keep `platforms;android-*` equal to compileSdk in app/build.gradle.kts and `build-tools;*` equal to the
 # default build-tools revision of the AGP version in gradle/libs.versions.toml; otherwise Gradle tries to download them.

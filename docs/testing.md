@@ -66,6 +66,32 @@ being downloaded at runtime. When `compileSdk` or the AGP version changes, bump 
 `ANDROID_BUILD_TOOLS` in `Dockerfile.sandbox` in the same change. Gradle dependencies still download into the Gradle
 user home (`/home/dev/.gradle`); mount a volume there to cache them.
 
+### The debug signing key
+
+AGP signs debug builds with `~/.android/debug.keystore` and creates a new one when it is missing. The image has no
+`/home/dev/.android`, so without a mount every container signs with a key of its own, and a sandbox-built APK never
+installs over the previous one: `adb install -r` fails with `INSTALL_FAILED_UPDATE_INCOMPATIBLE`, and uninstalling
+to get past it wipes MinimalUI's settings on the device. Mount your host's debug keystore read-only instead. Sandbox
+builds then sign like builds on the host (Android Studio or `./gradlew` with a local JDK), and either installs over the
+other.
+
+If `~/.android/debug.keystore` does not exist yet, create it once with the sandbox's `keytool` (the host needs no
+JDK), from the repository root. These are the values AGP itself uses for a debug key; `*.keystore` is gitignored, and
+the file moves out of the checkout straight away:
+
+```bash
+podman run --rm --userns=keep-id -v "$PWD":/workspace:z localhost/minimalui-sandbox \
+  keytool -genkeypair -keystore debug.keystore -storepass android -keypass android \
+  -alias androiddebugkey -dname "CN=Android Debug,O=Android,C=US" -keyalg RSA -keysize 2048 -validity 10000
+mkdir -p ~/.android && mv debug.keystore ~/.android/
+```
+
+It is a debug key: it signs nothing that ships (releases use the release key, see
+[CONTRIBUTING.md](../CONTRIBUTING.md#the-release-key)), so it needs no backup; a new one only means uninstalling
+debug builds once.
+
+### Running the gates
+
 Run the gates in the sandbox from the repository root (rootless podman; `--userns=keep-id` maps your host user to
 `dev` so build outputs stay owned by you):
 
@@ -73,8 +99,12 @@ Run the gates in the sandbox from the repository root (rootless podman; `--usern
 podman build -f Dockerfile.sandbox -t localhost/minimalui-sandbox .
 podman run --rm --userns=keep-id \
   -v "$PWD":/workspace:z -v minimalui-sandbox-gradle:/home/dev/.gradle \
+  -v ~/.android/debug.keystore:/home/dev/.android/debug.keystore:ro,z \
   localhost/minimalui-sandbox ./gradlew --no-daemon --console=plain check assembleDebug
 ```
+
+The debug APK lands in `app/build/outputs/apk/debug/app-debug.apk`; install it from the host with
+`adb install -r app/build/outputs/apk/debug/app-debug.apk`.
 
 In a git worktree, `.git` is a file pointing outside the mount, so git commands inside the container see no
 repository; the Gradle gates do not need one.
