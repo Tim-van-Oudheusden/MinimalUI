@@ -10,19 +10,15 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 ## Latest session
 
 - **Date:** 2026-10-14
-- **Worked:** every open issue. #125 closed as not planned (maintainer). #137 → PR #157 (quality report rows are
-  `check` + `assembleDebug`). #130 → PR #158 (group/collection names compare case-insensitively via `keyNamed`,
-  maintainer option 1). #147 → this branch (maintainer option A, plus the two medium alerts on the same path).
-- **Outcome:** the `build-tool-floors` bundle in `gradle/libs.versions.toml` raises bcprov/bcpkix/bcutil 1.85,
-  commons-lang3 3.18.0, freemarker 2.3.35, httpclient 4.5.14, jdom2 2.0.6.1 and jose4j 0.9.6 as constraints on the root
-  plugin classpath and every `androidLintTool`; `check assembleDebug assembleRelease koverXmlReport` and a signed
-  release pass with them. All 9 open Dependabot alerts should close on the next graph submission.
-- **Open follow-ups:** #159 (sandbox `validateSigningDebug` fails: read-only keystore mount leaves `~/.android`
-  unwritable). After #147 merges, run `Nightly compliance` by hand and confirm the alerts closed.
+- **Worked:** #162 → this branch (`SECURITY.md`; README docs table and `SECURITY-AI.md` Reporting point at it). Closed
+  out #147: ran `Nightly compliance` by hand after PR #160 merged (run 38568557946, green).
+- **Outcome:** all 9 Dependabot alerts are `fixed` (13:03Z); the dependency-graph SBOM now lists only the patched
+  build-tool versions. Private vulnerability reporting was already enabled; GitHub shows the policy once #162 merges.
+- **Open follow-ups:** none. After merge, `gh repo view --json isSecurityPolicyEnabled` should be true.
 - **Notes for next session:**
-  - No JDK on the host: `scripts/sandbox-gradlew.sh check assembleDebug`. Until #159 is fixed, a run where
-    `validateSigningDebug` is not up to date fails; mount a writable copy of the keystore dir as `/home/dev/.android`
-    with plain `podman run` instead.
+  - No JDK on the host: `scripts/sandbox-gradlew.sh check assembleDebug` (works since #159 was fixed).
+  - Dependabot alerts on build-tool transitives only close when a new graph is submitted: merging the fix is not
+    enough; dispatch `Nightly compliance` (or wait for 03:23Z).
   - To find which configuration resolves a vulnerable version, an init script that resolves every
     `buildscript.configurations + configurations` and prints matches mirrors what dependency submission sees;
     `:<module>:dependencies` alone misses the root `classpath`.
