@@ -24,6 +24,7 @@ class WorkflowInvariantsTest {
         "quality-report.yml" to mapOf("contents" to "read"),
         // Reads closed PRs for the acceptance metric.
         "pr-metrics.yml" to mapOf("contents" to "read", "pull-requests" to "read"),
+        "release.yml" to mapOf("contents" to "read"),
         "review.yml" to mapOf("contents" to "read"),
         "tier-classifier.yml" to mapOf("contents" to "read"),
     )
@@ -47,6 +48,10 @@ class WorkflowInvariantsTest {
             "dependency-graph" to mapOf("contents" to "write"),
             // vulnerability-alerts: read lists Dependabot alerts.
             "compliance" to mapOf("contents" to "read", "vulnerability-alerts" to "read"),
+        ),
+        // Creates the GitHub release for a pushed version tag and uploads the APK to it.
+        "release.yml" to mapOf(
+            "release" to mapOf("contents" to "write"),
         ),
     )
 

@@ -13,6 +13,10 @@ val buildCommit: String = runCatching {
     }.standardOutput.asText.get().trim()
 }.getOrNull().orEmpty().ifEmpty { "unknown" }
 
+// Release signing (#116). The release workflow decodes the keystore from repository secrets and passes it in through
+// these environment variables. Without RELEASE_KEYSTORE_FILE, assembleRelease still builds, but the APK is unsigned.
+val releaseKeystoreFile: String? = providers.environmentVariable("RELEASE_KEYSTORE_FILE").orNull
+
 android {
     namespace = "dev.buildwithtim.minimalui"
     compileSdk = 37
@@ -27,9 +31,21 @@ android {
         buildConfigField("String", "BUILD_COMMIT", "\"$buildCommit\"")
     }
 
+    signingConfigs {
+        if (releaseKeystoreFile != null) {
+            create("release") {
+                storeFile = file(releaseKeystoreFile)
+                storePassword = providers.environmentVariable("RELEASE_KEYSTORE_PASSWORD").get()
+                keyAlias = providers.environmentVariable("RELEASE_KEY_ALIAS").get()
+                keyPassword = providers.environmentVariable("RELEASE_KEY_PASSWORD").get()
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.findByName("release")
         }
     }
 

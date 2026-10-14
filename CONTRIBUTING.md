@@ -207,6 +207,40 @@ For reviews, point Claude at the shared rubric in [`prompts/code-review.md`](pro
 `@claude review this PR using prompts/code-review.md against issue #12`; [`prompts/`](prompts/README.md) also holds the
 PR-body template.
 
+## Releasing
+
+Pushing a version tag (`v0.1.0`, `v0.2.0-beta.1`, ...) runs `.github/workflows/release.yml`. It runs the unit tests and
+lint, builds the release APK signed with the MinimalUI release key, and publishes a GitHub release with
+`minimalui-<tag>.apk` and generated notes attached. A tag with a `-` suffix is marked as a pre-release. Every release is
+signed with the same key, so it installs over the previous one and keeps the user's settings.
+
+### The release key
+
+The maintainer creates the key once, outside the repository, and keeps a backup of it and its password. Android
+refuses an update signed with a different key, so losing it means every user has to uninstall to move to a new one.
+
+```bash
+keytool -genkeypair -keystore ~/minimalui-release.jks -alias minimalui \
+  -keyalg RSA -keysize 4096 -validity 10000 -dname "CN=MinimalUI"       # asks for a password
+base64 -w0 ~/minimalui-release.jks | gh secret set RELEASE_KEYSTORE_BASE64
+gh secret set RELEASE_KEY_ALIAS --body minimalui
+gh secret set RELEASE_KEYSTORE_PASSWORD   # asks for the keytool password
+gh secret set RELEASE_KEY_PASSWORD        # the same password: keytool's PKCS12 keystores have only one
+```
+
+Without `RELEASE_KEYSTORE_BASE64` the workflow stops before building and publishes nothing. Locally,
+`./gradlew assembleRelease` builds an unsigned `app-release-unsigned.apk` unless `RELEASE_KEYSTORE_FILE` (the keystore's
+path), `RELEASE_KEYSTORE_PASSWORD`, `RELEASE_KEY_ALIAS` and `RELEASE_KEY_PASSWORD` are set, as the workflow sets them.
+
+### Cutting a release
+
+1. Make sure `versionName` in `app/build.gradle.kts` matches the tag without its `v` (Settings → About shows it), and
+   that `versionCode` is higher than the last release's: Android refuses to install an update with a lower one. Change
+   them through a pull request like any other change.
+2. Tag the merged commit on `main` and push the tag:
+   `git switch main && git pull --rebase && git tag v0.1.0 && git push origin v0.1.0`.
+3. Watch the `Release` workflow under **Actions**; the release appears under **Releases** when it finishes.
+
 ## Code style
 
 - Kotlin official code style (`kotlin.code.style=official`), 4-space indent, max line length 120 (`.editorconfig`).
