@@ -49,7 +49,7 @@ class WorkflowInvariantsTest {
             // vulnerability-alerts: read lists Dependabot alerts.
             "compliance" to mapOf("contents" to "read", "vulnerability-alerts" to "read"),
         ),
-        // Creates the GitHub release for a pushed version tag and uploads the APK to it.
+        // Tags the commit with a new versionName, creates its GitHub release and uploads the APK to it.
         "release.yml" to mapOf(
             "release" to mapOf("contents" to "write"),
         ),
