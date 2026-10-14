@@ -19,12 +19,25 @@ import dev.buildwithtim.minimalui.core.UserGroups
 internal class LauncherStores(
     context: Context,
 ) {
-    private val recentStore = RecentAppsStore(context)
+    private val recentStore =
+        SingleKeyPreferenceStore(context, "recent_apps", "components", RecentApps::fromStored, RecentApps::stored)
     private val settingsStore = SettingsStore(context)
-    private val favouritesStore = FavouritesStore(context)
-    private val hiddenStore = HiddenAppsStore(context)
-    private val aliasesStore = AliasesStore(context)
-    private val groupsStore = GroupsStore(context)
+    private val favouritesStore =
+        SingleKeyPreferenceStore(context, "favourites", "favourites", Favourites::fromStored, Favourites::stored)
+    private val collectionsStore =
+        SingleKeyPreferenceStore(
+            context,
+            "favourites",
+            "collections",
+            AppCollections::fromStored,
+            AppCollections::stored,
+        )
+    private val hiddenStore =
+        SingleKeyPreferenceStore(context, "hidden_apps", "hidden", HiddenApps::fromStored, HiddenApps::stored)
+    private val aliasesStore =
+        SingleKeyPreferenceStore(context, "aliases", "aliases", Aliases::fromStored, Aliases::stored)
+    private val groupsStore =
+        SingleKeyPreferenceStore(context, "groups", "groups", UserGroups::fromStored, UserGroups::stored)
 
     /** The apps last opened from here, newest first (#70). */
     var recents by mutableStateOf(recentStore.load())
@@ -34,9 +47,9 @@ internal class LauncherStores(
         private set
 
     /** The favourites pinned to the top of the root list and the user's collections (#68). */
-    var favourites by mutableStateOf(favouritesStore.loadFavourites())
+    var favourites by mutableStateOf(favouritesStore.load())
         private set
-    var collections by mutableStateOf(favouritesStore.loadCollections())
+    var collections by mutableStateOf(collectionsStore.load())
         private set
 
     /** The apps the user hid (#71): off the root list and the collections, still found by typing. */
@@ -68,7 +81,7 @@ internal class LauncherStores(
 
     fun save(changed: AppCollections) {
         collections = changed
-        favouritesStore.save(changed)
+        collectionsStore.save(changed)
     }
 
     fun save(changed: HiddenApps) {
