@@ -142,4 +142,22 @@ class AppCollectionsTest {
             ),
         )
     }
+
+    @Test
+    fun `a name that differs only in case adds to the existing collection, which keeps its spelling`() {
+        val collections = games.added("games", app("Bell"))
+
+        assertEquals(listOf("Games"), collections.names(installed))
+        assertEquals(listOf("Camera", "Alarm", "Drums", "Bell"), collections.labelsIn("Games"))
+    }
+
+    @Test
+    fun `stored collections whose names differ only in case load as one, under the first spelling`() {
+        assertEquals(
+            AppCollections().added("Fun", app("Bell")).added("Fun", app("Alarm")),
+            AppCollections.fromStored(
+                "Fun\tpkg.Bell/pkg.Bell.Main\nfun\tpkg.Alarm/pkg.Alarm.Main\tpkg.Bell/pkg.Bell.Main",
+            ),
+        )
+    }
 }

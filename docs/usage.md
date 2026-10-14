@@ -52,8 +52,9 @@ Collections are named lists of apps in your own order, as in MinUI. **Add to col
 do not hold the app yet and a last row, **New collection**: type a name in the text editor (spaces and punctuation
 allowed) and press Enter to make it with the app, or Esc to cancel. Enter on the home screen's **Collections** row
 lists them by name; Enter on a name lists its apps, which open like any other. Inside a collection the app menu also
-offers Remove from collection, Move up and Move down; a collection goes away with its last app. Favourites and
-collections are kept in the app's private storage.
+offers Remove from collection, Move up and Move down; a collection goes away with its last app. A name that differs
+from an existing collection's only in letter case (`fun` for `Fun`) adds to that collection, as MinUI's folders do.
+Favourites and collections are kept in the app's private storage.
 
 ## Groups
 
@@ -62,13 +63,14 @@ developer declared: Games, Audio, Video, Images, Social, News, Maps, Productivit
 declared none (the MinimalUI settings row is in none). **Add to group** lists your own groups that do not hold the app
 and a last row, **New group**, which makes one with the app from a name typed in the text editor. Enter on the
 **Groups** row lists the groups by name, alphabetical with Other last; a group of yours named like an automatic one is
-one entry holding the apps of both. Enter on a name lists its apps in the home screen's order (renamed apps by their
-new name, favourites with their `★`); they open like any other, and coming back keeps the group open on that app.
-Inside a group of yours the app menu also offers Remove from group; a group goes away with its last app. The Menu key
-on a group in the list opens its menu: **Rename group** (the text editor, prefilled; a name another group of yours has
-merges the two) and **Delete group**, which forgets only your group, never the apps or an automatic group. For an
-automatic group both rows show grey and do nothing. A group whose apps are all hidden or uninstalled is not listed but
-kept until you delete it. Your groups are kept in the app's private storage.
+one entry holding the apps of both. Letter case does not tell groups apart: `games` is the Games group, and a new or
+renamed group named like one of yours in another case joins it. Enter on a name lists its apps in the home screen's
+order (renamed apps by their new name, favourites with their `★`); they open like any other, and coming back keeps
+the group open on that app. Inside a group of yours the app menu also offers Remove from group; a group goes away with
+its last app. The Menu key on a group in the list opens its menu: **Rename group** (the text editor, prefilled; a name
+another group of yours has merges the two) and **Delete group**, which forgets only your group, never the apps or an
+automatic group. For an automatic group both rows show grey and do nothing. A group whose apps are all hidden or
+uninstalled is not listed but kept until you delete it. Your groups are kept in the app's private storage.
 
 ## Work apps
 

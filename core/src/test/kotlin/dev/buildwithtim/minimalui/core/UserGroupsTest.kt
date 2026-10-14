@@ -84,4 +84,44 @@ class UserGroupsTest {
             UserGroups.fromStored(" \tpkg.A/pkg.A.Main\nPlay\tnot-a-component\tpkg.Drums/pkg.Drums.Main\nEmpty\n"),
         )
     }
+
+    @Test
+    fun `a name that differs only in case adds to the existing group, which keeps its spelling`() {
+        val groups = work.added("work", app("Bell"))
+
+        assertEquals(listOf("Work"), groups.names)
+        assertTrue(groups.holds("Work", app("Bell")))
+    }
+
+    @Test
+    fun `a group is found by its name in any case`() {
+        assertTrue(work.holds("WORK", app("Mail")))
+        assertFalse(work.removed("work", app("Mail")).holds("Work", app("Mail")))
+        assertEquals(UserGroups(), work.deleted("work"))
+        assertEquals(listOf("Office"), work.renamed("work", "Office").names)
+    }
+
+    @Test
+    fun `renaming to another group's name in another case merges into that group`() {
+        val both = work.added("Play", app("Drums")).renamed("Play", "WORK")
+
+        assertEquals(listOf("Work"), both.names)
+        assertTrue(both.holds("Work", app("Drums")))
+    }
+
+    @Test
+    fun `renaming a group to its own name in another case changes its spelling`() {
+        val renamed = work.renamed("Work", "WORK")
+
+        assertEquals(listOf("WORK"), renamed.names)
+        assertTrue(renamed.holds("WORK", app("Mail")))
+    }
+
+    @Test
+    fun `stored groups whose names differ only in case load as one, under the first spelling`() {
+        assertEquals(
+            UserGroups(mapOf("Fun" to setOf("pkg.A/pkg.A.Main", "pkg.B/pkg.B.Main"))),
+            UserGroups.fromStored("Fun\tpkg.A/pkg.A.Main\nfun\tpkg.B/pkg.B.Main"),
+        )
+    }
 }

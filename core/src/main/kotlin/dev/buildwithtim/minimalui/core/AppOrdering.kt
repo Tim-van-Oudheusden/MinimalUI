@@ -29,3 +29,12 @@ fun List<LauncherApp>.sortedForDisplay(): List<LauncherApp> =
  * engines agree only on ASCII and Latin-1 accented labels, so tests can pin the device's order only for those.
  */
 internal fun labelCollator(): Collator = Collator.getInstance(Locale.ROOT).apply { strength = Collator.SECONDARY }
+
+/**
+ * The key of [this] map that is the same name as [name] to [labelCollator], so differs from it at most in letter case,
+ * as MinUI's folders on a case-insensitive SD card do (#130); null when there is none.
+ */
+internal fun <V> Map<String, V>.keyNamed(name: String): String? {
+    val collator = labelCollator()
+    return keys.firstOrNull { collator.compare(it, name) == 0 }
+}

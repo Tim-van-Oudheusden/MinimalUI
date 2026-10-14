@@ -3,7 +3,9 @@ package dev.buildwithtim.minimalui.core
 /**
  * The user's collections (#68), MinUI-style: named lists of apps, each in the user's own order (the order the apps
  * were added, then as moved), never nested. A collection exists only while it holds an app, so removing its last app
- * deletes it. Apps are kept by component, like [RecentApps], so they keep their place when relabelled.
+ * deletes it. Apps are kept by component, like [RecentApps], so they keep their place when relabelled. Names that
+ * differ only in letter case are one collection, under the spelling it was created with, as MinUI's folders are on a
+ * case-insensitive SD card (#130).
  */
 data class AppCollections(
     val byName: Map<String, List<String>> = emptyMap(),
@@ -18,9 +20,7 @@ data class AppCollections(
         app: LauncherApp,
     ): AppCollections {
         val trimmed = typedName(name)
-        val components = byName[trimmed].orEmpty()
-        if (trimmed.isEmpty() || app.component in components) return this
-        return AppCollections(byName + (trimmed to components + app.component))
+        return if (trimmed.isEmpty()) this else merged(trimmed, listOf(app.component))
     }
 
     /** [app] taken out of the collection called [name]; the collection goes with its last app. */
@@ -79,17 +79,29 @@ data class AppCollections(
             (listOf(name) + components).joinToString("\t")
         }
 
+    // [components] it does not hold yet added at the end of the collection called [name] in any case, created under
+    // [name] when there is none.
+    private fun merged(
+        name: String,
+        components: List<String>,
+    ): AppCollections {
+        val key = byName.keyNamed(name) ?: name
+        val held = byName[key].orEmpty()
+        val added = components.filterNot { it in held }
+        return if (added.isEmpty()) this else AppCollections(byName + (key to held + added))
+    }
+
     companion object {
-        /** The collections [stored] wrote; blank names, fields that are not a component and empty ones are skipped. */
-        fun fromStored(text: String?): AppCollections {
-            val byName =
-                text.orEmpty().lines().mapNotNull { line ->
-                    val fields = line.split('\t')
-                    val name = fields.first().trim()
-                    val components = fields.drop(1).filter(::isComponent).distinct()
-                    if (name.isEmpty() || components.isEmpty()) null else name to components
-                }
-            return AppCollections(byName.toMap())
-        }
+        /**
+         * The collections [stored] wrote; blank names, fields that are not a component and empty ones are skipped, and
+         * collections whose names differ only in case are one, under the first spelling.
+         */
+        fun fromStored(text: String?): AppCollections =
+            text.orEmpty().lines().fold(AppCollections()) { collections, line ->
+                val fields = line.split('\t')
+                val name = fields.first().trim()
+                val components = fields.drop(1).filter(::isComponent).distinct()
+                if (name.isEmpty() || components.isEmpty()) collections else collections.merged(name, components)
+            }
     }
 }
