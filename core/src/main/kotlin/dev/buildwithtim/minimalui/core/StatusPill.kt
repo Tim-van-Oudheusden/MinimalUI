@@ -64,22 +64,3 @@ fun battery(
 }
 
 private const val PERCENT = 100
-
-/**
- * The time as the system's 12/24-hour setting shows it: `HH:mm` when [twentyFourHour], else `h:mm` and the
- * locale's [am] or [pm] marker. [hour] runs 0–23.
- */
-fun clockText(
-    hour: Int,
-    minute: Int,
-    twentyFourHour: Boolean,
-    am: String,
-    pm: String,
-): String {
-    val mm = "%02d".format(minute)
-    if (twentyFourHour) return "%02d:%s".format(hour, mm)
-    val twelveHour = if (hour % HALF_DAY_HOURS == 0) HALF_DAY_HOURS else hour % HALF_DAY_HOURS
-    return "$twelveHour:$mm ${if (hour < HALF_DAY_HOURS) am else pm}"
-}
-
-private const val HALF_DAY_HOURS = 12

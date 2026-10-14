@@ -70,21 +70,6 @@ class StatusPillTest {
     }
 
     @Test
-    fun `the 24-hour clock pads the hour`() {
-        assertEquals("07:05", clockText(hour = 7, minute = 5, twentyFourHour = true, am = "AM", pm = "PM"))
-        assertEquals("00:00", clockText(hour = 0, minute = 0, twentyFourHour = true, am = "AM", pm = "PM"))
-        assertEquals("23:59", clockText(hour = 23, minute = 59, twentyFourHour = true, am = "AM", pm = "PM"))
-    }
-
-    @Test
-    fun `the 12-hour clock counts from 12 and adds the locale's marker`() {
-        assertEquals("12:00 AM", clockText(hour = 0, minute = 0, twentyFourHour = false, am = "AM", pm = "PM"))
-        assertEquals("7:05 AM", clockText(hour = 7, minute = 5, twentyFourHour = false, am = "AM", pm = "PM"))
-        assertEquals("12:30 PM", clockText(hour = 12, minute = 30, twentyFourHour = false, am = "AM", pm = "PM"))
-        assertEquals("11:59 pm", clockText(hour = 23, minute = 59, twentyFourHour = false, am = "am", pm = "pm"))
-    }
-
-    @Test
     fun `Wi-Fi and the battery are left out when absent, the clock always shows`() {
         val pill = StatusPill(wifi = false, battery = null, clock = "9:41 AM")
 

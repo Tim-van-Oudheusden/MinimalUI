@@ -14,8 +14,6 @@ import android.text.format.DateFormat
 import dev.buildwithtim.minimalui.core.Battery
 import dev.buildwithtim.minimalui.core.StatusPill
 import dev.buildwithtim.minimalui.core.battery
-import dev.buildwithtim.minimalui.core.clockText
-import java.text.DateFormatSymbols
 import java.time.LocalTime
 
 /**
@@ -82,8 +80,8 @@ internal class StatusWatcher(
 
     private fun update() {
         val now = LocalTime.now()
-        val (am, pm) = DateFormatSymbols.getInstance().amPmStrings
-        val clock = clockText(now.hour, now.minute, DateFormat.is24HourFormat(context), am, pm)
+        val locale = context.resources.configuration.locales[0]
+        val clock = clockText(now.hour, now.minute, DateFormat.is24HourFormat(context), locale)
         publish(StatusPill(wifi, battery, clock))
     }
 
