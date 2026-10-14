@@ -177,6 +177,10 @@ Run these before opening a PR (CI runs the same on every PR):
 
 `check` is the gate: every check added to the build hooks into it, so CI and the docs never list its tasks one by one.
 
+The Kotlin compiler treats warnings as errors, extra warnings included (`allWarningsAsErrors` and `extraWarnings` in
+every module's build file), so an unused variable or a deprecated call fails the build. Fix the code; never
+`@Suppress` a warning.
+
 The `main` ruleset also requires the **Unit-test coverage floors** check (`.github/workflows/coverage-gate.yml`): it
 runs `./gradlew :<module>:koverXmlReport` for every module in `.github/auto-qa-tuning.json` and fails the PR if a
 module's function or line coverage drops below its floor there. Check locally with
@@ -212,6 +216,8 @@ formats the same way. Composables keep type-style names (`AppList`).
 A rule that misfires is turned off for the whole project in `.editorconfig`, with a comment saying why. Never
 silence one finding with `@Suppress` or a `ktlint-disable` comment.
 
+The commit that first formatted the code base is listed in `.git-blame-ignore-revs`. Run
+`git config blame.ignoreRevsFile .git-blame-ignore-revs` once so local `git blame` skips it; GitHub does so on its own.
 ### Android Lint
 
 Every module runs Android Lint as part of `check`: `app` through AGP, `core` and `tooling` through the standalone

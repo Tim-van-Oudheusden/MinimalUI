@@ -94,6 +94,15 @@ android {
     }
 }
 
+// AGP's built-in Kotlin registers the `kotlin` extension; compiler warnings fail the build like Android Lint warnings
+// do (#133).
+kotlin {
+    compilerOptions {
+        allWarningsAsErrors.set(true)
+        extraWarnings.set(true)
+    }
+}
+
 dependencies {
     implementation(project(":core"))
     implementation(libs.androidx.activity.compose)
