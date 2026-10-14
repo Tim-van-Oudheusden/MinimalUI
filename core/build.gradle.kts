@@ -4,6 +4,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.kover)
+    alias(libs.plugins.android.lint)
 }
 
 java {
@@ -18,6 +19,14 @@ kotlin {
         allWarningsAsErrors.set(true)
         extraWarnings.set(true)
     }
+}
+
+lint {
+    abortOnError = true
+    warningsAsErrors = true
+    checkAllWarnings = true
+    // Tests are code we maintain too; lint them like the main sources.
+    checkTestSources = true
 }
 
 dependencies {

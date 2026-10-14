@@ -48,3 +48,46 @@ jobs:
           name: reports
           path: '**/build/reports/'
           retention-days: 14
+
+  static-checks:
+    # Required by the main ruleset (.github/rulesets/main.json); keep the name in sync.
+    name: Static checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      # shellcheck publishes no checksum file: the SHA-256 is computed from the release asset. actionlint's matches
+      # the release's actionlint_<version>_checksums.txt.
+      SHELLCHECK_VERSION: 0.11.0
+      SHELLCHECK_SHA256: 8c3be12b05d5c177a04c29e3c78ce89ac86f1595681cab149b65b97c4e227198
+      ACTIONLINT_VERSION: 1.7.12
+      ACTIONLINT_SHA256: 8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # Release binaries pinned by SHA-256: no third-party action and no docker:// image.
+      - name: Install shellcheck and actionlint
+        run: |
+          mkdir -p "$RUNNER_TEMP/bin"
+          cd "$RUNNER_TEMP"
+          shellcheck_archive="shellcheck-v${SHELLCHECK_VERSION}.linux.x86_64.tar.xz"
+          curl -fsSLO "https://github.com/koalaman/shellcheck/releases/download/v${SHELLCHECK_VERSION}/${shellcheck_archive}"
+          echo "${SHELLCHECK_SHA256}  ${shellcheck_archive}" | sha256sum -c -
+          tar -xJf "$shellcheck_archive"
+          mv "shellcheck-v${SHELLCHECK_VERSION}/shellcheck" bin/
+          actionlint_archive="actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
+          curl -fsSLO "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/${actionlint_archive}"
+          echo "${ACTIONLINT_SHA256}  ${actionlint_archive}" | sha256sum -c -
+          tar -xzf "$actionlint_archive" -C bin actionlint
+          echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+      # Every tracked *.sh file plus extensionless sh/bash scripts under scripts/. gradlew (Gradle's) and the
+      # generated .beads/hooks are left out on purpose.
+      - name: shellcheck
+        run: |
+          {
+            git ls-files '*.sh'
+            git ls-files scripts ':!:*.sh' | while IFS= read -r file; do
+              if head -n 1 "$file" | grep -Eq '^#!.*[/ ](ba)?sh( |$)'; then echo "$file"; fi
+            done
+          } | xargs -d '\n' shellcheck -x
+      # Reads .github/actionlint.yaml and also runs shellcheck on every run: block, via the shellcheck on PATH.
+      - name: actionlint
+        run: actionlint -color
