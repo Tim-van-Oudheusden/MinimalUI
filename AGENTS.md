@@ -53,7 +53,8 @@ bd prime                     # Full beads workflow reference
 Work is NOT complete until the issue branch is pushed and its pull request is open.
 
 1. **File issues for remaining work** — `gh issue create` for anything that needs follow-up
-2. **Run quality gates** (if code changed) — `./gradlew test lint assembleDebug`
+2. **Run quality gates** (if code changed) — `./gradlew check assembleDebug` (unit tests, Android lint, formatting,
+   debug build); `./gradlew spotlessApply` fixes formatting
 3. **Update issue status** — comment progress on the GitHub issue; run `bd github sync --pull-only`
 4. **Push the branch and open a PR** — `main` is protected by `.github/rulesets/main.json`: it only changes through
    merged pull requests with passing checks (`PR review rubric`, `Build, lint, test`):

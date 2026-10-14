@@ -9,24 +9,35 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 
 class TierClassifyScriptTest {
-
     @get:Rule
     val temp = TemporaryFolder()
 
-    private fun classify(vararg paths: String, env: Map<String, String> = emptyMap()) =
-        runScript("scripts/tier-classify.sh", env = env, stdin = paths.joinToString("\n"))
+    private fun classify(
+        vararg paths: String,
+        env: Map<String, String> = emptyMap(),
+    ) = runScript("scripts/tier-classify.sh", env = env, stdin = paths.joinToString("\n"))
 
-    private fun classifyWith(policy: String, vararg paths: String): ScriptResult {
+    private fun classifyWith(
+        policy: String,
+        vararg paths: String,
+    ): ScriptResult {
         val file = temp.root.resolve("risk-tiers.policy").apply { writeText(policy) }
         return classify(*paths, env = mapOf("RISK_TIER_POLICY" to file.path))
     }
 
     /** The tier the script printed for each path, from its `<tier>  <path>` lines. */
-    private fun ScriptResult.tiers(): Map<String, String> = stdout.lines()
-        .filter { it.isNotBlank() && !it.startsWith("tier=") }
-        .associate { line -> line.trim().split(Regex("\\s+"), limit = 2).let { (tier, path) -> path to tier } }
+    private fun ScriptResult.tiers(): Map<String, String> =
+        stdout
+            .lines()
+            .filter { it.isNotBlank() && !it.startsWith("tier=") }
+            .associate { line -> line.trim().split(Regex("\\s+"), limit = 2).let { (tier, path) -> path to tier } }
 
-    private fun ScriptResult.overall(): String? = stdout.lines().singleOrNull { it.startsWith("tier=") }?.removePrefix("tier=")
+    private fun ScriptResult.overall(): String? =
+        stdout
+            .lines()
+            .singleOrNull {
+                it.startsWith("tier=")
+            }?.removePrefix("tier=")
 
     // Engine, against a policy written by the test.
 
@@ -117,30 +128,31 @@ class TierClassifyScriptTest {
 
     @Test
     fun `classifies build, gate, manifest and agent-governance paths as high`() {
-        val high = listOf(
-            ".github/workflows/ci.yml",
-            ".github/policies/risk-tiers.policy",
-            "scripts/tier-classify.sh",
-            "tooling/src/test/kotlin/dev/buildwithtim/minimalui/tooling/Repo.kt",
-            "gradle/libs.versions.toml",
-            "gradle/wrapper/gradle-wrapper.properties",
-            "build.gradle.kts",
-            "app/build.gradle.kts",
-            "settings.gradle.kts",
-            "gradle.properties",
-            "gradlew",
-            "gradlew.bat",
-            "app/src/main/AndroidManifest.xml",
-            "AGENTS.md",
-            "CLAUDE.md",
-            ".claude/settings.json",
-            ".cursor/rules/agents.mdc",
-            ".beads/config.yaml",
-            "prompts/code-review.md",
-            ".devcontainer/devcontainer.json",
-            "Dockerfile",
-            ".gitattributes",
-        )
+        val high =
+            listOf(
+                ".github/workflows/ci.yml",
+                ".github/policies/risk-tiers.policy",
+                "scripts/tier-classify.sh",
+                "tooling/src/test/kotlin/dev/buildwithtim/minimalui/tooling/Repo.kt",
+                "gradle/libs.versions.toml",
+                "gradle/wrapper/gradle-wrapper.properties",
+                "build.gradle.kts",
+                "app/build.gradle.kts",
+                "settings.gradle.kts",
+                "gradle.properties",
+                "gradlew",
+                "gradlew.bat",
+                "app/src/main/AndroidManifest.xml",
+                "AGENTS.md",
+                "CLAUDE.md",
+                ".claude/settings.json",
+                ".cursor/rules/agents.mdc",
+                ".beads/config.yaml",
+                "prompts/code-review.md",
+                ".devcontainer/devcontainer.json",
+                "Dockerfile",
+                ".gitattributes",
+            )
 
         val result = classify(*high.toTypedArray())
 
@@ -151,14 +163,15 @@ class TierClassifyScriptTest {
 
     @Test
     fun `classifies app and core sources and unknown paths as medium`() {
-        val medium = listOf(
-            "app/src/main/kotlin/dev/buildwithtim/minimalui/MainActivity.kt",
-            "app/src/main/res/values/strings.xml",
-            "core/src/main/kotlin/dev/buildwithtim/minimalui/core/AppSearch.kt",
-            "core/src/test/kotlin/dev/buildwithtim/minimalui/core/AppSearchTest.kt",
-            ".editorconfig",
-            "somewhere/new.txt",
-        )
+        val medium =
+            listOf(
+                "app/src/main/kotlin/dev/buildwithtim/minimalui/MainActivity.kt",
+                "app/src/main/res/values/strings.xml",
+                "core/src/main/kotlin/dev/buildwithtim/minimalui/core/AppSearch.kt",
+                "core/src/test/kotlin/dev/buildwithtim/minimalui/core/AppSearchTest.kt",
+                ".editorconfig",
+                "somewhere/new.txt",
+            )
 
         val result = classify(*medium.toTypedArray())
 
@@ -192,10 +205,19 @@ class TierClassifyScriptTest {
 
     @Test
     fun `classifies with the base branch's script and policy so a pull request cannot lower its own tier`() {
-        val steps = Repo.workflows().getValue("tier-classifier.yml").jobs().values.single().steps()
+        val steps =
+            Repo
+                .workflows()
+                .getValue("tier-classifier.yml")
+                .jobs()
+                .values
+                .single()
+                .steps()
         val checkouts = steps.filter { (it["uses"] as? String)?.startsWith("actions/checkout@") == true }
-        val base = checkouts.map { it["with"].asMap() }
-            .single { it["ref"] == "\${{ github.event.pull_request.base.sha }}" }
+        val base =
+            checkouts
+                .map { it["with"].asMap() }
+                .single { it["ref"] == "\${{ github.event.pull_request.base.sha }}" }
         val basePath = base["path"] as? String
         val classify = steps.mapNotNull { it["run"] as? String }.single { it.contains("tier-classify.sh") }
 
@@ -207,11 +229,20 @@ class TierClassifyScriptTest {
 
     @Test
     fun `lists both sides of a rename so a high-risk file moved to a low-risk path stays high`() {
-        val sources = mapOf(
-            "tier-classifier.yml" to Repo.workflows().getValue("tier-classifier.yml").jobs().values.single().steps()
-                .mapNotNull { it["run"] as? String }.joinToString("\n"),
-            "docs/risk-tiers.md" to Repo.read("docs/risk-tiers.md"),
-        )
+        val sources =
+            mapOf(
+                "tier-classifier.yml" to
+                    Repo
+                        .workflows()
+                        .getValue("tier-classifier.yml")
+                        .jobs()
+                        .values
+                        .single()
+                        .steps()
+                        .mapNotNull { it["run"] as? String }
+                        .joinToString("\n"),
+                "docs/risk-tiers.md" to Repo.read("docs/risk-tiers.md"),
+            )
 
         for ((name, text) in sources) {
             val diffs = Regex("git diff[^\n|]*").findAll(text).map { it.value }.toList()
@@ -222,14 +253,18 @@ class TierClassifyScriptTest {
 
     @Test
     fun `documents every policy rule under its tier in docs-risk-tiers-md`() {
-        val sections = Repo.read("docs/risk-tiers.md").split(Regex("(?m)^## ")).associate { section ->
-            section.substringBefore('\n').trim() to section
-        }
-        val undocumented = Repo.read(".github/policies/risk-tiers.policy").lines()
-            .map { it.trim() }
-            .filter { it.isNotEmpty() && !it.startsWith("#") }
-            .map { it.split(Regex("\\s+")).let { (tier, glob) -> tier to glob } }
-            .filterNot { (tier, glob) -> sections["Tier: $tier"]?.contains("`$glob`") == true }
+        val sections =
+            Repo.read("docs/risk-tiers.md").split(Regex("(?m)^## ")).associate { section ->
+                section.substringBefore('\n').trim() to section
+            }
+        val undocumented =
+            Repo
+                .read(".github/policies/risk-tiers.policy")
+                .lines()
+                .map { it.trim() }
+                .filter { it.isNotEmpty() && !it.startsWith("#") }
+                .map { it.split(Regex("\\s+")).let { (tier, glob) -> tier to glob } }
+                .filterNot { (tier, glob) -> sections["Tier: $tier"]?.contains("`$glob`") == true }
 
         assertEquals(emptyList<Pair<String, String>>(), undocumented)
     }

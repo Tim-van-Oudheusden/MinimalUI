@@ -5,7 +5,6 @@ import org.junit.Assert.assertNull
 import org.junit.Test
 
 class FilterQueryTest {
-
     @Test
     fun `typing a letter or digit appends it to the query`() {
         assertEquals("map", "ma".plusTyped('p'.code))

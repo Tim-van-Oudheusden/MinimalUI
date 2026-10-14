@@ -67,7 +67,7 @@ import dev.buildwithtim.minimalui.core.stepped
 internal val DimText = Color(0xFF808080)
 
 /** The duplicate-name suffix's size against the label's, Cannoli's 0.75. */
-internal const val SuffixScale = 0.75f
+internal const val SUFFIX_SCALE = 0.75f
 
 /**
  * Where a [PillList] is: the selected row, the row at the top of the screen, and the scroll. Held by the caller, so a
@@ -138,42 +138,51 @@ internal fun <T> PillList(
     LazyColumn(
         state = state.scroll,
         flingBehavior = rememberSnapFlingBehavior(state.scroll),
-        modifier = modifier
-            .fillMaxWidth()
-            .height(rowHeight * rowsPerPage)
-            .onPreviewKeyEvent { event ->
-                val item = items.getOrNull(state.position.selected) ?: return@onPreviewKeyEvent false
-                val held = event.nativeKeyEvent.repeatCount > 0
-                if (event.key in ConfirmKeys) {
-                    return@onPreviewKeyEvent when {
-                        event.type == KeyEventType.KeyUp -> !pressed.remove(event.key)
-                        !held -> {
-                            pressed += event.key
-                            false
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .height(rowHeight * rowsPerPage)
+                .onPreviewKeyEvent { event ->
+                    val item = items.getOrNull(state.position.selected) ?: return@onPreviewKeyEvent false
+                    val held = event.nativeKeyEvent.repeatCount > 0
+                    if (event.key in ConfirmKeys) {
+                        return@onPreviewKeyEvent when {
+                            event.type == KeyEventType.KeyUp -> {
+                                !pressed.remove(event.key)
+                            }
+
+                            !held -> {
+                                pressed += event.key
+                                false
+                            }
+
+                            // The first repeat of a key pressed down in this list is a long press, where there is one;
+                            // other repeats are dropped, so holding a key never confirms more than once.
+                            onLongPress != null && pressed.remove(event.key) -> {
+                                onLongPress(item)
+                                true
+                            }
+
+                            else -> {
+                                true
+                            }
                         }
-                        // The first repeat of a key pressed down in this list is a long press, where there is one;
-                        // other repeats are dropped, so holding a key never confirms more than once.
-                        onLongPress != null && pressed.remove(event.key) -> {
-                            onLongPress(item)
-                            true
-                        }
-                        else -> true
                     }
-                }
-                if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
-                if (onKey(event.key, item)) return@onPreviewKeyEvent true
-                // Start from the screen as it is now, which touch scrolling may have moved.
-                val now = state.position.copy(first = state.scroll.firstVisibleItemIndex)
-                val next = when (event.key) {
-                    Key.DirectionUp -> now.stepped(-1, held, count, rowsPerPage, blank)
-                    Key.DirectionDown -> now.stepped(1, held, count, rowsPerPage, blank)
-                    Key.DirectionLeft -> now.paged(-1, count, rowsPerPage, blank)
-                    Key.DirectionRight -> now.paged(1, count, rowsPerPage, blank)
-                    else -> return@onPreviewKeyEvent false
-                }
-                state.select(next)
-                true
-            },
+                    if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                    if (onKey(event.key, item)) return@onPreviewKeyEvent true
+                    // Start from the screen as it is now, which touch scrolling may have moved.
+                    val now = state.position.copy(first = state.scroll.firstVisibleItemIndex)
+                    val next =
+                        when (event.key) {
+                            Key.DirectionUp -> now.stepped(-1, held, count, rowsPerPage, blank)
+                            Key.DirectionDown -> now.stepped(1, held, count, rowsPerPage, blank)
+                            Key.DirectionLeft -> now.paged(-1, count, rowsPerPage, blank)
+                            Key.DirectionRight -> now.paged(1, count, rowsPerPage, blank)
+                            else -> return@onPreviewKeyEvent false
+                        }
+                    state.select(next)
+                    true
+                },
     ) {
         itemsIndexed(items, key = { _, item -> key(item) }) { index, item ->
             if (!selectable(item)) {
@@ -220,10 +229,11 @@ internal fun TitledList(
 ) {
     BackHandler(onBack = onClose)
     BoxWithConstraints(
-        modifier = modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .windowInsetsPadding(WindowInsets.safeDrawing),
+        modifier =
+            modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+                .windowInsetsPadding(WindowInsets.safeDrawing),
     ) {
         val density = LocalDensity.current
         val rhythm = listRhythm(constraints.maxHeight, with(density) { RowMetrics.rowHeight().roundToPx() })
@@ -244,13 +254,18 @@ internal fun TitledList(
  * menu's title, which sits in a dark-grey pill like the status pill (MinUI marks its in-game menu's title that way).
  */
 @Composable
-internal fun HeaderLine(text: String, height: Dp, pill: Boolean = false) {
+internal fun HeaderLine(
+    text: String,
+    height: Dp,
+    pill: Boolean = false,
+) {
     Box(
         contentAlignment = Alignment.CenterStart,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(height)
-            .padding(horizontal = RowMetrics.ListPaddingHorizontal),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .height(height)
+                .padding(horizontal = RowMetrics.ListPaddingHorizontal),
     ) {
         Text(
             text = text,
@@ -258,9 +273,10 @@ internal fun HeaderLine(text: String, height: Dp, pill: Boolean = false) {
             style = RowMetrics.TextStyle,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier
-                .background(if (pill) PillColor else Color.Transparent, RowMetrics.PillShape)
-                .padding(horizontal = RowMetrics.PillPaddingHorizontal, vertical = RowMetrics.PillPaddingVertical),
+            modifier =
+                Modifier
+                    .background(if (pill) PillColor else Color.Transparent, RowMetrics.PillShape)
+                    .padding(horizontal = RowMetrics.PillPaddingHorizontal, vertical = RowMetrics.PillPaddingVertical),
         )
     }
 }
@@ -294,48 +310,54 @@ private fun PillRow(
     // outside the pill, as in MinUI's and Cannoli's settings.
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(height)
-            .focusRequester(requester)
-            .onFocusChanged {
-                focused = it.isFocused
-                if (it.isFocused) onFocused()
-            }
-            // Clickables refuse focus in touch mode; a keyboard launcher needs a focused row from the start.
-            .focusProperties { canFocus = true }
-            // A disabled row stays clickable, so it can still be selected and the pill can rest on it; it just does
-            // nothing. No ripple: its full-width focus layer would blur the pill, the one selection mark.
-            .combinedClickable(
-                interactionSource = null,
-                indication = null,
-                onLongClick = onLongPress,
-                onClick = { if (enabled) onConfirm() },
-            )
-            .semantics { if (!enabled) disabled() }
-            .padding(horizontal = RowMetrics.ListPaddingHorizontal),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .height(height)
+                .focusRequester(requester)
+                .onFocusChanged {
+                    focused = it.isFocused
+                    if (it.isFocused) onFocused()
+                }
+                // Clickables refuse focus in touch mode; a keyboard launcher needs a focused row from the start.
+                .focusProperties { canFocus = true }
+                // A disabled row stays clickable, so it can still be selected and the pill can rest on it; it just does
+                // nothing. No ripple: its full-width focus layer would blur the pill, the one selection mark.
+                .combinedClickable(
+                    interactionSource = null,
+                    indication = null,
+                    onLongClick = onLongPress,
+                    onClick = { if (enabled) onConfirm() },
+                ).semantics { if (!enabled) disabled() }
+                .padding(horizontal = RowMetrics.ListPaddingHorizontal),
     ) {
         Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
             Text(
                 // One text, so the label keeps the room it needs and only the suffix is cut short on a narrow row.
-                text = buildAnnotatedString {
-                    append(label)
-                    if (suffix != null) {
-                        append(' ')
-                        withStyle(SpanStyle(color = DimText, fontSize = SuffixScale.em)) { append(suffix) }
-                    }
-                },
-                color = when {
-                    !enabled || dim -> DimText
-                    focused -> colors.onPrimary
-                    else -> colors.onBackground
-                },
+                text =
+                    buildAnnotatedString {
+                        append(label)
+                        if (suffix != null) {
+                            append(' ')
+                            withStyle(SpanStyle(color = DimText, fontSize = SUFFIX_SCALE.em)) { append(suffix) }
+                        }
+                    },
+                color =
+                    when {
+                        !enabled || dim -> DimText
+                        focused -> colors.onPrimary
+                        else -> colors.onBackground
+                    },
                 style = RowMetrics.TextStyle,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier
-                    .background(if (focused) colors.primary else Color.Transparent, RowMetrics.PillShape)
-                    .padding(horizontal = RowMetrics.PillPaddingHorizontal, vertical = RowMetrics.PillPaddingVertical),
+                modifier =
+                    Modifier
+                        .background(if (focused) colors.primary else Color.Transparent, RowMetrics.PillShape)
+                        .padding(
+                            horizontal = RowMetrics.PillPaddingHorizontal,
+                            vertical = RowMetrics.PillPaddingVertical,
+                        ),
             )
         }
         if (value != null) {

@@ -30,12 +30,13 @@ object RowMetrics {
     /** Fully rounded ends, as MinUI and Cannoli draw the selection. */
     val PillShape = RoundedCornerShape(percent = 50)
 
-    val TextStyle = TextStyle(
-        fontSize = TextSize,
-        lineHeight = LineHeight,
-        // Keep the whole line height, so the drawn row matches rowHeight() exactly.
-        lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.None),
-    )
+    val TextStyle =
+        TextStyle(
+            fontSize = TextSize,
+            lineHeight = LineHeight,
+            // Keep the whole line height, so the drawn row matches rowHeight() exactly.
+            lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.None),
+        )
 
     /** Height of one row, which follows the user's font scale through [LineHeight]. */
     @Composable

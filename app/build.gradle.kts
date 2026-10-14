@@ -6,12 +6,16 @@ plugins {
 
 // The commit the APK was built from, shown in Settings > About (#73). "unknown" where git or the repository is
 // missing (a source archive, say), so the build never fails for it.
-val buildCommit: String = runCatching {
-    providers.exec {
-        commandLine("git", "rev-parse", "--short", "HEAD")
-        isIgnoreExitValue = true
-    }.standardOutput.asText.get().trim()
-}.getOrNull().orEmpty().ifEmpty { "unknown" }
+val buildCommit: String =
+    runCatching {
+        providers
+            .exec {
+                commandLine("git", "rev-parse", "--short", "HEAD")
+                isIgnoreExitValue = true
+            }.standardOutput.asText
+            .get()
+            .trim()
+    }.getOrNull().orEmpty().ifEmpty { "unknown" }
 
 // Release signing (#116). The release workflow decodes the keystore from repository secrets and passes it in through
 // these environment variables. Without RELEASE_KEYSTORE_FILE, assembleRelease still builds, but the APK is unsigned.

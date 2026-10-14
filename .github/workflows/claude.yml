@@ -97,4 +97,4 @@ jobs:
           additional_permissions: |
             actions: read
           claude_args: >-
-            --allowedTools "Bash(./gradlew test:*),Bash(./gradlew lint:*),Bash(./gradlew assembleDebug:*),Bash(./gradlew check:*),Bash(./gradlew :core:test:*),Bash(./gradlew :app:testDebugUnitTest:*)"
+            --allowedTools "Bash(./gradlew test:*),Bash(./gradlew lint:*),Bash(./gradlew assembleDebug:*),Bash(./gradlew check:*),Bash(./gradlew spotlessApply:*),Bash(./gradlew :core:test:*),Bash(./gradlew :app:testDebugUnitTest:*)"

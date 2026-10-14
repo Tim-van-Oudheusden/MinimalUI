@@ -1,10 +1,10 @@
 # Agent sandbox / devcontainer image: JDK 21 + Android SDK (no emulator) + git, jq, gh, bd.
-# Runs the quality gates (`./gradlew test lint assembleDebug`) without any SDK download at build time.
+# Runs the quality gates (`./gradlew check assembleDebug`) without any SDK download at build time.
 # .devcontainer/devcontainer.json builds from this file, so there is one recipe for both.
 #
 #   podman build -f Dockerfile.sandbox -t localhost/minimalui-sandbox .
 #   podman run --rm -it --userns=keep-id -v "$PWD":/workspace:z localhost/minimalui-sandbox \
-#     ./gradlew --no-daemon test lint assembleDebug
+#     ./gradlew --no-daemon check assembleDebug
 #
 # Bumping: keep `platforms;android-*` equal to compileSdk in app/build.gradle.kts and `build-tools;*` equal to the
 # default build-tools revision of the AGP version in gradle/libs.versions.toml; otherwise Gradle tries to download them.

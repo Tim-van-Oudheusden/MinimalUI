@@ -5,7 +5,6 @@ import org.junit.Test
 import java.util.concurrent.Executor
 
 class LatestLoaderTest {
-
     /** Holds tasks until the test runs them, standing in for a worker thread or the main looper. */
     private class QueuedExecutor : Executor {
         private val tasks = ArrayDeque<Runnable>()

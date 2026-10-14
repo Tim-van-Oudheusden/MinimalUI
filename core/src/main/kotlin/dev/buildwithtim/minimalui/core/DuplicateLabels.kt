@@ -11,16 +11,20 @@ package dev.buildwithtim.minimalui.core
  */
 fun duplicateSuffixes(shown: List<LauncherApp>): Map<LauncherApp, String> {
     val collator = labelCollator()
-    return shown.groupBy { collator.getCollationKey(it.label) }.values.filter { it.size > 1 }.flatMap { same ->
-        same.mapNotNull { app ->
-            val profile = same.filter { it.profile == app.profile }
-            val sharesPackage = profile.count { it.packageName == app.packageName } > 1
-            val name = if (sharesPackage) app.activityName.substringAfterLast('.') else app.packageName
-            when {
-                profile.size > 1 -> listOfNotNull(WORK_GROUP.takeIf { app.isWorkApp }, name).joinToString(" ")
-                app.isWorkApp -> WORK_GROUP
-                else -> null
-            }?.let { app to it }
-        }
-    }.toMap()
+    return shown
+        .groupBy { collator.getCollationKey(it.label) }
+        .values
+        .filter { it.size > 1 }
+        .flatMap { same ->
+            same.mapNotNull { app ->
+                val profile = same.filter { it.profile == app.profile }
+                val sharesPackage = profile.count { it.packageName == app.packageName } > 1
+                val name = if (sharesPackage) app.activityName.substringAfterLast('.') else app.packageName
+                when {
+                    profile.size > 1 -> listOfNotNull(WORK_GROUP.takeIf { app.isWorkApp }, name).joinToString(" ")
+                    app.isWorkApp -> WORK_GROUP
+                    else -> null
+                }?.let { app to it }
+            }
+        }.toMap()
 }

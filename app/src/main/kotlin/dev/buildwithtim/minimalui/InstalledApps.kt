@@ -73,17 +73,18 @@ private fun ApplicationInfo.groupCategory() = appCategory(category, Build.VERSIO
 
 /** Whether [packageName] came with the system image, so it cannot be uninstalled; false if it is not installed. */
 fun PackageManager.isSystemApp(packageName: String): Boolean {
-    val info = try {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            getApplicationInfo(packageName, PackageManager.ApplicationInfoFlags.of(0L))
-        } else {
-            // The only overload before API 33; deprecated from 33 on, where the branch above is taken.
-            @Suppress("DEPRECATION")
-            getApplicationInfo(packageName, 0)
+    val info =
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                getApplicationInfo(packageName, PackageManager.ApplicationInfoFlags.of(0L))
+            } else {
+                // The only overload before API 33; deprecated from 33 on, where the branch above is taken.
+                @Suppress("DEPRECATION")
+                getApplicationInfo(packageName, 0)
+            }
+        } catch (_: PackageManager.NameNotFoundException) {
+            return false
         }
-    } catch (_: PackageManager.NameNotFoundException) {
-        return false
-    }
     return info.flags and ApplicationInfo.FLAG_SYSTEM != 0
 }
 

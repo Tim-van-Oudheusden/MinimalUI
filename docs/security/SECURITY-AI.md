@@ -75,7 +75,7 @@ Personal `.claude/settings.local.json` overrides may add permissions but cannot 
 Agent changes go through the same gates as human ones, with no shortcuts:
 
 - The `main` ruleset (`.github/rulesets/main.json`) requires a pull request and the required checks; CI
-  (`.github/workflows/ci.yml`) runs `./gradlew test lint assembleDebug`, which includes the `tooling` tests that pin the
+  (`.github/workflows/ci.yml`) runs `./gradlew check assembleDebug`, which includes the `tooling` tests that pin the
   workflows' security invariants. The PR review rubric (`.github/workflows/review.yml`) runs as well.
 - A human reviews and merges every PR. Look harder at changes that touch:
   - `.github/workflows/`: keep `permissions:` least-privilege (the reviewed scopes are listed in

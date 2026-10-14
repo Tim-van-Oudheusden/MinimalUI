@@ -28,7 +28,8 @@ tasks.test {
     // The files under test live outside this module; declare them so an edit reruns the tests instead of reusing a
     // cached result.
     for (dir in listOf(".github", "scripts", "docs", "fastlane")) {
-        inputs.dir(repoRoot.dir(dir))
+        inputs
+            .dir(repoRoot.dir(dir))
             .withPropertyName("repo-$dir")
             .withPathSensitivity(PathSensitivity.RELATIVE)
     }

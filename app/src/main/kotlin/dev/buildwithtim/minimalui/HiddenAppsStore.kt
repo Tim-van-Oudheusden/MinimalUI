@@ -5,7 +5,9 @@ import androidx.core.content.edit
 import dev.buildwithtim.minimalui.core.HiddenApps
 
 /** The hidden apps (#71) in app-private storage, so they stay hidden after the launcher's process is killed. */
-class HiddenAppsStore(context: Context) {
+class HiddenAppsStore(
+    context: Context,
+) {
     private val preferences = context.getSharedPreferences("hidden_apps", Context.MODE_PRIVATE)
 
     fun load(): HiddenApps = HiddenApps.fromStored(preferences.getString(HIDDEN, null))

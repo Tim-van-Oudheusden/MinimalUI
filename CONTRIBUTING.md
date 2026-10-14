@@ -168,17 +168,30 @@ weaken or skip a failing test to make it pass; fix the implementation.
 
 Run these before opening a PR (CI runs the same on every PR):
 
-| Command                    | What it runs                                  |
-| -------------------------- | --------------------------------------------- |
-| `./gradlew test`           | Unit tests for every module                   |
-| `./gradlew lint`           | Android lint, warnings as errors              |
-| `./gradlew assembleDebug`  | Debug APK build                               |
+| Command                   | What it runs                                                                |
+| ------------------------- | --------------------------------------------------------------------------- |
+| `./gradlew check`         | Unit tests for every module, Android lint (warnings as errors), formatting |
+| `./gradlew assembleDebug` | Debug APK build                                                             |
+
+`check` is the gate: every check added to the build hooks into it, so CI and the docs never list its tasks one by one.
 
 The `main` ruleset also requires the **Unit-test coverage floors** check (`.github/workflows/coverage-gate.yml`): it
 runs `./gradlew :<module>:koverXmlReport` for every module in `.github/auto-qa-tuning.json` and fails the PR if a
 module's function or line coverage drops below its floor there. Check locally with
 `./gradlew :core:koverXmlReport && scripts/coverage-check.sh core <functions> <lines>`; see
 [`docs/testing.md`](docs/testing.md#coverage-floors).
+
+### Formatting
+
+[Spotless](https://github.com/diffplug/spotless) formats the repository: Kotlin and `*.gradle.kts` with
+[ktlint](https://pinterest.github.io/ktlint/) in its `ktlint_official` style, at 120 columns, and every other text file
+to no trailing whitespace (Markdown keeps it, as a line break) and a final newline. `./gradlew spotlessCheck`, part of
+`check`, fails on a deviation; `./gradlew spotlessApply` fixes it. ktlint cannot shorten a long string or comment, so
+those you wrap by hand. Its settings live in `.editorconfig`, which Android Studio reads too, so **Code → Reformat Code**
+formats the same way. Composables keep type-style names (`AppList`).
+
+A rule that misfires is turned off for the whole project in `.editorconfig`, with a comment saying why. Never
+silence one finding with `@Suppress` or a `ktlint-disable` comment.
 
 ### Applying review suggestions
 
@@ -202,9 +215,9 @@ issue `ai-fix-requested`, or mention `@claude` in an issue comment, PR review, o
 request on a `claude/*` branch and opens a pull request; it never pushes to `main`. On a pull request, `@claude review
 this` asks for a review. Mentions only count from `OWNER`/`MEMBER`/`COLLABORATOR`, the label can only be applied by
 triagers, and fork pull requests are refused, so outside contributors cannot start or steer a run. Claude may run only
-the quality gates (`./gradlew test`, `lint`, `assembleDebug`, `check`, and the module test tasks). Its PRs go through the
-same checks and human review as any other. The workflow needs the `CLAUDE_CODE_OAUTH_TOKEN` repo secret and the Claude
-GitHub App.
+the quality gates (`./gradlew test`, `lint`, `assembleDebug`, `check`, and the module test tasks) and
+`./gradlew spotlessApply`. Its PRs go through the same checks and human review as any other. The workflow needs the
+`CLAUDE_CODE_OAUTH_TOKEN` repo secret and the Claude GitHub App.
 
 For reviews, point Claude at the shared rubric in [`prompts/code-review.md`](prompts/code-review.md), e.g.
 `@claude review this PR using prompts/code-review.md against issue #12`; [`prompts/`](prompts/README.md) also holds the

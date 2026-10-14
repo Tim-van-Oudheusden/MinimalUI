@@ -9,7 +9,6 @@ package dev.buildwithtim.minimalui.tooling
  * misread, so a workflow edit that needs them fails loudly and this reader gets extended on purpose.
  */
 object Yaml {
-
     fun parse(text: String): Any? {
         val lines = text.lines().toMutableList()
         // lines() yields a final "" for a trailing newline; it is that line's break, not an empty line.
@@ -22,11 +21,16 @@ object Yaml {
         return node
     }
 
-    private class Reader(val lines: MutableList<String>, val finalBreak: Boolean) {
+    private class Reader(
+        val lines: MutableList<String>,
+        val finalBreak: Boolean,
+    ) {
         var pos = 0
 
-        fun fail(line: Int, message: String): Nothing =
-            throw IllegalArgumentException("YAML line ${line + 1}: $message: '${lines[line].trim()}'")
+        fun fail(
+            line: Int,
+            message: String,
+        ): Nothing = throw IllegalArgumentException("YAML line ${line + 1}: $message: '${lines[line].trim()}'")
 
         /** Index of the next line that is neither blank nor a comment, leaving [pos] on it. */
         fun nextStructural(): Int? {
@@ -84,26 +88,43 @@ object Yaml {
                 val key = unquote(content.substring(0, end).trim(), line)
                 if (key in entries) fail(line, "duplicate key '$key'")
                 val rest = content.substring(end + 1).trim()
-                entries[key] = if (rest.isEmpty() || rest.startsWith("#")) {
-                    pos++
-                    val child = nextStructural()
-                    when {
-                        child == null -> null
-                        lines.indentOf(child) > indent -> node(lines.indentOf(child))
-                        // A sequence may sit at its key's own indentation.
-                        lines.indentOf(child) == indent && lines[child].trim().let { it == "-" || it.startsWith("- ") } ->
-                            sequence(indent)
-                        else -> null
+                entries[key] =
+                    if (rest.isEmpty() || rest.startsWith("#")) {
+                        pos++
+                        val child = nextStructural()
+                        when {
+                            child == null -> {
+                                null
+                            }
+
+                            lines.indentOf(child) > indent -> {
+                                node(lines.indentOf(child))
+                            }
+
+                            // A sequence may sit at its key's own indentation.
+                            lines.indentOf(
+                                child,
+                            ) == indent && lines[child].trim().let { it == "-" || it.startsWith("- ") } -> {
+                                sequence(indent)
+                            }
+
+                            else -> {
+                                null
+                            }
+                        }
+                    } else {
+                        valueAt(line, rest, indent)
                     }
-                } else {
-                    valueAt(line, rest, indent)
-                }
             }
             return entries
         }
 
         /** Parses the inline [text] that starts on [line], consuming any block scalar body below it. */
-        fun valueAt(line: Int, text: String, parentIndent: Int): Any? {
+        fun valueAt(
+            line: Int,
+            text: String,
+            parentIndent: Int,
+        ): Any? {
             pos = line + 1
             if (text.startsWith("|") || text.startsWith(">")) return blockScalar(line, text, parentIndent)
             val value = scalar(text, line)
@@ -114,7 +135,11 @@ object Yaml {
             return value
         }
 
-        fun blockScalar(line: Int, header: String, parentIndent: Int): String {
+        fun blockScalar(
+            line: Int,
+            header: String,
+            parentIndent: Int,
+        ): String {
             val indicator = stripComment(header)
             if (!Regex("[|>][-+]?").matches(indicator)) fail(line, "unsupported block scalar header '$indicator'")
             val body = mutableListOf<String>()
@@ -151,44 +176,63 @@ object Yaml {
          * Folds `>` content: a single break between two text lines becomes a space, and k empty lines between them
          * become k newlines. Around a more-indented line every break is kept.
          */
-        fun fold(content: List<String>): String = buildString {
-            var previous: String? = null
-            var blanks = 0
-            for (text in content) {
-                if (text.isEmpty()) {
-                    blanks++
-                    continue
+        fun fold(content: List<String>): String =
+            buildString {
+                var previous: String? = null
+                var blanks = 0
+                for (text in content) {
+                    if (text.isEmpty()) {
+                        blanks++
+                        continue
+                    }
+                    val moreIndented = previous?.startsWith(" ") == true || text.startsWith(" ")
+                    when {
+                        previous == null -> append("\n".repeat(blanks))
+                        moreIndented -> append("\n".repeat(blanks + 1))
+                        blanks == 0 -> append(' ')
+                        else -> append("\n".repeat(blanks))
+                    }
+                    append(text)
+                    previous = text
+                    blanks = 0
                 }
-                val moreIndented = previous?.startsWith(" ") == true || text.startsWith(" ")
-                when {
-                    previous == null -> append("\n".repeat(blanks))
-                    moreIndented -> append("\n".repeat(blanks + 1))
-                    blanks == 0 -> append(' ')
-                    else -> append("\n".repeat(blanks))
-                }
-                append(text)
-                previous = text
-                blanks = 0
             }
-        }
 
-        fun scalar(text: String, line: Int): Any? {
+        fun scalar(
+            text: String,
+            line: Int,
+        ): Any? {
             val trimmed = text.trim()
             return when {
-                trimmed.startsWith("&") || trimmed.startsWith("*") -> fail(line, "anchors and aliases are not supported")
-                trimmed.startsWith("{") -> fail(line, "flow mappings are not supported")
-                trimmed.startsWith("[") -> flowSequence(trimmed, line)
+                trimmed.startsWith("&") || trimmed.startsWith("*") -> {
+                    fail(line, "anchors and aliases are not supported")
+                }
+
+                trimmed.startsWith("{") -> {
+                    fail(line, "flow mappings are not supported")
+                }
+
+                trimmed.startsWith("[") -> {
+                    flowSequence(trimmed, line)
+                }
+
                 trimmed.startsWith("'") || trimmed.startsWith("\"") -> {
                     val end = quotedEnd(trimmed, line)
                     val rest = trimmed.substring(end + 1).trim()
                     if (rest.isNotEmpty() && !rest.startsWith("#")) fail(line, "text after a quoted scalar")
                     unquote(trimmed.substring(0, end + 1), line)
                 }
-                else -> plain(stripComment(trimmed))
+
+                else -> {
+                    plain(stripComment(trimmed))
+                }
             }
         }
 
-        fun flowSequence(text: String, line: Int): List<Any?> {
+        fun flowSequence(
+            text: String,
+            line: Int,
+        ): List<Any?> {
             val close = text.lastIndexOf(']')
             if (close < 0) fail(line, "unterminated flow sequence")
             val rest = text.substring(close + 1).trim()
@@ -206,12 +250,19 @@ object Yaml {
                         current.append(inner, i, end + 1)
                         i = end
                     }
-                    '[', '{' -> fail(line, "nested flow collections are not supported")
+
+                    '[', '{' -> {
+                        fail(line, "nested flow collections are not supported")
+                    }
+
                     ',' -> {
                         items += current.toString()
                         current = StringBuilder()
                     }
-                    else -> current.append(c)
+
+                    else -> {
+                        current.append(c)
+                    }
                 }
                 i++
             }
@@ -222,7 +273,10 @@ object Yaml {
             }
         }
 
-        fun quotedEnd(text: String, line: Int): Int {
+        fun quotedEnd(
+            text: String,
+            line: Int,
+        ): Int {
             val quote = text[0]
             var i = 1
             while (i < text.length) {
@@ -243,37 +297,51 @@ object Yaml {
             fail(line, "unterminated quoted scalar")
         }
 
-        fun unquote(text: String, line: Int): String = when {
-            text.length >= 2 && text.startsWith("'") && text.endsWith("'") ->
-                text.substring(1, text.length - 1).replace("''", "'")
-            text.length >= 2 && text.startsWith("\"") && text.endsWith("\"") ->
-                unescape(text.substring(1, text.length - 1), line)
-            else -> text
-        }
-
-        fun unescape(text: String, line: Int): String = buildString {
-            var i = 0
-            while (i < text.length) {
-                val c = text[i]
-                if (c != '\\') {
-                    append(c)
-                    i++
-                    continue
+        fun unquote(
+            text: String,
+            line: Int,
+        ): String =
+            when {
+                text.length >= 2 && text.startsWith("'") && text.endsWith("'") -> {
+                    text.substring(1, text.length - 1).replace("''", "'")
                 }
-                if (i + 1 >= text.length) fail(line, "dangling escape")
-                append(
-                    when (val e = text[i + 1]) {
-                        'n' -> '\n'
-                        't' -> '\t'
-                        '"' -> '"'
-                        '\\' -> '\\'
-                        '/' -> '/'
-                        else -> fail(line, "unsupported escape '\\$e'")
-                    },
-                )
-                i += 2
+
+                text.length >= 2 && text.startsWith("\"") && text.endsWith("\"") -> {
+                    unescape(text.substring(1, text.length - 1), line)
+                }
+
+                else -> {
+                    text
+                }
             }
-        }
+
+        fun unescape(
+            text: String,
+            line: Int,
+        ): String =
+            buildString {
+                var i = 0
+                while (i < text.length) {
+                    val c = text[i]
+                    if (c != '\\') {
+                        append(c)
+                        i++
+                        continue
+                    }
+                    if (i + 1 >= text.length) fail(line, "dangling escape")
+                    append(
+                        when (val e = text[i + 1]) {
+                            'n' -> '\n'
+                            't' -> '\t'
+                            '"' -> '"'
+                            '\\' -> '\\'
+                            '/' -> '/'
+                            else -> fail(line, "unsupported escape '\\$e'")
+                        },
+                    )
+                    i += 2
+                }
+            }
     }
 
     /** Position of the ':' that ends a mapping key in [content], or null if it is not a "key: value" line. */
@@ -292,20 +360,24 @@ object Yaml {
         return null
     }
 
-    private fun isValueStart(content: String, index: Int) = index >= content.length || content[index] == ' '
+    private fun isValueStart(
+        content: String,
+        index: Int,
+    ) = index >= content.length || content[index] == ' '
 
     private fun stripComment(text: String): String {
         val hash = Regex("(^|\\s)#").find(text) ?: return text.trim()
         return text.substring(0, hash.range.first).trim()
     }
 
-    private fun plain(text: String): Any? = when {
-        text.isEmpty() || text == "~" || text == "null" -> null
-        text == "true" -> true
-        text == "false" -> false
-        Regex("-?[0-9]+").matches(text) -> text.toInt()
-        else -> text
-    }
+    private fun plain(text: String): Any? =
+        when {
+            text.isEmpty() || text == "~" || text == "null" -> null
+            text == "true" -> true
+            text == "false" -> false
+            Regex("-?[0-9]+").matches(text) -> text.toInt()
+            else -> text
+        }
 
     private fun List<String>.indentOf(line: Int): Int = this[line].length - this[line].trimStart(' ').length
 }
