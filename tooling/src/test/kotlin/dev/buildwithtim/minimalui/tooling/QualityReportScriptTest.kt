@@ -74,8 +74,7 @@ class QualityReportScriptTest {
         assertEquals(result.stderr, 0, result.exitCode)
         assertTrue(result.stdout, result.stdout.startsWith("# Quality report\n"))
         assertTrue(result.stdout, result.stdout.contains("Commit: `abc1234`"))
-        assertTrue(result.stdout, result.stdout.contains("| `./gradlew test` | ✅ pass |"))
-        assertTrue(result.stdout, result.stdout.contains("| `./gradlew lint` | ✅ pass |"))
+        assertTrue(result.stdout, result.stdout.contains("| `./gradlew check` | ✅ pass |"))
         assertTrue(result.stdout, result.stdout.contains("| `./gradlew assembleDebug` | ✅ pass |"))
         assertTrue(result.stdout, result.stdout.contains("| app | 16.67% | 10.00% |"))
         assertTrue(result.stdout, result.stdout.contains("| core | 100.00% | 95.24% |"))
@@ -86,19 +85,19 @@ class QualityReportScriptTest {
         val result = report()
 
         assertFalse(result.stdout, result.stdout.contains("gradle output"))
-        assertTrue(result.stderr, result.stderr.contains("gradle output for lint"))
+        assertTrue(result.stderr, result.stderr.contains("gradle output for check"))
     }
 
     @Test
     fun `marks a failing gate, still runs the others, and exits non-zero`() {
-        val result = report(failTasks = "test")
+        val result = report(failTasks = "check")
 
         assertEquals(1, result.exitCode)
-        assertTrue(result.stdout, result.stdout.contains("| `./gradlew test` | ❌ fail |"))
+        assertTrue(result.stdout, result.stdout.contains("| `./gradlew check` | ❌ fail |"))
         assertTrue(result.stdout, result.stdout.contains("| `./gradlew assembleDebug` | ✅ pass |"))
         assertTrue(result.stdout, result.stdout.contains("| core | 100.00% | 95.24% |"))
         assertEquals(
-            listOf("test", "lint", "assembleDebug", ":app:koverXmlReport", ":core:koverXmlReport"),
+            listOf("check", "assembleDebug", ":app:koverXmlReport", ":core:koverXmlReport"),
             calls.readLines(),
         )
     }
@@ -122,7 +121,7 @@ class QualityReportScriptTest {
 
         assertEquals(result.stderr, 0, result.exitCode)
         assertFalse(result.stdout, result.stdout.contains("| app |"))
-        assertEquals(listOf("test", "lint", "assembleDebug", ":core:koverXmlReport"), calls.readLines())
+        assertEquals(listOf("check", "assembleDebug", ":core:koverXmlReport"), calls.readLines())
     }
 
     @Test
