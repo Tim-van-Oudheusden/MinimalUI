@@ -79,6 +79,11 @@ adb shell input keyevent KEYCODE_HOME
 device or emulator attached, pick one for both Gradle and `adb` with `export ANDROID_SERIAL=emulator-5554`. After a
 code change, rerun `./gradlew installDebug`; the home setting stays.
 
+Without a local JDK, build in the agent sandbox instead (see
+[docs/testing.md](docs/testing.md#running-the-gates), with its debug-key mount) and install from the host:
+`adb install -r app/build/outputs/apk/debug/app-debug.apk` in place of `./gradlew installDebug`. Thanks to the mount the
+APK is signed with your host debug key, so it installs over the previous build and the settings stay.
+
 The emulator window passes your keyboard through, so arrows, Enter, Esc, Backspace and letters work as on a keyboard
 phone, and the mouse stands in for touch. A PC keyboard has no phone keys, so the emulator maps them to shortcuts:
 
@@ -87,6 +92,14 @@ phone, and the mouse stands in for touch. A PC keyboard has no phone keys, so th
 | Menu (`☰`) | Ctrl+M                      |
 | Home       | Ctrl+H                      |
 | Back       | Ctrl+Backspace (or Esc)     |
+
+If the emulator misbehaves:
+
+- **It crashes while starting without a window.** On some hosts `emulator -no-window` (the
+  `qemu-system-x86_64-headless` binary) segfaults during startup whatever the AVD or `-gpu` mode; seen with emulator
+  37.2.12.0. Start it with its window through `android emulator start`, which works on the same hosts.
+- **The screen stays black and keys do nothing.** An AVD can finish booting with its display asleep (seen on API 28).
+  Wake it and keep it awake: `adb shell input keyevent KEYCODE_WAKEUP && adb shell svc power stayon true`.
 
 ## Project layout
 

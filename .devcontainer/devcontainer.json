@@ -7,6 +7,10 @@
   },
   "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind",
   "workspaceFolder": "/workspace",
+  // The host's debug key, so debug builds install over each other (docs/testing.md#the-debug-signing-key).
+  "mounts": [
+    "source=${localEnv:HOME}/.android/debug.keystore,target=/home/dev/.android/debug.keystore,type=bind,readonly"
+  ],
   "remoteUser": "dev",
   "containerUser": "dev",
   "updateRemoteUserUID": true,
