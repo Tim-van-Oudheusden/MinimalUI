@@ -7,13 +7,17 @@ const val RECENT_APPS_LIMIT = 15
  * The apps most recently opened through MinimalUI, newest first. They are kept by component (package and activity
  * name), not by label, so an app keeps its place when it is relabelled or the list is re-sorted.
  */
-data class RecentApps(val components: List<String> = emptyList()) {
-
+data class RecentApps(
+    val components: List<String> = emptyList(),
+) {
     /**
      * The list after opening [app]: it moves to the front without a duplicate, apps no longer [installed] are dropped
      * for good, and the oldest apps past [RECENT_APPS_LIMIT] fall off.
      */
-    fun opened(app: LauncherApp, installed: List<LauncherApp>): RecentApps {
+    fun opened(
+        app: LauncherApp,
+        installed: List<LauncherApp>,
+    ): RecentApps {
         val stillInstalled = installed.mapTo(HashSet()) { it.component }
         val older = components.filter { it != app.component && it in stillInstalled }
         return RecentApps((listOf(app.component) + older).take(RECENT_APPS_LIMIT))
@@ -47,8 +51,14 @@ data class RecentApps(val components: List<String> = emptyList()) {
 
     companion object {
         /** The list [stored] wrote; lines that are not a component, repeats and lines past the limit are skipped. */
-        fun fromStored(text: String?): RecentApps = RecentApps(
-            text.orEmpty().lines().filter(::isComponent).distinct().take(RECENT_APPS_LIMIT),
-        )
+        fun fromStored(text: String?): RecentApps =
+            RecentApps(
+                text
+                    .orEmpty()
+                    .lines()
+                    .filter(::isComponent)
+                    .distinct()
+                    .take(RECENT_APPS_LIMIT),
+            )
     }
 }

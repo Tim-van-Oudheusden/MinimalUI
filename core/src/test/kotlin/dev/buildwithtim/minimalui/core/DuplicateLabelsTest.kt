@@ -4,7 +4,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class DuplicateLabelsTest {
-
     private val phone = LauncherApp("Phone", "com.android.dialer", "com.android.dialer.Main")
     private val otherPhone = LauncherApp("PHONE", "org.fossify.phone", "org.fossify.phone.Main")
     private val camera = LauncherApp("Camera", "com.android.camera", "com.android.camera.Main")
@@ -49,7 +48,8 @@ class DuplicateLabelsTest {
     @Test
     fun `a work app is told apart by Work, so a personal app whose name only work apps share needs no suffix`() {
         val workPhone = phone.copy(profile = 10L)
-        val workContacts = LauncherApp("Phone", "com.android.dialer", "com.android.dialer.ContactsActivity", profile = 10L)
+        val workContacts =
+            LauncherApp("Phone", "com.android.dialer", "com.android.dialer.ContactsActivity", profile = 10L)
         val workOther = otherPhone.copy(profile = 10L)
 
         assertEquals(mapOf(workPhone to WORK_GROUP), duplicateSuffixes(listOf(phone, workPhone, camera)))

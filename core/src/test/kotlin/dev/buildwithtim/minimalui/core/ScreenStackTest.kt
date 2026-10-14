@@ -7,9 +7,11 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ScreenStackTest {
-
     // A screen that keeps its own selection, as each list on screen does.
-    private class Screen(val name: String, var selected: Int = 0)
+    private class Screen(
+        val name: String,
+        var selected: Int = 0,
+    )
 
     private val root = Screen("root")
 

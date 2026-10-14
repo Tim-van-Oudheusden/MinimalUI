@@ -29,8 +29,8 @@ when this file conflicts with AGENTS.md, AGENTS.md wins.**
   never add `@Suppress` to silence failures.
 - Test behaviour, not implementation. Put logic in `core` so it runs as a plain
   JVM unit test; keep Android framework code in `app` thin.
-- Quality gates after any change: `./gradlew test`, `./gradlew lint`,
-  `./gradlew assembleDebug`.
+- Quality gates after any change: `./gradlew check assembleDebug` (unit tests,
+  lint, formatting); `./gradlew spotlessApply` fixes formatting.
 - No new dependencies without explicit approval; always an exact version in
   the version catalog.
 - Conventional Commits, one commit per issue, referencing the issue number.

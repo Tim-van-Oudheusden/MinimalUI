@@ -5,7 +5,9 @@ import androidx.core.content.edit
 import dev.buildwithtim.minimalui.core.RecentApps
 
 /** The recent apps in app-private storage, so the list survives the launcher's process being killed. */
-class RecentAppsStore(context: Context) {
+class RecentAppsStore(
+    context: Context,
+) {
     private val preferences = context.getSharedPreferences("recent_apps", Context.MODE_PRIVATE)
 
     fun load(): RecentApps = RecentApps.fromStored(preferences.getString(KEY, null))

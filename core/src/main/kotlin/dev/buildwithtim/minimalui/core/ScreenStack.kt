@@ -6,8 +6,10 @@ package dev.buildwithtim.minimalui.core
  * opened from. Only the [top] one shows. Each screen keeps its own selection, so going back shows the parent as it
  * was left.
  */
-data class ScreenStack<S>(val root: S, private val above: List<S> = emptyList()) {
-
+data class ScreenStack<S>(
+    val root: S,
+    private val above: List<S> = emptyList(),
+) {
     val top: S get() = above.lastOrNull() ?: root
 
     val isRoot: Boolean get() = above.isEmpty()

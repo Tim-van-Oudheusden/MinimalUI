@@ -4,7 +4,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class ListContentTest {
-
     private fun app(label: String) =
         LauncherApp(label = label, packageName = "pkg.$label", activityName = "pkg.$label.Main")
 

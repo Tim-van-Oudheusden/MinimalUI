@@ -4,7 +4,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class LauncherAppTest {
-
     private val mail = LauncherApp("Mail", "com.example.mail", "com.example.mail.Main")
     private val workMail = mail.copy(profile = 10L)
 

@@ -4,7 +4,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class RecentAppsTest {
-
     private fun app(label: String) = LauncherApp(label, "pkg.$label", "pkg.$label.Main")
 
     private val installed = (1..20).map { app("App$it") }
@@ -87,8 +86,11 @@ class RecentAppsTest {
 
     @Test
     fun `damaged storage is read as far as it makes sense`() {
-        val stored = (listOf("pkg.App1/pkg.App1.Main", "", "pkg.App1/pkg.App1.Main", "garbage") +
-            (2..20).map { "pkg.App$it/pkg.App$it.Main" }).joinToString("\n")
+        val stored =
+            (
+                listOf("pkg.App1/pkg.App1.Main", "", "pkg.App1/pkg.App1.Main", "garbage") +
+                    (2..20).map { "pkg.App$it/pkg.App$it.Main" }
+            ).joinToString("\n")
 
         val recents = RecentApps.fromStored(stored)
 

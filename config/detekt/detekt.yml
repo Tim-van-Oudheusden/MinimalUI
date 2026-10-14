@@ -1,0 +1,40 @@
+# detekt (#135) runs its default rules (buildUponDefaultConfig in build.gradle.kts); this file holds only the
+# overrides, each with the reason. Main code meets every size and complexity limit; tests are exempt from those below.
+# The Compose settings are the ones detekt documents: https://detekt.dev/docs/introduction/compose
+
+complexity:
+  CyclomaticComplexMethod:
+    # Tests only: a hand-written test helper (the tooling module's YAML reader) branches as its input does.
+    excludes: ['**/test/**']
+  LargeClass:
+    # Tests only: one test class per screen keeps its scenarios together (MainActivityTest).
+    excludes: ['**/test/**']
+  LongParameterList:
+    # Compose: composables take many parameters, most of them defaulted (modifier, colours, callbacks).
+    ignoreDefaultParameters: true
+
+naming:
+  FunctionNaming:
+    # Compose: composables are named like types (AppList), which the camelCase pattern rejects.
+    ignoreAnnotated: ['Composable']
+
+style:
+  FunctionOnlyReturningConstant:
+    # A Robolectric shadow's @Implementation replaces an Android method, so it keeps that method's shape.
+    ignoreAnnotated: ['Implementation']
+  LoopWithTooManyJumpStatements:
+    # Tests only: the test helpers' line-by-line parsers skip and stop with continue and break.
+    excludes: ['**/test/**']
+  MagicNumber:
+    # Compose: colours and sizes are declared as properties (val Accent = Color(0xFF...)). detekt's default already,
+    # pinned here because the UI relies on it.
+    ignorePropertyDeclaration: true
+  ProtectedMemberInFinalClass:
+    # A Robolectric shadow's @Implementation keeps the visibility of the Android method it replaces.
+    ignoreAnnotated: ['Implementation']
+  ReturnCount:
+    # Tests only: the test helpers' parsers return as soon as they know the answer.
+    excludes: ['**/test/**']
+  UnusedPrivateFunction:
+    # Compose: @Preview functions are called by Android Studio, never by code. (detekt 1's UnusedPrivateMember.)
+    ignoreAnnotated: ['Preview']
