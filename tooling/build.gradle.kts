@@ -4,6 +4,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 // script fails `./gradlew test`. The module has no main sources.
 plugins {
     alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.android.lint)
 }
 
 java {
@@ -15,6 +16,14 @@ kotlin {
     compilerOptions {
         jvmTarget.set(JvmTarget.fromTarget(libs.versions.jvmTarget.get()))
     }
+}
+
+lint {
+    abortOnError = true
+    warningsAsErrors = true
+    checkAllWarnings = true
+    // The module has only test sources, which lint skips unless told otherwise.
+    checkTestSources = true
 }
 
 dependencies {
@@ -33,6 +42,9 @@ tasks.test {
             .withPropertyName("repo-$dir")
             .withPathSensitivity(PathSensitivity.RELATIVE)
     }
-    // FastlaneMetadataTest reads versionCode from it.
-    inputs.file(repoRoot.file("app/build.gradle.kts")).withPropertyName("repo-app-build")
+    // FastlaneMetadataTest reads versionCode from app/build.gradle.kts; LintConfigTest reads every module's lint {}.
+    inputs.file(repoRoot.file("settings.gradle.kts")).withPropertyName("repo-settings")
+    for (module in listOf("app", "core", "tooling")) {
+        inputs.file(repoRoot.file("$module/build.gradle.kts")).withPropertyName("repo-$module-build")
+    }
 }

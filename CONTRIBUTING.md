@@ -170,10 +170,10 @@ weaken or skip a failing test to make it pass; fix the implementation.
 
 Run these before opening a PR (CI runs the same on every PR):
 
-| Command                   | What it runs                                                                |
-| ------------------------- | --------------------------------------------------------------------------- |
-| `./gradlew check`         | Unit tests for every module, Android lint (warnings as errors), formatting |
-| `./gradlew assembleDebug` | Debug APK build                                                             |
+| Command                   | What it runs                                                                              |
+| ------------------------- | ----------------------------------------------------------------------------------------- |
+| `./gradlew check`         | Unit tests and Android lint (all checks, warnings as errors) for every module, formatting |
+| `./gradlew assembleDebug` | Debug APK build                                                                           |
 
 `check` is the gate: every check added to the build hooks into it, so CI and the docs never list its tasks one by one.
 
@@ -211,6 +211,17 @@ formats the same way. Composables keep type-style names (`AppList`).
 
 A rule that misfires is turned off for the whole project in `.editorconfig`, with a comment saying why. Never
 silence one finding with `@Suppress` or a `ktlint-disable` comment.
+
+### Android Lint
+
+Every module runs Android Lint as part of `check`: `app` through AGP, `core` and `tooling` through the standalone
+`com.android.lint` plugin. Each `lint {}` block turns on every check (`checkAllWarnings`) and fails on any warning;
+`app` adds [Slack's Compose rules](https://slackhq.github.io/compose-lints/rules/) through `lintChecks`, and
+`LintConfigTest` fails if a module stops treating warnings as errors. `core` and `tooling` lint their test sources
+too; `app` keeps lint's default for its Robolectric tests, where device-runtime checks misfire.
+
+A check that is noise for this project is turned off by name in the module's `lint { disable += ... }`, with a comment
+saying why. Never `@Suppress`/`@SuppressLint` a finding and never add a lint baseline.
 
 ### Applying review suggestions
 

@@ -67,7 +67,7 @@ internal fun HintLine(
 @Composable
 private fun HintPill(
     hints: List<Hint>,
-    modifier: Modifier,
+    modifier: Modifier = Modifier,
 ) {
     val line = with(LocalDensity.current) { RowMetrics.LineHeight.toDp() }
     // The circle sits as far from the pill's top, bottom and left edges as can be: MinUI's button in its pill.
