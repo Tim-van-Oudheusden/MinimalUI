@@ -120,7 +120,7 @@ flowchart LR
   end
 
   subgraph app["app: Android shell"]
-    activity["MainActivity<br/>keys, screens, intents"]
+    activity["MainActivity, LauncherState,<br/>AppActions: keys, screens, intents"]
     watcher["StatusWatcher"]
     stores[("Stores<br/>SharedPreferences")]
     ui["ui/<br/>Compose lists, menus,<br/>status pill, hint row"]
