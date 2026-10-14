@@ -13,7 +13,7 @@ locally as in CI.
 
 | Metric | Measures | Source | Cadence | Published as |
 | --- | --- | --- | --- | --- |
-| [Quality gates](#quality-gates) | Pass/fail of `test`, `lint`, `assembleDebug` | `scripts/quality-report.sh` via `quality-report.yml` | Push to `main`, weekly (Mon 06:17 UTC), manual | Job summary + `quality-report` artifact |
+| [Quality gates](#quality-gates) | Pass/fail of `check` (unit tests, lint, formatting) and `assembleDebug` | `scripts/quality-report.sh` via `quality-report.yml` | Push to `main`, weekly (Mon 06:17 UTC), manual | Job summary + `quality-report` artifact |
 | [Unit-test coverage](#unit-test-coverage) | Function and line coverage per module | `scripts/quality-report.sh` via `quality-report.yml` | Same as above | Job summary + `quality-report` artifact |
 | [Coverage floors](#coverage-floors) | Minimum coverage each module must keep | `.github/auto-qa-tuning.json`, enforced by `coverage-gate.yml` | Every PR and push to `main` | `Unit-test coverage floors` check; proposed floors as `auto-qa-tuning` artifact |
 | [PR acceptance rate](#pr-acceptance-rate) | Merged vs. closed-unmerged PRs, agent vs. other | `scripts/pr-metrics.sh` via `pr-metrics.yml` | Weekly (Mon 06:17 UTC), manual | Job summary |
@@ -22,9 +22,10 @@ locally as in CI.
 
 ## Quality gates
 
-Runs the quality gates `./gradlew test`, `./gradlew lint` and `./gradlew assembleDebug` and reports each as
-pass/fail. Every gate runs even when an earlier one fails, so one report shows the full state. The workflow fails if
-any gate fails.
+Runs the quality gates `./gradlew check` and `./gradlew assembleDebug`, the same gate CI runs, and reports each as
+pass/fail. `check` is one row: it holds every check the build hooks into it (unit tests, Android lint, formatting), so
+a failing formatting check fails the row. Every gate runs even when an earlier one fails, so one report shows the full
+state. The workflow fails if any gate fails.
 
 ```bash
 scripts/quality-report.sh > quality-report.md

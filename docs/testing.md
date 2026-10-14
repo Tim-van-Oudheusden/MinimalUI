@@ -173,8 +173,9 @@ scripts/coverage-check.sh core 100 100
 
 `.github/workflows/quality-report.yml` (job **Quality report**: every push to `main`, weekly on Monday at 06:17 UTC,
 and on demand) runs `scripts/quality-report.sh > quality-report.md`. The script runs each quality gate separately
-(`./gradlew test`, `lint`, `assembleDebug`), then `./gradlew :<module>:koverXmlReport` for every module in
-`.github/auto-qa-tuning.json`, and prints a Markdown report: pass/fail per gate and function/line coverage per module.
+(`./gradlew check`, which includes unit tests, lint and formatting, then `assembleDebug`), then
+`./gradlew :<module>:koverXmlReport` for every module in `.github/auto-qa-tuning.json`, and prints a Markdown report:
+pass/fail per gate and function/line coverage per module.
 Every gate and coverage run happens even when an earlier one fails. A module whose coverage run fails, or leaves no
 report, shows `❌ n/a`; a report left by an earlier build is deleted first, so it never stands in for the current run.
 Gradle output goes to stderr. The script exits 1 if anything failed, 2 if the floors file lists no module.

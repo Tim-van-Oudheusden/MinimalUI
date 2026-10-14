@@ -4,11 +4,13 @@
 # Usage:
 #   scripts/quality-report.sh > quality-report.md
 #
-# Runs every quality gate (`./gradlew test`, `lint`, `assembleDebug`), then `./gradlew :<module>:koverXmlReport` for
-# every module in .github/auto-qa-tuning.json, and reports pass/fail per gate and the function/line coverage per
-# module. Gradle output goes to stderr so stdout stays a clean report. Every gate and coverage run happens even when an
-# earlier one fails; a failed coverage run reports n/a. The coverage floors themselves are enforced by
-# scripts/coverage-check.sh, and scripts/auto-qa-tuner.sh reads the coverage rows printed here.
+# Runs every quality gate (`./gradlew check`, `assembleDebug`), then `./gradlew :<module>:koverXmlReport` for every
+# module in .github/auto-qa-tuning.json, and reports pass/fail per gate and the function/line coverage per module.
+# `check` is reported as one gate: it holds every check the build hooks into it (unit tests, lint, formatting), so a
+# check added later is reported without a change here. Gradle output goes to stderr so stdout stays a clean report.
+# Every gate and coverage run happens even when an earlier one fails; a failed coverage run reports n/a. The coverage
+# floors themselves are enforced by scripts/coverage-check.sh, and scripts/auto-qa-tuner.sh reads the coverage rows
+# printed here.
 #
 # Environment: $GRADLE replaces ./gradlew, $QA_TUNING_CONFIG the floors file, $COVERAGE_ROOT the root the Kover
 # reports are read from (see scripts/lib/coverage.sh); $GITHUB_SHA names the commit.
@@ -40,7 +42,7 @@ echo "## Quality gates"
 echo
 echo "| Gate | Result |"
 echo "| ---- | ------ |"
-for gate in test lint assembleDebug; do
+for gate in check assembleDebug; do
   if "$gradle" "$gate" >&2; then
     result="✅ pass"
   else
