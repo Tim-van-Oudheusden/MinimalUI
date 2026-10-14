@@ -209,10 +209,12 @@ PR-body template.
 
 ## Releasing
 
-Pushing a version tag (`v0.1.0`, `v0.2.0-beta.1`, ...) runs `.github/workflows/release.yml`. It runs the unit tests and
-lint, builds the release APK signed with the MinimalUI release key, and publishes a GitHub release with
-`minimalui-<tag>.apk` and generated notes attached. A tag with a `-` suffix is marked as a pre-release. Every release is
-signed with the same key, so it installs over the previous one and keeps the user's settings.
+`versionName` in `app/build.gradle.kts` decides what gets released. When `main` gets a `versionName` that has no GitHub
+release yet, `.github/workflows/release.yml` runs the unit tests and lint and builds the release APK signed with the
+MinimalUI release key. It then tags that commit `v<versionName>` and publishes a GitHub release with
+`minimalui-v<versionName>.apk` and generated notes attached. A version with a `-` suffix (`0.2.0-beta.1`) is marked as
+a pre-release. Every release is signed with the same key, so it installs over the previous one and keeps the user's
+settings.
 
 ### The release key
 
@@ -228,18 +230,20 @@ gh secret set RELEASE_KEYSTORE_PASSWORD   # asks for the keytool password
 gh secret set RELEASE_KEY_PASSWORD        # the same password: keytool's PKCS12 keystores have only one
 ```
 
-Without `RELEASE_KEYSTORE_BASE64` the workflow stops before building and publishes nothing. Locally,
+If a secret is missing, the workflow names it and stops before building, so nothing is published. Locally,
 `./gradlew assembleRelease` builds an unsigned `app-release-unsigned.apk` unless `RELEASE_KEYSTORE_FILE` (the keystore's
 path), `RELEASE_KEYSTORE_PASSWORD`, `RELEASE_KEY_ALIAS` and `RELEASE_KEY_PASSWORD` are set, as the workflow sets them.
 
 ### Cutting a release
 
-1. Make sure `versionName` in `app/build.gradle.kts` matches the tag without its `v` (Settings → About shows it), and
-   that `versionCode` is higher than the last release's: Android refuses to install an update with a lower one. Change
-   them through a pull request like any other change.
-2. Tag the merged commit on `main` and push the tag:
-   `git switch main && git pull --rebase && git tag v0.1.0 && git push origin v0.1.0`.
-3. Watch the `Release` workflow under **Actions**; the release appears under **Releases** when it finishes.
+1. Open a pull request that raises `versionName` (Settings → About shows it) and `versionCode` in
+   `app/build.gradle.kts`. Android refuses to install an update with a lower `versionCode`.
+2. Merge it. The `Release` workflow under **Actions** publishes the release, which then appears under **Releases**.
+
+A merge that leaves `versionName` alone, or sets one that is already released, publishes nothing. To retry a failed
+release, run the workflow again on `main`: `gh workflow run release.yml`, or **Actions → Release → Run workflow**. If a
+`v<versionName>` tag already exists on another commit, the workflow refuses to release; raise `versionName`, or delete
+the tag with `git push origin :refs/tags/v<versionName>` and run it again.
 
 ## Code style
 

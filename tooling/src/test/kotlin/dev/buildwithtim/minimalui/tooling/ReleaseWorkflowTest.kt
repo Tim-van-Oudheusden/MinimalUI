@@ -1,28 +1,31 @@
 package dev.buildwithtim.minimalui.tooling
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ReleaseWorkflowTest {
 
     private val release = Repo.workflows().getValue("release.yml")
 
-    // The job holds the signing key and a write token; it must run for a pushed version tag and nothing else.
+    // The jobs hold the signing key and a write token; they must never run for a pull request. A version bump reaches
+    // main only through the build file, so other pushes don't start a release.
     @Test
-    fun `runs only when a version tag is pushed`() {
+    fun `runs for build file changes on main and by hand, never for pull requests`() {
         val push = release.getValue("on").asMap().getValue("push").asMap()
 
-        assertEquals(setOf("push"), release.triggers())
-        assertEquals(mapOf("tags" to listOf("v*")), push)
+        assertEquals(setOf("push", "workflow_dispatch"), release.triggers())
+        assertEquals(mapOf("branches" to listOf("main"), "paths" to listOf("app/build.gradle.kts")), push)
     }
 
-    // Gradle runs the tagged code while the job holds the signing key, so the token must not stay in .git/config.
+    // Gradle runs main's code while a job holds the signing key, so the token must not stay in .git/config.
     @Test
     fun `checks out without persisting the token`() {
-        val checkouts = release.jobs().values.flatMap { it.steps() }
+        val persisted = release.jobs().values.flatMap { it.steps() }
             .filter { it["uses"].toString().startsWith("actions/checkout@") }
+            .map { it["with"]?.asMap()?.get("persist-credentials").toString() }
 
-        assertEquals(1, checkouts.size)
-        assertEquals("false", checkouts.single()["with"]?.asMap()?.get("persist-credentials").toString())
+        assertTrue(persisted.isNotEmpty())
+        assertEquals(listOf("false"), persisted.distinct())
     }
 }
