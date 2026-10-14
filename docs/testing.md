@@ -126,7 +126,9 @@ Raise a floor when coverage rises; never lower one to make a PR pass. Add tests 
 
 The initial floors are the coverage observed when the gate was added, rounded down: `core` 100 % / 100 %, `app` 0 % /
 0 % (it had no unit tests yet). `app` was raised to 93 % / 84 % once it was unit-tested (#95): observed coverage minus
-the margin, taken from the lowest of `main` and the PRs then open, so no open PR started failing. Run the check locally:
+the margin, taken from the lowest of `main` and the PRs then open, so no open PR started failing. It was raised to
+98 % / 97 % (#127) once the status pill's glyphs and a removed work profile were tested and the generated `BuildConfig`
+left the report. Run the check locally:
 
 ```bash
 ./gradlew :core:koverXmlReport
