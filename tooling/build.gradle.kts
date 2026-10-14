@@ -27,9 +27,11 @@ tasks.test {
     systemProperty("repo.root", repoRoot.asFile.absolutePath)
     // The files under test live outside this module; declare them so an edit reruns the tests instead of reusing a
     // cached result.
-    for (dir in listOf(".github", "scripts", "docs")) {
+    for (dir in listOf(".github", "scripts", "docs", "fastlane")) {
         inputs.dir(repoRoot.dir(dir))
             .withPropertyName("repo-$dir")
             .withPathSensitivity(PathSensitivity.RELATIVE)
     }
+    // FastlaneMetadataTest reads versionCode from it.
+    inputs.file(repoRoot.file("app/build.gradle.kts")).withPropertyName("repo-app-build")
 }

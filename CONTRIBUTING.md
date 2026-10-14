@@ -97,11 +97,13 @@ app/                        Android application: manifest, activity, Compose UI,
   src/test/kotlin/          Robolectric + Compose UI tests, run on the JVM without an emulator
 core/                       pure Kotlin/JVM logic (no Android dependencies), package dev.buildwithtim.minimalui.core
   src/test/kotlin/          JUnit tests, run on the JVM without an emulator
+docs/                       usage guide, testing notes, brand assets, research, metrics, reflections
+fastlane/metadata/android/  store listing: title, descriptions, changelogs, icon, feature graphic, screenshots
 gradle/libs.versions.toml   every dependency and plugin version
 gradle/wrapper/             Gradle wrapper (pinned version and checksum)
 prompts/                    reusable agent prompts (code review, PR body)
 scripts/                    CI helper scripts
-tooling/                    JUnit tests over .github/ and scripts/ (workflow invariants, CI script behaviour)
+tooling/                    JUnit tests over .github/, scripts/ and fastlane/ (workflow invariants, CI scripts, listing)
 ```
 
 **Where code goes.** Anything that can be expressed without the Android framework (sorting, filtering, key-to-action
@@ -117,12 +119,13 @@ and `createComposeRule()` in `app/src/test`, inside `./gradlew test`. Drive the 
 what was started. Robolectric emulates SDK 35 (`app/src/test/resources/robolectric.properties`), because it cannot yet
 emulate the app's `targetSdk`. Mark a test `@Config(sdk = [28, 35])` when it covers a version branch.
 
-**Tests for CI and scripts.** `tooling` has no main sources: its tests read `.github/` and run `scripts/` the way CI
-does, so they run with `./gradlew test`. `WorkflowInvariantsTest` holds the reviewed `GITHUB_TOKEN` scopes of every
-workflow and checks that every job has `timeout-minutes`, every action is pinned to a commit SHA, no `run:` interpolates
-event payload (pass it through `env:`), and no `pull_request_target` workflow checks out code. Adding a workflow means
-adding its scopes there. A test for `scripts/foo.sh` goes in `tooling/src/test/kotlin/dev/buildwithtim/minimalui/tooling/`
-and runs it with `runScript`.
+**Tests for CI and scripts.** `tooling` has no main sources: its tests read `.github/` and `fastlane/` and run
+`scripts/` the way CI does, so they run with `./gradlew test`. `WorkflowInvariantsTest` holds the reviewed
+`GITHUB_TOKEN` scopes of every workflow and checks that every job has `timeout-minutes`, every action is pinned to a
+commit SHA, no `run:` interpolates event payload (pass it through `env:`), and no `pull_request_target` workflow checks
+out code. Adding a workflow means adding its scopes there. A test for `scripts/foo.sh` goes in
+`tooling/src/test/kotlin/dev/buildwithtim/minimalui/tooling/` and runs it with `runScript`. `FastlaneMetadataTest`
+holds the store listing to the stores' limits and requires a changelog for the current `versionCode`.
 
 ## Finding and claiming work
 
@@ -237,7 +240,9 @@ path), `RELEASE_KEYSTORE_PASSWORD`, `RELEASE_KEY_ALIAS` and `RELEASE_KEY_PASSWOR
 ### Cutting a release
 
 1. Open a pull request that raises `versionName` (Settings → About shows it) and `versionCode` in
-   `app/build.gradle.kts`. Android refuses to install an update with a lower `versionCode`.
+   `app/build.gradle.kts`. Android refuses to install an update with a lower `versionCode`. In the same pull request,
+   add `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt`: what changed for users, in at most 500
+   characters. `./gradlew test` fails without it (`FastlaneMetadataTest`).
 2. Merge it. The `Release` workflow under **Actions** publishes the release, which then appears under **Releases**.
 
 A merge that leaves `versionName` alone, or sets one that is already released, publishes nothing. To retry a failed

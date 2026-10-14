@@ -1,0 +1,1 @@
+First release. One list of apps driven by keys: favourites, recently used apps, collections and groups (including a Work group), type-to-filter, rename and hide, a status pill with Wi-Fi, battery and the time, and MinimalUI settings for the pill, the recently used block and hidden apps.

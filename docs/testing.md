@@ -79,6 +79,25 @@ podman run --rm --userns=keep-id \
 In a git worktree, `.git` is a file pointing outside the mount, so git commands inside the container see no
 repository; the Gradle gates do not need one.
 
+## Store screenshots
+
+`app/src/test/kotlin/dev/buildwithtim/minimalui/StoreScreenshots.kt` renders the README and store screenshots from the
+real `MainActivity` under Robolectric's native graphics (`@GraphicsMode(NATIVE)`), so it needs no device or emulator
+and runs in the agent sandbox. It installs a fixed set of demo apps, puts the phone on Wi-Fi at 80 % charge, makes two
+favourites and two recent apps by key presses, and captures the home screen, a typed filter, an app's menu and
+MinimalUI settings at 1080 × 1620 px (360 × 540 dp at xxhdpi, the 3:2 screen of the targeted keyboard phones).
+
+```bash
+./gradlew :app:testDebugUnitTest -PstoreScreenshots
+```
+
+The `storeScreenshots` property makes the unit-test task run only `StoreScreenshots` and write the PNGs to
+`fastlane/metadata/android/en-US/images/phoneScreenshots/`; without it, every test task leaves the class out, so
+`./gradlew test` and CI never run it. The status pill shows the time of the run, so regenerated files differ even
+when the UI has not changed: regenerate them when the look of a captured screen changes, and commit the result.
+`FastlaneMetadataTest` in `tooling` checks that the screenshots exist and fit the stores' size rules, and that the
+listing texts and the changelog for the current `versionCode` exist within the stores' length limits.
+
 ## Coverage floors
 
 Unit-test coverage is measured with [Kover](https://github.com/Kotlin/kotlinx-kover) (`org.jetbrains.kotlinx.kover`),

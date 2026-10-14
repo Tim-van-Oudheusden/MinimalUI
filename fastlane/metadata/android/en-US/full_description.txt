@@ -1,0 +1,26 @@
+MinimalUI is a minimal Android launcher for keyboard-centric phones, such as those from Zinwa, Clicks and Unihertz. Inspired by MinUI and Cannoli, it replaces the home screen with a plain list of apps, driven entirely by keys.
+
+<b>Keyboard first</b>
+<ul>
+<li>Up and Down move one row, Left and Right turn a page, Enter opens the highlighted app.</li>
+<li>Start typing to filter the list by name; Backspace deletes.</li>
+<li>Menu, or holding Enter, opens the highlighted app's menu.</li>
+<li>The bottom row names the keys that work on the screen. Touch works too: tapping a hint does the same as its key.</li>
+</ul>
+
+<b>One list</b>
+<ul>
+<li>Favourites first, then the apps you opened last, then every app in alphabetical order.</li>
+<li>Collections: named lists of apps in your own order.</li>
+<li>Groups: apps sorted by the category their developer declared, plus groups of your own. Work profile apps get a Work group.</li>
+<li>Rename or hide any app; hidden apps stay findable by typing their name.</li>
+</ul>
+
+<b>Less on screen</b>
+<ul>
+<li>Black background, white text, the selected row an inverted pill.</li>
+<li>Android's status bar is hidden; a small pill shows Wi-Fi, battery and the time.</li>
+<li>Apps open without a transition animation.</li>
+</ul>
+
+MinimalUI is in early development and needs Android 9 or newer. It has no internet access and asks for no permission that needs your approval. It is free software under the GNU General Public License v3.0.
