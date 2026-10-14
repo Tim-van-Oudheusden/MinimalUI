@@ -38,15 +38,29 @@ fun listContent(
 ): ListContent {
     if (installed == null) return ListContent.Loading
     val visible = hidden.visibleFrom(installed)
-    if (installed.isEmpty() || (query.isEmpty() && visible.isEmpty())) return ListContent.NoApps
-    if (query.isEmpty()) {
-        return ListContent.Apps(rootEntries(visible, recents, settings, favourites, collections, groups))
+    return when {
+        installed.isEmpty() || (query.isEmpty() && visible.isEmpty()) -> ListContent.NoApps
+        query.isEmpty() -> ListContent.Apps(rootEntries(visible, recents, settings, favourites, collections, groups))
+        else -> found(query, installed, visible, favourites, hidden)
     }
+}
+
+/**
+ * The apps the non-empty [query] keeps, from all [installed] ones: the [visible] ones first, the [favourites] first
+ * among them, then the [hidden] ones, flagged so they are drawn dim, each part in list order.
+ */
+private fun found(
+    query: String,
+    installed: List<LauncherApp>,
+    visible: List<LauncherApp>,
+    favourites: Favourites,
+    hidden: HiddenApps,
+): ListContent {
     val (starred, others) = visible.filteredBy(query).partition { it in favourites }
-    val found = installed.filteredBy(query).filter { it in hidden }
+    val dimmed = installed.filteredBy(query).filter { it in hidden }
     val shown =
         starred.map { RootEntry.App(it, isFavourite = true) } + others.map { RootEntry.App(it) } +
-            found.map { RootEntry.App(it, isFavourite = it in favourites, isHidden = true) }
+            dimmed.map { RootEntry.App(it, isFavourite = it in favourites, isHidden = true) }
     return if (shown.isEmpty()) ListContent.NoMatch else ListContent.Apps(shown)
 }
 

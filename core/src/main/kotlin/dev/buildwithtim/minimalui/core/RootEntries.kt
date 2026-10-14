@@ -85,9 +85,11 @@ fun rootEntries(
             recent.map { RootEntry.App(it, RootSection.Recent) } +
             listOfNotNull(RootEntry.Collections.takeIf { collections.names(apps).isNotEmpty() })
     val top = if (block.isEmpty()) all else block + RootEntry.Blank() + all
-    if (appGroups(apps, groups).isEmpty()) return top
-    if (top.isEmpty()) return listOf(RootEntry.Groups)
-    return top + RootEntry.Blank(GROUPS_BLANK) + RootEntry.Groups
+    return when {
+        appGroups(apps, groups).isEmpty() -> top
+        top.isEmpty() -> listOf(RootEntry.Groups)
+        else -> top + RootEntry.Blank(GROUPS_BLANK) + RootEntry.Groups
+    }
 }
 
 private const val GROUPS_BLANK = "groups-blank"
@@ -103,9 +105,7 @@ fun followedRow(
     now: List<RootEntry>,
 ): Int {
     val entry = before.getOrNull(selected) ?: return selected
-    val same = now.indexOfFirst { it.key == entry.key }
-    if (same >= 0) return same
-    val app = entry.app ?: return selected
-    val sameApp = now.indexOfFirst { it.app?.component == app.component }
-    return if (sameApp >= 0) sameApp else selected
+    return now.indexOfFirst { it.key == entry.key }.takeIf { it >= 0 }
+        ?: entry.app?.let { app -> now.indexOfFirst { it.app?.component == app.component } }?.takeIf { it >= 0 }
+        ?: selected
 }

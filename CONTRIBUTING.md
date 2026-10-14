@@ -218,6 +218,7 @@ silence one finding with `@Suppress` or a `ktlint-disable` comment.
 
 The commit that first formatted the code base is listed in `.git-blame-ignore-revs`. Run
 `git config blame.ignoreRevsFile .git-blame-ignore-revs` once so local `git blame` skips it; GitHub does so on its own.
+
 ### Android Lint
 
 Every module runs Android Lint as part of `check`: `app` through AGP, `core` and `tooling` through the standalone
@@ -228,6 +229,15 @@ too; `app` keeps lint's default for its Robolectric tests, where device-runtime 
 
 A check that is noise for this project is turned off by name in the module's `lint { disable += ... }`, with a comment
 saying why. Never `@Suppress`/`@SuppressLint` a finding and never add a lint baseline.
+
+### Static analysis
+
+[detekt](https://detekt.dev) checks the Kotlin of every module (`src/main` and `src/test`) against its default rules
+for code smells: overlong or overly complex functions, swallowed exceptions, magic numbers. `./gradlew detekt`, part of
+`check`, fails on a finding; the report names the rule and lands in `<module>/build/reports/detekt/`. Fix the code: a
+function that grows past a size or complexity limit is split, not exempted. `config/detekt/detekt.yml` holds only the
+overrides, each with the reason: detekt's documented Compose settings, and size and complexity limits lifted for test
+sources. A rule that misfires is changed there for the whole project; never `@Suppress` a finding or add a baseline.
 
 ### Applying review suggestions
 
