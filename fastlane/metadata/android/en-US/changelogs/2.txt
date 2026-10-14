@@ -1,0 +1,1 @@
+The clock in the status pill now writes the time as your phone's language does: in one set of digits (Arabic, Persian) and with AM/PM where the language puts it (before the time in Korean and Chinese). Under the hood, stricter build checks and a reorganised code base; nothing else changes in how the launcher works.
