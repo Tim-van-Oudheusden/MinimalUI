@@ -6,9 +6,11 @@ import org.junit.Test
 import java.io.File
 
 class ReleaseVersionScriptTest {
-
     private fun outputs(result: ScriptResult): Map<String, String> =
-        result.stdout.lines().filter { "=" in it }.associate { it.substringBefore("=") to it.substringAfter("=") }
+        result.stdout
+            .lines()
+            .filter { "=" in it }
+            .associate { it.substringBefore("=") to it.substringAfter("=") }
 
     private fun releaseOf(vararg buildFileLines: String): ScriptResult {
         val buildFile = File.createTempFile("build", ".gradle.kts")
@@ -43,7 +45,10 @@ class ReleaseVersionScriptTest {
     fun `a version with a suffix is a pre-release`() {
         val result = releaseOf("        versionName = \"0.2.0-beta.1\"")
 
-        assertEquals(mapOf("version" to "0.2.0-beta.1", "tag" to "v0.2.0-beta.1", "prerelease" to "true"), outputs(result))
+        assertEquals(
+            mapOf("version" to "0.2.0-beta.1", "tag" to "v0.2.0-beta.1", "prerelease" to "true"),
+            outputs(result),
+        )
     }
 
     @Test

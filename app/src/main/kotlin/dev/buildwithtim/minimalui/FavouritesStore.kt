@@ -6,7 +6,9 @@ import dev.buildwithtim.minimalui.core.AppCollections
 import dev.buildwithtim.minimalui.core.Favourites
 
 /** The favourites and collections (#68) in app-private storage, so they survive the launcher's process being killed. */
-class FavouritesStore(context: Context) {
+class FavouritesStore(
+    context: Context,
+) {
     private val preferences = context.getSharedPreferences("favourites", Context.MODE_PRIVATE)
 
     fun loadFavourites(): Favourites = Favourites.fromStored(preferences.getString(FAVOURITES, null))

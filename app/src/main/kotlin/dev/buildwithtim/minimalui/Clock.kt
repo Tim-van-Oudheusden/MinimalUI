@@ -11,7 +11,12 @@ import java.util.concurrent.TimeUnit
  * when [twentyFourHour], else `hm`. ICU picks the digits, the AM/PM or day-period marker and where it goes, so the
  * hour and the minutes never mix digit scripts and Korean or Chinese put the marker first. [hour] runs 0–23.
  */
-internal fun clockText(hour: Int, minute: Int, twentyFourHour: Boolean, locale: Locale): String {
+internal fun clockText(
+    hour: Int,
+    minute: Int,
+    twentyFourHour: Boolean,
+    locale: Locale,
+): String {
     val format = DateFormat.getInstanceForSkeleton(if (twentyFourHour) "Hm" else "hm", locale)
     // A fixed zone with no daylight saving, so the instant below reads back as exactly hour:minute.
     format.timeZone = TimeZone.GMT_ZONE

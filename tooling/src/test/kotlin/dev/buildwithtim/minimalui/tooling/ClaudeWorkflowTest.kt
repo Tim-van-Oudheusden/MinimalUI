@@ -5,16 +5,21 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ClaudeWorkflowTest {
-
     private val claudeAction = Regex("""uses: anthropics/claude-code-action@""")
     private val source = Repo.read(".github/workflows/claude.yml")
-    private val job = Yaml.parse(source).asMap().jobs().getValue("claude")
+    private val job =
+        Yaml
+            .parse(source)
+            .asMap()
+            .jobs()
+            .getValue("claude")
 
     @Test
     fun `is the only workflow that runs Claude Code, so one mention starts one run`() {
-        val runners = checkNotNull(Repo.file(".github/workflows").listFiles())
-            .filter { claudeAction.containsMatchIn(it.readText()) }
-            .map { it.name }
+        val runners =
+            checkNotNull(Repo.file(".github/workflows").listFiles())
+                .filter { claudeAction.containsMatchIn(it.readText()) }
+                .map { it.name }
 
         assertEquals(listOf("claude.yml"), runners)
     }
@@ -48,7 +53,12 @@ class ClaudeWorkflowTest {
 
     @Test
     fun `lets Claude run only the quality gates`() {
-        val args = job.steps().single { it["name"] == "Run Claude Code" }["with"].asMap()["claude_args"].toString()
+        val args =
+            job
+                .steps()
+                .single { it["name"] == "Run Claude Code" }["with"]
+                .asMap()["claude_args"]
+                .toString()
         val allowed = Regex("""Bash\(([^)]*)\)""").findAll(args).map { it.groupValues[1] }.toList()
 
         assertTrue("allowed tools: $allowed", allowed.isNotEmpty())

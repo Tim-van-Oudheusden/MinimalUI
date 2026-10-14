@@ -2,6 +2,7 @@ package dev.buildwithtim.minimalui.ui
 
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.LineHeightStyle
@@ -30,14 +31,16 @@ object RowMetrics {
     /** Fully rounded ends, as MinUI and Cannoli draw the selection. */
     val PillShape = RoundedCornerShape(percent = 50)
 
-    val TextStyle = TextStyle(
-        fontSize = TextSize,
-        lineHeight = LineHeight,
-        // Keep the whole line height, so the drawn row matches rowHeight() exactly.
-        lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.None),
-    )
+    val TextStyle =
+        TextStyle(
+            fontSize = TextSize,
+            lineHeight = LineHeight,
+            // Keep the whole line height, so the drawn row matches rowHeight() exactly.
+            lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.None),
+        )
 
     /** Height of one row, which follows the user's font scale through [LineHeight]. */
     @Composable
+    @ReadOnlyComposable
     fun rowHeight(): Dp = with(LocalDensity.current) { LineHeight.toDp() } + PillPaddingVertical * 2
 }

@@ -16,7 +16,12 @@ class ClockTest {
     private val defaultLocale = Locale.getDefault()
 
     // On a device the default locale is the clock's too, and String.format writes its digits: set it, as there.
-    private fun clock(hour: Int, minute: Int, twentyFourHour: Boolean, tag: String): String {
+    private fun clock(
+        hour: Int,
+        minute: Int,
+        twentyFourHour: Boolean,
+        tag: String,
+    ): String {
         val locale = Locale.forLanguageTag(tag)
         Locale.setDefault(locale)
         return clockText(hour, minute, twentyFourHour, locale)

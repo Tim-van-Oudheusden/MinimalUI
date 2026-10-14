@@ -7,15 +7,18 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 
 class NightlyComplianceScriptTest {
-
     @get:Rule
     val tmp = TemporaryFolder()
 
-    private fun alert(ghsa: String, severity: String, pkg: String = "com.example:lib") = """
+    private fun alert(
+        ghsa: String,
+        severity: String,
+        pkg: String = "com.example:lib",
+    ) = """
         {"number": 1, "state": "open", "html_url": "https://github.com/o/r/security/dependabot/1",
          "dependency": {"package": {"ecosystem": "maven", "name": "$pkg"}},
          "security_advisory": {"ghsa_id": "$ghsa", "severity": "$severity", "summary": "Bad thing in $pkg"}}
-    """.trimIndent()
+        """.trimIndent()
 
     private fun compliance(
         vararg alerts: String,
@@ -25,11 +28,12 @@ class NightlyComplianceScriptTest {
         alertsJson: String = "[${alerts.joinToString(",")}]",
     ): ScriptResult {
         val file = tmp.newFile("alerts.json").apply { writeText(alertsJson) }
-        val env = mutableMapOf(
-            "ALERTS_JSON" to file.path,
-            "DEPENDENCY_GRAPH_RESULT" to graph,
-            "WRAPPER_VALIDATION_OUTCOME" to wrapper,
-        )
+        val env =
+            mutableMapOf(
+                "ALERTS_JSON" to file.path,
+                "DEPENDENCY_GRAPH_RESULT" to graph,
+                "WRAPPER_VALIDATION_OUTCOME" to wrapper,
+            )
         if (ignore != null) env["ALERTS_IGNORE"] = ignore
         return runScript("scripts/nightly-compliance.sh", env = env)
     }
@@ -67,18 +71,20 @@ class NightlyComplianceScriptTest {
 
     @Test
     fun `passes when the only high alert is on the ignore list`() {
-        val result = compliance(alert("GHSA-aaaa-bbbb-cccc", "high"), ignore = "GHSA-zzzz-zzzz-zzzz GHSA-aaaa-bbbb-cccc")
+        val result =
+            compliance(alert("GHSA-aaaa-bbbb-cccc", "high"), ignore = "GHSA-zzzz-zzzz-zzzz GHSA-aaaa-bbbb-cccc")
 
         assertEquals(result.stdout + result.stderr, 0, result.exitCode)
     }
 
     @Test
     fun `still fails on a high alert that is not on the ignore list`() {
-        val result = compliance(
-            alert("GHSA-aaaa-bbbb-cccc", "high"),
-            alert("GHSA-dddd-eeee-ffff", "critical"),
-            ignore = "GHSA-aaaa-bbbb-cccc",
-        )
+        val result =
+            compliance(
+                alert("GHSA-aaaa-bbbb-cccc", "high"),
+                alert("GHSA-dddd-eeee-ffff", "critical"),
+                ignore = "GHSA-aaaa-bbbb-cccc",
+            )
 
         assertEquals(1, result.exitCode)
         assertTrue(result.stdout, result.stdout.contains("GHSA-dddd-eeee-ffff"))
@@ -102,10 +108,11 @@ class NightlyComplianceScriptTest {
 
     @Test
     fun `fails when a check reports no outcome`() {
-        val result = runScript(
-            "scripts/nightly-compliance.sh",
-            env = mapOf("ALERTS_JSON" to tmp.newFile("empty.json").apply { writeText("[]") }.path),
-        )
+        val result =
+            runScript(
+                "scripts/nightly-compliance.sh",
+                env = mapOf("ALERTS_JSON" to tmp.newFile("empty.json").apply { writeText("[]") }.path),
+            )
 
         assertEquals(1, result.exitCode)
         assertTrue(result.stdout, result.row("Gradle wrapper jar checksum").contains("fail"))

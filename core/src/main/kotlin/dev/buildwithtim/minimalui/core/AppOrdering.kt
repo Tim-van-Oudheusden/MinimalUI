@@ -9,12 +9,13 @@ import java.util.Locale
  * Apps sharing a label fall back to package and activity name, so the list never reshuffles between loads, and an
  * app of the launcher's own user comes before its copies in other profiles (#78).
  */
-fun List<LauncherApp>.sortedForDisplay(): List<LauncherApp> = sortedWith(
-    compareBy<LauncherApp, String>(labelCollator()) { it.label }
-        .thenBy { it.packageName }
-        .thenBy { it.activityName }
-        .thenBy(nullsFirst()) { it.profile },
-)
+fun List<LauncherApp>.sortedForDisplay(): List<LauncherApp> =
+    sortedWith(
+        compareBy<LauncherApp, String>(labelCollator()) { it.label }
+            .thenBy { it.packageName }
+            .thenBy { it.activityName }
+            .thenBy(nullsFirst()) { it.profile },
+    )
 
 /**
  * How the launcher compares names, for sorting and for telling duplicates apart: SECONDARY strength, so accents sort

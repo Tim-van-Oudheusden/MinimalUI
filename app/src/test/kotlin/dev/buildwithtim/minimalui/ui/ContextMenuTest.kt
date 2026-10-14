@@ -10,7 +10,7 @@ import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasScrollAction
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
@@ -39,14 +39,18 @@ class ContextMenuTest {
     private val chosen = mutableListOf<MenuAction>()
     private var closed = 0
 
-    private val all = listOf(
-        MenuItem(MenuAction.AppInfo),
-        MenuItem(MenuAction.Uninstall),
-        MenuItem(MenuAction.RemoveFromRecents),
-        MenuItem(MenuAction.ClearRecents),
-    )
+    private val all =
+        listOf(
+            MenuItem(MenuAction.AppInfo),
+            MenuItem(MenuAction.Uninstall),
+            MenuItem(MenuAction.RemoveFromRecents),
+            MenuItem(MenuAction.ClearRecents),
+        )
 
-    private fun show(items: List<MenuItem> = all, status: StatusPill? = null) {
+    private fun show(
+        items: List<MenuItem> = all,
+        status: StatusPill? = null,
+    ) {
         rule.setContent {
             MinimalTheme {
                 ContextMenu(
@@ -62,8 +66,11 @@ class ContextMenuTest {
 
     private fun press(key: Key) = rule.onRoot().performKeyInput { pressKey(key) }
 
-    private fun send(action: Int, keyCode: Int, repeat: Int = 0) =
-        rule.onRoot().performKeyPress(KeyEvent(AndroidKeyEvent(0, 0, action, keyCode, repeat)))
+    private fun send(
+        action: Int,
+        keyCode: Int,
+        repeat: Int = 0,
+    ) = rule.onRoot().performKeyPress(KeyEvent(AndroidKeyEvent(0, 0, action, keyCode, repeat)))
 
     @Test
     fun `the app's name heads the menu, and the first action takes focus`() {

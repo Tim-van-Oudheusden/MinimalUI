@@ -14,8 +14,9 @@ import java.util.Locale
 fun List<LauncherApp>.filteredBy(query: String): List<LauncherApp> {
     if (query.isEmpty()) return this
     val wanted = query.folded()
-    val (labelStarts, wordStarts) = filter { it.label.folded().hasWordStartingWith(wanted) }
-        .partition { it.label.folded().startsWith(wanted) }
+    val (labelStarts, wordStarts) =
+        filter { it.label.folded().hasWordStartingWith(wanted) }
+            .partition { it.label.folded().startsWith(wanted) }
     return labelStarts + wordStarts
 }
 

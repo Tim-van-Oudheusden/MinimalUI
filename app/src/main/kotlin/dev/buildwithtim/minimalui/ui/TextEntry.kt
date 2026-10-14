@@ -57,24 +57,29 @@ internal fun TextEntry(
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
             onKeyboardAction = { onDone(text.text.toString()) },
             // Aligned with the title's text above it and the rows' labels on other screens.
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(rowHeight)
-                .padding(horizontal = RowMetrics.ListPaddingHorizontal + RowMetrics.PillPaddingHorizontal)
-                .focusRequester(requester)
-                .onPreviewKeyEvent { event ->
-                    if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
-                    when (event.key) {
-                        Key.Enter, Key.NumPadEnter, Key.DirectionCenter -> {
-                            if (event.nativeKeyEvent.repeatCount == 0) onDone(text.text.toString())
-                            true
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(rowHeight)
+                    .padding(horizontal = RowMetrics.ListPaddingHorizontal + RowMetrics.PillPaddingHorizontal)
+                    .focusRequester(requester)
+                    .onPreviewKeyEvent { event ->
+                        if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                        when (event.key) {
+                            Key.Enter, Key.NumPadEnter, Key.DirectionCenter -> {
+                                if (event.nativeKeyEvent.repeatCount == 0) onDone(text.text.toString())
+                                true
+                            }
+
+                            else -> {
+                                closesOnEscape(event.key, onClose)
+                            }
                         }
-                        else -> closesOnEscape(event.key, onClose)
-                    }
+                    },
+            decorator =
+                TextFieldDecorator { field ->
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.CenterStart) { field() }
                 },
-            decorator = TextFieldDecorator { field ->
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.CenterStart) { field() }
-            },
         )
         LaunchedEffect(Unit) { requester.requestFocus() }
     }

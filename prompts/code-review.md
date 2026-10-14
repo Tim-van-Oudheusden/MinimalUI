@@ -18,7 +18,7 @@ Check two axes and report them separately:
   `gradle/libs.versions.toml`, never inline in a build file.
 - Keyboard first: every changed screen is fully usable with a hardware keyboard
   and D-pad, without touch.
-- Gates green: `./gradlew test`, `./gradlew lint`, `./gradlew assembleDebug`.
+- Gates green: `./gradlew check assembleDebug` (unit tests, lint, formatting).
 - Conventional Commits, one commit per issue, issue number referenced.
 
 ## Spec
