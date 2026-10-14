@@ -1,3 +1,17 @@
+// Build-tool transitives with published advisories (#147): AGP and Kover put them on the plugin classpath, and Android
+// Lint on every module's androidLintTool, at vulnerable versions. These constraints raise them to the patched releases
+// in gradle/libs.versions.toml's build-tool-floors bundle; a tool that later brings a newer version still wins. Neither
+// classpath is packaged into the APK.
+buildscript {
+    dependencies {
+        constraints {
+            libs.bundles.build.tool.floors
+                .get()
+                .forEach { add("classpath", it) }
+        }
+    }
+}
+
 // Plugin versions come from gradle/libs.versions.toml; modules apply what they need.
 plugins {
     // Gives the root project a `check` task, so `./gradlew check` runs spotlessCheck along with every module's checks.
@@ -18,6 +32,16 @@ subprojects {
     apply(plugin = "dev.detekt")
     extensions.configure<dev.detekt.gradle.extensions.DetektExtension> {
         buildUponDefaultConfig = true
+    }
+}
+
+// The same floors (#147) for Android Lint, which AGP and the standalone lint plugin resolve per module.
+subprojects {
+    val constraints = dependencies.constraints
+    configurations.matching { it.name == "androidLintTool" }.configureEach {
+        libs.bundles.build.tool.floors
+            .get()
+            .forEach { constraints.add(name, it) }
     }
 }
 
