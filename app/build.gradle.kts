@@ -73,8 +73,24 @@ android {
     lint {
         abortOnError = true
         warningsAsErrors = true
-        // Version-freshness checks change verdict whenever a library ships; Dependabot owns updates.
-        disable += setOf("GradleDependency", "NewerVersionAvailable", "AndroidGradlePluginVersion", "OldTargetApi")
+        checkAllWarnings = true
+        // App tests run on Robolectric's JVM, where lint's device-runtime checks (MissingPermission, PrivateApi,
+        // RestrictedApi on test-only key dispatch) misfire, so they keep lint's default test-source coverage.
+        checkTestSources = false
+        disable +=
+            setOf(
+                // Version-freshness checks change verdict whenever a library ships; Dependabot owns updates.
+                "GradleDependency",
+                "NewerVersionAvailable",
+                "AndroidGradlePluginVersion",
+                "OldTargetApi",
+                // For AndroidX library authors counting methods; R8 inlines Kotlin's accessors in release builds.
+                "SyntheticAccessor",
+                // A hint and a menu item may share an English word yet need different translations.
+                "DuplicateStrings",
+                // Strong skipping (Kotlin 2.0.20+) skips on instance equality; ImmutableList needs a new dependency.
+                "ComposeUnstableCollections",
+            )
     }
 }
 
@@ -92,6 +108,8 @@ dependencies {
     testImplementation(libs.androidx.compose.ui.test.junit4)
     // Declares the empty activity that createComposeRule() hosts content in; debug builds only.
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+    // Slack's Compose rules (modifier parameters, state hoisting, naming), run by Android Lint.
+    lintChecks(libs.compose.lint.checks)
 }
 
 // Store and README screenshots (#120). StoreScreenshots renders them instead of asserting anything, so unit test runs
