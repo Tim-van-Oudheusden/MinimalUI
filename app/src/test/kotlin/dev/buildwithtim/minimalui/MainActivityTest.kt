@@ -713,7 +713,18 @@ class MainActivityTest {
         Settings.System.putString(application.contentResolver, Settings.System.TIME_12_24, "12")
         application.sendBroadcast(Intent(Intent.ACTION_TIME_CHANGED))
 
-        rule.waitUntil(timeoutMillis = 5_000) { texts().any { it.matches(Regex("\\d{1,2}:\\d\\d (AM|PM)")) } }
+        rule.waitUntil(timeoutMillis = 5_000) { texts().any { it.matches(Regex("\\d{1,2}:\\d\\d[ \u202F](AM|PM)")) } }
+    }
+
+    @Test
+    @Config(qualifiers = "ko-rKR")
+    fun `the clock writes the time as the device's language does`() {
+        install("Alarm", "com.example.alarm")
+        Settings.System.putString(application.contentResolver, Settings.System.TIME_12_24, "12")
+        launch()
+        awaitListed("Alarm")
+        // Korean puts the marker first: 오후 3:05, never 3:05 오후 (#129).
+        assertTrue(texts().toString(), texts().any { it.matches(Regex("(오전|오후) \\d{1,2}:\\d\\d")) })
     }
 
     @Test
