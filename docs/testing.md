@@ -92,19 +92,21 @@ debug builds once.
 
 ### Running the gates
 
-Run the gates in the sandbox from the repository root (rootless podman; `--userns=keep-id` maps your host user to
-`dev` so build outputs stay owned by you):
+Build the image once (again whenever `Dockerfile.sandbox` changes), then run Gradle in it with
+`scripts/sandbox-gradlew.sh`, from anywhere in the checkout. It passes its arguments to `./gradlew` and mounts the
+repository at `/workspace`, Gradle's caches from the `minimalui-sandbox-gradle` volume and the debug key read-only
+(rootless podman; `--userns=keep-id` maps your host user to `dev` so build outputs stay owned by you):
 
 ```bash
 podman build -f Dockerfile.sandbox -t localhost/minimalui-sandbox .
-podman run --rm --userns=keep-id \
-  -v "$PWD":/workspace:z -v minimalui-sandbox-gradle:/home/dev/.gradle \
-  -v ~/.android/debug.keystore:/home/dev/.android/debug.keystore:ro,z \
-  localhost/minimalui-sandbox ./gradlew --no-daemon --console=plain check assembleDebug
+scripts/sandbox-gradlew.sh check assembleDebug
+adb install -r app/build/outputs/apk/debug/app-debug.apk   # from the host, onto a device or emulator
 ```
 
-The debug APK lands in `app/build/outputs/apk/debug/app-debug.apk`; install it from the host with
-`adb install -r app/build/outputs/apk/debug/app-debug.apk`.
+It stops before starting the container if `~/.android/debug.keystore` is missing. Worktrees building side by side
+each want a Gradle cache of their own: `SANDBOX_GRADLE_VOLUME=minimalui-sandbox-gradle-2 scripts/sandbox-gradlew.sh …`.
+For a shell in the sandbox instead, run the same `podman run` the script does with `-it` and `bash` in place of
+`./gradlew`.
 
 In a git worktree, `.git` is a file pointing outside the mount, so git commands inside the container see no
 repository; the Gradle gates do not need one.
