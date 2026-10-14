@@ -5,8 +5,11 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class PrReviewCheckScriptTest {
-
-    private fun check(title: String, body: String, author: String = "Tim-van-Oudheusden") = runScript(
+    private fun check(
+        title: String,
+        body: String,
+        author: String = "Tim-van-Oudheusden",
+    ) = runScript(
         "scripts/pr-review-check.sh",
         env = mapOf("PR_TITLE" to title, "PR_BODY" to body, "PR_AUTHOR" to author),
     )

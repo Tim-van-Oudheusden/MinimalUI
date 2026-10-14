@@ -21,7 +21,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class ContextMenuTest {
-
     private val userApp = AppFacts(isSystem = false, isSettingsEntry = false, isRecent = false, hasRecents = false)
 
     // Every app's menu ends its own part with these, before any recents rows.
@@ -92,7 +91,14 @@ class ContextMenuTest {
 
         assertEquals(
             listOf(
-                AppInfo, Uninstall, AddToFavourites, AddToCollection, AddToGroup, Rename, Hide, RemoveFromRecents,
+                AppInfo,
+                Uninstall,
+                AddToFavourites,
+                AddToCollection,
+                AddToGroup,
+                Rename,
+                Hide,
+                RemoveFromRecents,
                 ClearRecents,
             ),
             menu.map { it.action },
@@ -112,8 +118,12 @@ class ContextMenuTest {
 
     @Test
     fun `inside a collection an app can be removed from it and moved, but not past either end, before Rename`() {
-        fun menuAt(row: Int, count: Int) = contextMenu(userApp.copy(place = CollectionPlace(row, count)))
-        val inCollection = listOf(AppInfo, Uninstall, AddToFavourites, AddToCollection, AddToGroup, RemoveFromCollection)
+        fun menuAt(
+            row: Int,
+            count: Int,
+        ) = contextMenu(userApp.copy(place = CollectionPlace(row, count)))
+        val inCollection =
+            listOf(AppInfo, Uninstall, AddToFavourites, AddToCollection, AddToGroup, RemoveFromCollection)
 
         assertEquals(
             inCollection.map(::MenuItem) + MenuItem(MoveUp) + MenuItem(MoveDown) + MenuItem(Rename) + MenuItem(Hide),

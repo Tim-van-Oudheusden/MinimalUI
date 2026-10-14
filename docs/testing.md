@@ -51,7 +51,7 @@ file instead, and `ALERTS_IGNORE="GHSA-… GHSA-…"` to replace the ignore list
 ## Agent sandbox: what runs where
 
 **Decision:** the agent sandbox (`Dockerfile.sandbox`, also built by `.devcontainer/devcontainer.json`) runs the
-JVM and build gates only: `./gradlew test lint assembleDebug`. Anything that needs an Android device or emulator
+JVM and build gates only: `./gradlew check assembleDebug`. Anything that needs an Android device or emulator
 (`./gradlew installDebug`, `connectedAndroidTest`, manual keyboard/D-pad checks on the launcher) runs on a host with a
 device attached over `adb`, or on an emulator on the host (see
 [Running it in an emulator on Linux](../CONTRIBUTING.md#running-it-in-an-emulator-on-linux)).
@@ -73,7 +73,7 @@ Run the gates in the sandbox from the repository root (rootless podman; `--usern
 podman build -f Dockerfile.sandbox -t localhost/minimalui-sandbox .
 podman run --rm --userns=keep-id \
   -v "$PWD":/workspace:z -v minimalui-sandbox-gradle:/home/dev/.gradle \
-  localhost/minimalui-sandbox ./gradlew --no-daemon --console=plain test lint assembleDebug
+  localhost/minimalui-sandbox ./gradlew --no-daemon --console=plain check assembleDebug
 ```
 
 In a git worktree, `.git` is a file pointing outside the mount, so git commands inside the container see no

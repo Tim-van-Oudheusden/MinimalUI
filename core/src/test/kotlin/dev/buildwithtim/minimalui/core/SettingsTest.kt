@@ -6,7 +6,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class SettingsTest {
-
     @Test
     fun `every setting starts at its default, and the status items default to on`() {
         val settings = Settings()
@@ -18,7 +17,13 @@ class SettingsTest {
 
     @Test
     fun `keys are distinct, so no two settings overwrite each other in storage`() {
-        assertEquals(Setting.entries.size, Setting.entries.map { it.key }.toSet().size)
+        assertEquals(
+            Setting.entries.size,
+            Setting.entries
+                .map { it.key }
+                .toSet()
+                .size,
+        )
     }
 
     @Test

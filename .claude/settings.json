@@ -9,6 +9,8 @@
       "Bash(./gradlew assembleDebug)",
       "Bash(./gradlew assembleDebug *)",
       "Bash(./gradlew check)",
+      "Bash(./gradlew check *)",
+      "Bash(./gradlew spotlessApply)",
       "Bash(./gradlew :core:test *)",
       "Bash(./gradlew :app:testDebugUnitTest *)",
       "Bash(git status)",

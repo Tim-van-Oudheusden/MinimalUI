@@ -4,7 +4,7 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performKeyInput
@@ -31,7 +31,10 @@ class SettingsListTest {
     private val opened = mutableListOf<SettingsLink>()
     private var closed = 0
 
-    private fun show(settings: Settings = Settings(), status: StatusPill? = null) {
+    private fun show(
+        settings: Settings = Settings(),
+        status: StatusPill? = null,
+    ) {
         rule.setContent {
             MinimalTheme {
                 SettingsList(

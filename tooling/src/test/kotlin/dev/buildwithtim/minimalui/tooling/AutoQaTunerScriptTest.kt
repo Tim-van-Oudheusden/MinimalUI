@@ -8,7 +8,6 @@ import java.io.File
 import java.nio.file.Files
 
 class AutoQaTunerScriptTest {
-
     private val dir: File = Files.createTempDirectory("auto-qa-tuner").toFile()
     private val config = dir.resolve("auto-qa-tuning.json")
     private val report = dir.resolve("quality-report.md")
@@ -18,18 +17,29 @@ class AutoQaTunerScriptTest {
         dir.deleteRecursively()
     }
 
-    private fun writeConfig(margin: Int, vararg floors: Pair<String, Pair<Int, Int>>) {
-        val modules = floors.joinToString(",\n") { (module, floor) ->
-            "    \"$module\": {\n      \"functions\": ${floor.first},\n      \"lines\": ${floor.second}\n    }"
-        }
+    private fun writeConfig(
+        margin: Int,
+        vararg floors: Pair<String, Pair<Int, Int>>,
+    ) {
+        val modules =
+            floors.joinToString(",\n") { (module, floor) ->
+                "    \"$module\": {\n      \"functions\": ${floor.first},\n      \"lines\": ${floor.second}\n    }"
+            }
         config.writeText("{\n  \"margin\": $margin,\n  \"floors\": {\n$modules\n  }\n}\n")
     }
 
     // Coverage rows in the format scripts/quality-report.sh prints.
     private fun writeReport(vararg rows: String) {
         report.writeText(
-            (listOf("## Unit-test coverage", "", "| Module | Functions | Lines |", "| ------ | --------- | ----- |") +
-                rows + "").joinToString("\n"),
+            (
+                listOf(
+                    "## Unit-test coverage",
+                    "",
+                    "| Module | Functions | Lines |",
+                    "| ------ | --------- | ----- |",
+                ) +
+                    rows + ""
+            ).joinToString("\n"),
         )
     }
 
@@ -133,15 +143,16 @@ class AutoQaTunerScriptTest {
     @Test
     fun `rejects a malformed config without touching it`() {
         writeReport("| core | 99.12% | 96.03% |")
-        val malformed = listOf(
-            "not json",
-            """{"floors": {"core": {"functions": 90, "lines": 90}}}""",
-            """{"margin": -1, "floors": {"core": {"functions": 90, "lines": 90}}}""",
-            """{"margin": 2, "floors": {}}""",
-            """{"margin": 2, "floors": {"core": {"functions": "90", "lines": 90}}}""",
-            """{"margin": 2, "floors": {"core": {"functions": 90}}}""",
-            """{"margin": 2, "floors": {"core": {"functions": 90, "lines": 101}}}""",
-        )
+        val malformed =
+            listOf(
+                "not json",
+                """{"floors": {"core": {"functions": 90, "lines": 90}}}""",
+                """{"margin": -1, "floors": {"core": {"functions": 90, "lines": 90}}}""",
+                """{"margin": 2, "floors": {}}""",
+                """{"margin": 2, "floors": {"core": {"functions": "90", "lines": 90}}}""",
+                """{"margin": 2, "floors": {"core": {"functions": 90}}}""",
+                """{"margin": 2, "floors": {"core": {"functions": 90, "lines": 101}}}""",
+            )
 
         for (text in malformed) {
             config.writeText(text)

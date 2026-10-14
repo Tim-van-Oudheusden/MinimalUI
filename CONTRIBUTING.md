@@ -143,9 +143,11 @@ We favour small, focused changes tied to a tracked issue.
 4. Open a pull request and fill in the template (link the issue with `Fixes #<number>`, paste evidence).
 
 `main` is protected by the ruleset in [`.github/rulesets/main.json`](.github/rulesets/main.json): no direct pushes,
-force-pushes or deletion; changes land only through pull requests whose `PR review rubric` and `Build, lint, test`
-checks pass. Pull requests merge with a merge commit only (no squash or rebase), so each issue's single commit lands on
-`main` unchanged, and the head branch is deleted on merge.
+force-pushes or deletion; changes land only through pull requests whose `PR review rubric`, `Build, lint, test`,
+`Unit-test coverage floors` and `Static checks` checks pass. Pull requests merge with a merge commit only (no squash or
+rebase), so each issue's single commit lands on `main` unchanged, and the head branch is deleted on merge. The file is
+the source of truth: a change to it lands by PR, then a maintainer applies it with
+`gh api -X PUT repos/Tim-van-Oudheusden/MinimalUI/rulesets/<id> --input .github/rulesets/main.json`.
 
 [conventional-commits]: https://www.conventionalcommits.org/
 
@@ -168,17 +170,74 @@ weaken or skip a failing test to make it pass; fix the implementation.
 
 Run these before opening a PR (CI runs the same on every PR):
 
-| Command                    | What it runs                                  |
-| -------------------------- | --------------------------------------------- |
-| `./gradlew test`           | Unit tests for every module                   |
-| `./gradlew lint`           | Android lint, warnings as errors              |
-| `./gradlew assembleDebug`  | Debug APK build                               |
+| Command                   | What it runs                                                                              |
+| ------------------------- | ----------------------------------------------------------------------------------------- |
+| `./gradlew check`         | Unit tests and Android lint (all checks, warnings as errors) for every module, formatting |
+| `./gradlew assembleDebug` | Debug APK build                                                                           |
+
+`check` is the gate: every check added to the build hooks into it, so CI and the docs never list its tasks one by one.
+
+The Kotlin compiler treats warnings as errors, extra warnings included (`allWarningsAsErrors` and `extraWarnings` in
+every module's build file), so an unused variable or a deprecated call fails the build. Fix the code; never
+`@Suppress` a warning.
 
 The `main` ruleset also requires the **Unit-test coverage floors** check (`.github/workflows/coverage-gate.yml`): it
 runs `./gradlew :<module>:koverXmlReport` for every module in `.github/auto-qa-tuning.json` and fails the PR if a
 module's function or line coverage drops below its floor there. Check locally with
 `./gradlew :core:koverXmlReport && scripts/coverage-check.sh core <functions> <lines>`; see
 [`docs/testing.md`](docs/testing.md#coverage-floors).
+
+### Shell scripts and workflows
+
+The `main` ruleset also requires the **Static checks** job in `.github/workflows/ci.yml`. It downloads pinned
+[shellcheck](https://www.shellcheck.net/) and [actionlint](https://github.com/rhysd/actionlint) releases (versions and
+SHA-256 checksums in the job's `env:`) and runs `shellcheck -x` on every tracked `*.sh` file and every extensionless
+sh/bash script under `scripts/`, then `actionlint` on `.github/workflows/`. actionlint reads `.github/actionlint.yaml`
+and runs shellcheck on each `run:` block too. `gradlew` (Gradle's) and the generated `.beads/hooks/` are not linted.
+Run the same locally, with both tools at the versions in `ci.yml` on your `PATH`:
+
+```bash
+shellcheck -x scripts/*.sh scripts/lib/*.sh
+actionlint
+```
+
+Fix a finding rather than silencing it. A check that cannot apply to this repository is turned off in
+`.github/actionlint.yaml` with a comment saying why.
+
+### Formatting
+
+[Spotless](https://github.com/diffplug/spotless) formats the repository: Kotlin and `*.gradle.kts` with
+[ktlint](https://pinterest.github.io/ktlint/) in its `ktlint_official` style, at 120 columns, and every other text file
+to no trailing whitespace (Markdown keeps it, as a line break) and a final newline. `./gradlew spotlessCheck`, part of
+`check`, fails on a deviation; `./gradlew spotlessApply` fixes it. ktlint cannot shorten a long string or comment, so
+those you wrap by hand. Its settings live in `.editorconfig`, which Android Studio reads too, so **Code → Reformat Code**
+formats the same way. Composables keep type-style names (`AppList`).
+
+A rule that misfires is turned off for the whole project in `.editorconfig`, with a comment saying why. Never
+silence one finding with `@Suppress` or a `ktlint-disable` comment.
+
+The commit that first formatted the code base is listed in `.git-blame-ignore-revs`. Run
+`git config blame.ignoreRevsFile .git-blame-ignore-revs` once so local `git blame` skips it; GitHub does so on its own.
+
+### Android Lint
+
+Every module runs Android Lint as part of `check`: `app` through AGP, `core` and `tooling` through the standalone
+`com.android.lint` plugin. Each `lint {}` block turns on every check (`checkAllWarnings`) and fails on any warning;
+`app` adds [Slack's Compose rules](https://slackhq.github.io/compose-lints/rules/) through `lintChecks`, and
+`LintConfigTest` fails if a module stops treating warnings as errors. `core` and `tooling` lint their test sources
+too; `app` keeps lint's default for its Robolectric tests, where device-runtime checks misfire.
+
+A check that is noise for this project is turned off by name in the module's `lint { disable += ... }`, with a comment
+saying why. Never `@Suppress`/`@SuppressLint` a finding and never add a lint baseline.
+
+### Static analysis
+
+[detekt](https://detekt.dev) checks the Kotlin of every module (`src/main` and `src/test`) against its default rules
+for code smells: overlong or overly complex functions, swallowed exceptions, magic numbers. `./gradlew detekt`, part of
+`check`, fails on a finding; the report names the rule and lands in `<module>/build/reports/detekt/`. Fix the code: a
+function that grows past a size or complexity limit is split, not exempted. `config/detekt/detekt.yml` holds only the
+overrides, each with the reason: detekt's documented Compose settings, and size and complexity limits lifted for test
+sources. A rule that misfires is changed there for the whole project; never `@Suppress` a finding or add a baseline.
 
 ### Applying review suggestions
 
@@ -202,9 +261,9 @@ issue `ai-fix-requested`, or mention `@claude` in an issue comment, PR review, o
 request on a `claude/*` branch and opens a pull request; it never pushes to `main`. On a pull request, `@claude review
 this` asks for a review. Mentions only count from `OWNER`/`MEMBER`/`COLLABORATOR`, the label can only be applied by
 triagers, and fork pull requests are refused, so outside contributors cannot start or steer a run. Claude may run only
-the quality gates (`./gradlew test`, `lint`, `assembleDebug`, `check`, and the module test tasks). Its PRs go through the
-same checks and human review as any other. The workflow needs the `CLAUDE_CODE_OAUTH_TOKEN` repo secret and the Claude
-GitHub App.
+the quality gates (`./gradlew test`, `lint`, `assembleDebug`, `check`, and the module test tasks) and
+`./gradlew spotlessApply`. Its PRs go through the same checks and human review as any other. The workflow needs the
+`CLAUDE_CODE_OAUTH_TOKEN` repo secret and the Claude GitHub App.
 
 For reviews, point Claude at the shared rubric in [`prompts/code-review.md`](prompts/code-review.md), e.g.
 `@claude review this PR using prompts/code-review.md against issue #12`; [`prompts/`](prompts/README.md) also holds the

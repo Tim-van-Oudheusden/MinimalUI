@@ -9,7 +9,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.captureToImage
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.dp
@@ -56,10 +56,15 @@ class StatusLineTest {
         return Colours.of(rule.onRoot().captureToImage().asAndroidBitmap())
     }
 
-    private fun battery(percent: Int, charging: Boolean = false) =
-        colours(StatusPill(wifi = false, battery = Battery(percent, charging), clock = null, percentage = false))
+    private fun battery(
+        percent: Int,
+        charging: Boolean = false,
+    ) = colours(StatusPill(wifi = false, battery = Battery(percent, charging), clock = null, percentage = false))
 
-    private data class Colours(val white: Int, val red: Int) {
+    private data class Colours(
+        val white: Int,
+        val red: Int,
+    ) {
         companion object {
             fun of(bitmap: android.graphics.Bitmap): Colours {
                 val pixels = IntArray(bitmap.width * bitmap.height)

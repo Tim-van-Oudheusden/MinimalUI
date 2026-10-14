@@ -9,9 +9,10 @@ import org.junit.Test
  * but fails on the JVM.
  */
 class AppOrderingTest {
-
-    private fun app(label: String, packageName: String = "pkg.$label") =
-        LauncherApp(label = label, packageName = packageName, activityName = "$packageName.Main")
+    private fun app(
+        label: String,
+        packageName: String = "pkg.$label",
+    ) = LauncherApp(label = label, packageName = packageName, activityName = "$packageName.Main")
 
     @Test
     fun `orders apps alphabetically regardless of letter case`() {
@@ -33,10 +34,11 @@ class AppOrderingTest {
 
     @Test
     fun `orders apps with the same label by package so the list does not reshuffle`() {
-        val apps = listOf(
-            app("Camera", packageName = "com.vendor.camera"),
-            app("Camera", packageName = "com.android.camera"),
-        )
+        val apps =
+            listOf(
+                app("Camera", packageName = "com.vendor.camera"),
+                app("Camera", packageName = "com.android.camera"),
+            )
 
         val packages = apps.sortedForDisplay().map { it.packageName }
 

@@ -20,8 +20,7 @@ commits, body says `Fixes #<number>`. Fill in `.github/pull_request_template.md`
 
 ## Quality gates
 
-- The exact commands run and their results (`./gradlew test`, `lint`,
-  `assembleDebug`).
+- The exact commands run and their results (`./gradlew check assembleDebug`).
 
 ## Notes for the reviewer
 

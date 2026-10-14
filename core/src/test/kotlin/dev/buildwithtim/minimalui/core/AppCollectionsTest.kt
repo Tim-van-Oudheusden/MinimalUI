@@ -4,16 +4,20 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class AppCollectionsTest {
-
     private fun app(label: String) = LauncherApp(label, "pkg.$label", "pkg.$label.Main")
 
     private val installed = listOf("Alarm", "Bell", "Camera", "Drums").map(::app)
 
-    private fun AppCollections.labelsIn(name: String, apps: List<LauncherApp> = installed) =
-        appsIn(name, apps).map { it.label }
+    private fun AppCollections.labelsIn(
+        name: String,
+        apps: List<LauncherApp> = installed,
+    ) = appsIn(name, apps).map { it.label }
 
-    private val games = AppCollections().added("Games", app("Camera")).added("Games", app("Alarm"))
-        .added("Games", app("Drums"))
+    private val games =
+        AppCollections()
+            .added("Games", app("Camera"))
+            .added("Games", app("Alarm"))
+            .added("Games", app("Drums"))
 
     @Test
     fun `there are no collections at first`() {
@@ -51,8 +55,11 @@ class AppCollectionsTest {
 
     @Test
     fun `collections are named in alphabetical order, ignoring case`() {
-        val collections = AppCollections().added("work", app("Bell")).added("Games", app("Alarm"))
-            .added("Apps", app("Camera"))
+        val collections =
+            AppCollections()
+                .added("work", app("Bell"))
+                .added("Games", app("Alarm"))
+                .added("Apps", app("Camera"))
 
         assertEquals(listOf("Apps", "Games", "work"), collections.names(installed))
     }

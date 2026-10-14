@@ -4,7 +4,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class SystemSettingsTest {
-
     private val settings = LauncherApp("Settings", "com.android.settings", "com.android.settings.Settings")
     private val clock = LauncherApp("Clock", "com.android.deskclock", "com.android.deskclock.DeskClock")
 

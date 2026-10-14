@@ -11,7 +11,6 @@ import android.content.pm.ApplicationInfo
 import android.content.pm.LauncherActivityInfo
 import android.content.pm.LauncherApps
 import android.content.pm.PackageInfo
-import android.content.pm.ResolveInfo
 import android.graphics.Paint
 import android.graphics.Rect
 import android.net.ConnectivityManager
@@ -38,7 +37,7 @@ import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isFocused
-import androidx.compose.ui.test.junit4.createEmptyComposeRule
+import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -88,7 +87,6 @@ class MainActivityTest {
     val rule = createEmptyComposeRule()
 
     private val application: Application = ApplicationProvider.getApplicationContext()
-    private val launcherQuery = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
     private var controller: ActivityController<MainActivity>? = null
 
     @After
@@ -96,25 +94,26 @@ class MainActivityTest {
         controller?.pause()?.stop()?.destroy()
     }
 
-    private fun install(label: String, packageName: String, category: Int = ApplicationInfo.CATEGORY_UNDEFINED) {
-        val info = ResolveInfo().apply {
-            nonLocalizedLabel = label
-            activityInfo = ActivityInfo().apply {
+    private fun install(
+        label: String,
+        packageName: String,
+        category: Int = ApplicationInfo.CATEGORY_UNDEFINED,
+    ) {
+        val activity =
+            ActivityInfo().apply {
+                nonLocalizedLabel = label
                 this.packageName = packageName
                 name = "$packageName.Main"
-                exported = true
-                applicationInfo = ApplicationInfo().apply {
-                    this.packageName = packageName
-                    this.category = category
-                }
+                applicationInfo =
+                    ApplicationInfo().apply {
+                        this.packageName = packageName
+                        this.category = category
+                    }
             }
-        }
-        shadowOf(application.packageManager).addResolveInfoForIntent(launcherQuery, info)
-        shadowOf(application.packageManager).addActivityIfNotPresent(ComponentName(packageName, "$packageName.Main"))
+        shadowOf(application.packageManager).installActivity(activity, Intent.ACTION_MAIN, Intent.CATEGORY_LAUNCHER)
     }
 
     private fun uninstall(packageName: String) {
-        shadowOf(application.packageManager).removeResolveInfosForIntent(launcherQuery, packageName)
         shadowOf(application.packageManager).removeActivity(ComponentName(packageName, "$packageName.Main"))
     }
 
@@ -127,10 +126,12 @@ class MainActivityTest {
     // MinimalUI lists itself too, so test apps are named to sort before it and own the first row.
 
     /** The app list loads off the main thread; wait until [label] is listed, or no longer listed. */
-    private fun awaitListed(label: String, listed: Boolean = true) =
-        rule.waitUntil(timeoutMillis = 5_000) {
-            rule.onAllNodesWithText(label).fetchSemanticsNodes().isNotEmpty() == listed
-        }
+    private fun awaitListed(
+        label: String,
+        listed: Boolean = true,
+    ) = rule.waitUntil(timeoutMillis = 5_000) {
+        rule.onAllNodesWithText(label).fetchSemanticsNodes().isNotEmpty() == listed
+    }
 
     private fun press(key: Key) = rule.onRoot().performKeyInput { pressKey(key) }
 
@@ -138,13 +139,19 @@ class MainActivityTest {
     private val listRow = hasClickAction() and hasAnyAncestor(hasScrollAction())
 
     /** Types through the activity, the path a key takes when no row consumes it. */
-    private fun type(activity: ActivityController<MainActivity>, keyCode: Int) {
+    private fun type(
+        activity: ActivityController<MainActivity>,
+        keyCode: Int,
+    ) {
         activity.get().dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, keyCode))
         activity.get().dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_UP, keyCode))
     }
 
     /** The user leaves for the opened app, [meanwhile] happens, and they come back by a route other than Home. */
-    private fun leaveAndComeBack(activity: ActivityController<MainActivity>, meanwhile: () -> Unit = {}) {
+    private fun leaveAndComeBack(
+        activity: ActivityController<MainActivity>,
+        meanwhile: () -> Unit = {},
+    ) {
         activity.pause().stop()
         meanwhile()
         activity.restart().resume()
@@ -161,7 +168,8 @@ class MainActivityTest {
         }
     }
 
-    private fun Bundle?.contents(): Map<String, Any?>? = this?.let { b -> b.keySet().associateWith { b.get(it) } }
+    // Bundle has no equals; its string form lists every entry. Neither bundle here was parcelled, so both list theirs.
+    private fun Bundle?.contents(): String? = this?.toString()
 
     @Test
     fun `Enter opens the focused app in its own task`() {
@@ -447,14 +455,18 @@ class MainActivityTest {
     }
 
     /** An app that came with the system, so it cannot be uninstalled. */
-    private fun installSystem(label: String, packageName: String) {
+    private fun installSystem(
+        label: String,
+        packageName: String,
+    ) {
         shadowOf(application.packageManager).installPackage(
             PackageInfo().apply {
                 this.packageName = packageName
-                applicationInfo = ApplicationInfo().apply {
-                    this.packageName = packageName
-                    flags = ApplicationInfo.FLAG_SYSTEM
-                }
+                applicationInfo =
+                    ApplicationInfo().apply {
+                        this.packageName = packageName
+                        flags = ApplicationInfo.FLAG_SYSTEM
+                    }
             },
         )
         install(label, packageName)
@@ -579,15 +591,7 @@ class MainActivityTest {
 
     @Test
     fun `Uninstall is disabled for the Settings entry the list always keeps`() {
-        val settings = ResolveInfo().apply {
-            activityInfo = ActivityInfo().apply {
-                nonLocalizedLabel = "Settings"
-                packageName = "com.example.settings"
-                name = "com.example.settings.Main"
-                applicationInfo = ApplicationInfo().apply { packageName = "com.example.settings" }
-            }
-        }
-        shadowOf(application.packageManager).addResolveInfoForIntent(Intent(Settings.ACTION_SETTINGS), settings)
+        installSystemSettings()
         val activity = launch()
         awaitListed("Settings")
         type(activity, KeyEvent.KEYCODE_S)
@@ -674,29 +678,23 @@ class MainActivityTest {
         rule.onNodeWithText("Alarm").assertIsFocused()
     }
 
-    private fun batteryAt(level: Int, status: Int = BatteryManager.BATTERY_STATUS_DISCHARGING) =
-        application.sendStickyBroadcast(
-            Intent(Intent.ACTION_BATTERY_CHANGED)
-                .putExtra(BatteryManager.EXTRA_LEVEL, level)
-                .putExtra(BatteryManager.EXTRA_SCALE, 100)
-                .putExtra(BatteryManager.EXTRA_STATUS, status),
-        )
-
-    private fun texts(): List<String> = rule.onAllNodes(SemanticsMatcher.keyIsDefined(SemanticsProperties.Text), true)
-        .fetchSemanticsNodes()
-        .flatMap { node -> node.config[SemanticsProperties.Text].map { it.text } }
+    private fun texts(): List<String> =
+        rule
+            .onAllNodes(SemanticsMatcher.keyIsDefined(SemanticsProperties.Text), true)
+            .fetchSemanticsNodes()
+            .flatMap { node -> node.config[SemanticsProperties.Text].map { it.text } }
 
     private val connectivity get() = shadowOf(application.getSystemService(ConnectivityManager::class.java))
 
     @Test
     fun `the status pill shows the battery charge, and follows it`() {
         install("Alarm", "com.example.alarm")
-        batteryAt(42)
+        application.broadcastBattery(42)
         launch()
         awaitListed("Alarm")
         rule.onNodeWithText("42%").assertExists()
 
-        batteryAt(41, BatteryManager.BATTERY_STATUS_CHARGING)
+        application.broadcastBattery(41, BatteryManager.BATTERY_STATUS_CHARGING)
 
         awaitListed("41%")
         rule.onNodeWithContentDescription("Charging", useUnmergedTree = true).assertExists()
@@ -739,7 +737,9 @@ class MainActivityTest {
     fun `the status sources are watched only while the launcher is in front`() {
         val activity = launch()
         val watched = listOf(Intent.ACTION_BATTERY_CHANGED, Intent.ACTION_TIME_TICK)
-        fun receivers() = shadowOf(application).registeredReceivers.filter { r -> watched.all(r.intentFilter::hasAction) }
+
+        fun receivers() =
+            shadowOf(application).registeredReceivers.filter { r -> watched.all(r.intentFilter::hasAction) }
         assertEquals(1, receivers().size)
         assertEquals(1, connectivity.networkCallbacks.size)
 
@@ -761,29 +761,32 @@ class MainActivityTest {
 
     /** Android's Settings app, which the list always keeps, as a device that has one resolves it. */
     private fun installSystemSettings() {
-        val settings = ResolveInfo().apply {
-            activityInfo = ActivityInfo().apply {
+        val settings =
+            ActivityInfo().apply {
                 nonLocalizedLabel = "Settings"
                 packageName = "com.example.settings"
                 name = "com.example.settings.Main"
                 applicationInfo = ApplicationInfo().apply { packageName = "com.example.settings" }
             }
-        }
-        shadowOf(application.packageManager).addResolveInfoForIntent(Intent(Settings.ACTION_SETTINGS), settings)
+        shadowOf(application.packageManager).installActivity(settings, Settings.ACTION_SETTINGS)
     }
 
     /** The labels of the list's rows, top to bottom, as filtered by the [query] typed into [activity]. */
-    private fun rowsMatching(activity: ActivityController<MainActivity>, query: String): List<String> {
+    private fun rowsMatching(
+        activity: ActivityController<MainActivity>,
+        query: String,
+    ): List<String> {
         query.forEach { type(activity, KeyEvent.keyCodeFromString("KEYCODE_${it.uppercaseChar()}")) }
         rule.waitForIdle()
-        return rule.onAllNodes(listRow)
+        return rule
+            .onAllNodes(listRow)
             .fetchSemanticsNodes()
             .map { node -> node.config[SemanticsProperties.Text].joinToString { it.text } }
     }
 
     /**
-     * Opens MinimalUI's settings from its row: the last app row while no test app sorts after it and Settings is absent.
-     * Up wraps to the Groups row below it (#69), and Up again skips the blank row above that.
+     * Opens MinimalUI's settings from its row: the last app row while no test app sorts after it and Settings is
+     * absent. Up wraps to the Groups row below it (#69), and Up again skips the blank row above that.
      */
     private fun openSettings() {
         awaitListed("MinimalUI settings")
@@ -794,7 +797,10 @@ class MainActivityTest {
         awaitListed("Clock")
     }
 
-    private fun assertValue(setting: String, value: String) = rule.onNodeWithText(setting).assert(hasText(value))
+    private fun assertValue(
+        setting: String,
+        value: String,
+    ) = rule.onNodeWithText(setting).assert(hasText(value))
 
     @Test
     fun `the MinimalUI settings row sits right after Android's Settings, and typing finds it`() {
@@ -867,7 +873,7 @@ class MainActivityTest {
 
     @Test
     fun `the status pill follows the settings at once`() {
-        batteryAt(42)
+        application.broadcastBattery(42)
         Settings.System.putString(application.contentResolver, Settings.System.TIME_12_24, "24")
         launch()
         openSettings()
@@ -956,13 +962,18 @@ class MainActivityTest {
 
     /** MinimalUI's Recently used setting at Off, as stored before the launcher starts. */
     private fun recentlyUsedOff() {
-        application.getSharedPreferences("settings", Context.MODE_PRIVATE).edit()
+        application
+            .getSharedPreferences("settings", Context.MODE_PRIVATE)
+            .edit()
             .putString("recently_used", "Off")
             .commit()
     }
 
     /** Opens each of [labels] in turn from its row in the full list (the last row with it), and comes back by Back. */
-    private fun openInTurn(activity: ActivityController<MainActivity>, vararg labels: String) = labels.forEach {
+    private fun openInTurn(
+        activity: ActivityController<MainActivity>,
+        vararg labels: String,
+    ) = labels.forEach {
         rule.onAllNodesWithText(it).onLast().performClick()
         leaveAndComeBack(activity)
     }
@@ -1073,11 +1084,17 @@ class MainActivityTest {
     }
 
     /** Types [text] (letters and digits) through [activity]. */
-    private fun typeText(activity: ActivityController<MainActivity>, text: String) =
-        text.forEach { type(activity, KeyEvent.keyCodeFromString("KEYCODE_${it.uppercaseChar()}")) }
+    private fun typeText(
+        activity: ActivityController<MainActivity>,
+        text: String,
+    ) = text.forEach { type(activity, KeyEvent.keyCodeFromString("KEYCODE_${it.uppercaseChar()}")) }
 
     /** From the selected app's menu, by keyboard: Add to collection, then [name], made new when [new]. */
-    private fun addToCollection(activity: ActivityController<MainActivity>, name: String, new: Boolean) {
+    private fun addToCollection(
+        activity: ActivityController<MainActivity>,
+        name: String,
+        new: Boolean,
+    ) {
         openMenu(activity)
         chooseRow("Add to collection")
         awaitListed("App info", listed = false)
@@ -1165,9 +1182,12 @@ class MainActivityTest {
         rule.onNodeWithText("gamez").assertIsFocused()
         press(Key.Enter)
         awaitListed("Bell")
-        assertEquals(listOf("Bell", "Alarm"), rule.onAllNodes(listRow).fetchSemanticsNodes().map {
-            it.config[SemanticsProperties.Text].joinToString()
-        })
+        assertEquals(
+            listOf("Bell", "Alarm"),
+            rule.onAllNodes(listRow).fetchSemanticsNodes().map {
+                it.config[SemanticsProperties.Text].joinToString()
+            },
+        )
         rule.onNodeWithText("Bell").assertIsFocused()
 
         activity.get().onBackPressedDispatcher.onBackPressed()
@@ -1227,9 +1247,11 @@ class MainActivityTest {
         awaitListed("games")
         press(Key.Enter)
         awaitListed("Alarm")
-        fun rows() = rule.onAllNodes(listRow).fetchSemanticsNodes().map {
-            it.config[SemanticsProperties.Text].joinToString()
-        }
+
+        fun rows() =
+            rule.onAllNodes(listRow).fetchSemanticsNodes().map {
+                it.config[SemanticsProperties.Text].joinToString()
+            }
 
         openMenu(activity)
         rule.onNodeWithText("Move up").assertIsNotEnabled()
@@ -1288,7 +1310,10 @@ class MainActivityTest {
     }
 
     /** From the selected app's menu, by keyboard: [action] (Hide or Unhide), back on the list it was opened from. */
-    private fun fromMenu(activity: ActivityController<MainActivity>, action: String) {
+    private fun fromMenu(
+        activity: ActivityController<MainActivity>,
+        action: String,
+    ) {
         openMenu(activity)
         chooseRow(action)
         awaitListed("App info", listed = false)
@@ -1297,9 +1322,15 @@ class MainActivityTest {
     /** The colour [label]'s text is drawn in. */
     private fun textColor(label: String): Color {
         val layouts = mutableListOf<TextLayoutResult>()
-        rule.onNodeWithText(label, useUnmergedTree = true).fetchSemanticsNode()
-            .config[SemanticsActions.GetTextLayoutResult].action!!.invoke(layouts)
-        return layouts.single().layoutInput.style.color
+        rule
+            .onNodeWithText(label, useUnmergedTree = true)
+            .fetchSemanticsNode()
+            .config[SemanticsActions.GetTextLayoutResult]
+            .action!!
+            .invoke(layouts)
+        return layouts
+            .single()
+            .layoutInput.style.color
     }
 
     // One row taller than the default screen, for the hint row (#74): the list's first page still holds the block,
@@ -1348,9 +1379,11 @@ class MainActivityTest {
         awaitListed("games")
         press(Key.Enter)
         awaitListed("Alarm")
-        fun rows() = rule.onAllNodes(listRow).fetchSemanticsNodes().map {
-            it.config[SemanticsProperties.Text].joinToString()
-        }
+
+        fun rows() =
+            rule.onAllNodes(listRow).fetchSemanticsNodes().map {
+                it.config[SemanticsProperties.Text].joinToString()
+            }
         assertEquals(listOf("Bell", "Alarm"), rows())
 
         fromMenu(activity, "Hide")
@@ -1427,7 +1460,10 @@ class MainActivityTest {
         assertNotEquals(DimText, textColor("Bike"))
         activity.newIntent(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME))
         awaitListed("b_", listed = false)
-        assertEquals(listOf("Bell", "Bell", "Bike", "MinimalUI", "MinimalUI settings", "Groups"), rowsMatching(activity, ""))
+        assertEquals(
+            listOf("Bell", "Bell", "Bike", "MinimalUI", "MinimalUI settings", "Groups"),
+            rowsMatching(activity, ""),
+        )
     }
 
     /** Opens MinimalUI's settings, then its Hidden apps list. */
@@ -1449,9 +1485,11 @@ class MainActivityTest {
         }
         awaitListed("Cello", listed = false)
         openHiddenApps()
-        fun rows() = rule.onAllNodes(listRow).fetchSemanticsNodes().map {
-            it.config[SemanticsProperties.Text].joinToString()
-        }
+
+        fun rows() =
+            rule.onAllNodes(listRow).fetchSemanticsNodes().map {
+                it.config[SemanticsProperties.Text].joinToString()
+            }
         assertEquals(listOf("Alarm", "Bell", "Cello"), rows())
         rule.onNodeWithText("Alarm").assertIsFocused()
 
@@ -1472,7 +1510,10 @@ class MainActivityTest {
         rule.onNodeWithText("Hidden apps").assertIsFocused()
         activity.newIntent(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME))
         awaitListed("Alarm")
-        assertEquals(listOf("Alarm", "Bell", "Cello", "MinimalUI", "MinimalUI settings", "Groups"), rowsMatching(activity, ""))
+        assertEquals(
+            listOf("Alarm", "Bell", "Cello", "MinimalUI", "MinimalUI settings", "Groups"),
+            rowsMatching(activity, ""),
+        )
         rule.onNodeWithText("Alarm").assertIsFocused()
     }
 
@@ -1508,12 +1549,16 @@ class MainActivityTest {
     }
 
     /** Types [text] through [activity] as a hardware keyboard would: letters (capitals with Shift), digits, spaces. */
-    private fun typeChars(activity: ActivityController<MainActivity>, text: String) = text.forEach { char ->
-        val code = if (char == ' ') {
-            KeyEvent.KEYCODE_SPACE
-        } else {
-            KeyEvent.keyCodeFromString("KEYCODE_${char.uppercaseChar()}")
-        }
+    private fun typeChars(
+        activity: ActivityController<MainActivity>,
+        text: String,
+    ) = text.forEach { char ->
+        val code =
+            if (char == ' ') {
+                KeyEvent.KEYCODE_SPACE
+            } else {
+                KeyEvent.keyCodeFromString("KEYCODE_${char.uppercaseChar()}")
+            }
         val meta = if (char.isUpperCase()) KeyEvent.META_SHIFT_ON or KeyEvent.META_SHIFT_LEFT_ON else 0
         listOf(KeyEvent.ACTION_DOWN, KeyEvent.ACTION_UP).forEach { action ->
             activity.get().dispatchKeyEvent(KeyEvent(0, 0, action, code, 0, meta))
@@ -1525,15 +1570,24 @@ class MainActivityTest {
 
     /** The text in the open text editor. */
     private fun editorText(): String =
-        rule.onNode(editable).fetchSemanticsNode().config[SemanticsProperties.EditableText].text
+        rule
+            .onNode(editable)
+            .fetchSemanticsNode()
+            .config[SemanticsProperties.EditableText]
+            .text
 
     /** Waits until the text editor is open with its field focused, so typed keys reach it. */
-    private fun awaitEditor() = rule.waitUntil(timeoutMillis = 5_000) {
-        rule.onAllNodes(editable and isFocused()).fetchSemanticsNodes().isNotEmpty()
-    }
+    private fun awaitEditor() =
+        rule.waitUntil(timeoutMillis = 5_000) {
+            rule.onAllNodes(editable and isFocused()).fetchSemanticsNodes().isNotEmpty()
+        }
 
     /** From the selected app's menu, by keyboard: Rename, Backspace over the [current] name, then [name] and Enter. */
-    private fun rename(activity: ActivityController<MainActivity>, current: String, name: String) {
+    private fun rename(
+        activity: ActivityController<MainActivity>,
+        current: String,
+        name: String,
+    ) {
         openMenu(activity)
         chooseRow("Rename")
         awaitEditor()
@@ -1638,7 +1692,10 @@ class MainActivityTest {
         awaitListed("Ring")
         openInTurn(restarted, "Ring")
 
-        assertEquals(listOf("Ring", "Alarm", "MinimalUI", "MinimalUI settings", "Ring", "Groups"), rowsMatching(restarted, ""))
+        assertEquals(
+            listOf("Ring", "Alarm", "MinimalUI", "MinimalUI settings", "Ring", "Groups"),
+            rowsMatching(restarted, ""),
+        )
     }
 
     @Test
@@ -1663,13 +1720,22 @@ class MainActivityTest {
 
         assertEquals(
             listOf(
-                "Bell", "MinimalUI", "MinimalUI settings", "Phone com.example.dialer", "Phone com.example.phone", "Groups",
+                "Bell",
+                "MinimalUI",
+                "MinimalUI settings",
+                "Phone com.example.dialer",
+                "Phone com.example.phone",
+                "Groups",
             ),
             rowsMatching(activity, ""),
         )
         val layouts = mutableListOf<TextLayoutResult>()
-        rule.onNodeWithText("Phone com.example.dialer", useUnmergedTree = true).fetchSemanticsNode()
-            .config[SemanticsActions.GetTextLayoutResult].action!!.invoke(layouts)
+        rule
+            .onNodeWithText("Phone com.example.dialer", useUnmergedTree = true)
+            .fetchSemanticsNode()
+            .config[SemanticsActions.GetTextLayoutResult]
+            .action!!
+            .invoke(layouts)
         val text = layouts.single().layoutInput.text
         val suffix = text.spanStyles.single()
         assertEquals("com.example.dialer", text.text.substring(suffix.start, suffix.end))
@@ -1694,9 +1760,10 @@ class MainActivityTest {
     }
 
     /** The texts of the open list's rows, top to bottom. */
-    private fun shownRows(): List<String> = rule.onAllNodes(listRow).fetchSemanticsNodes().map {
-        it.config[SemanticsProperties.Text].joinToString()
-    }
+    private fun shownRows(): List<String> =
+        rule.onAllNodes(listRow).fetchSemanticsNodes().map {
+            it.config[SemanticsProperties.Text].joinToString()
+        }
 
     @Test
     fun `the Groups row ends the root, Up wraps to it, a game is under Games, and Back restores each row`() {
@@ -1766,7 +1833,7 @@ class MainActivityTest {
     }
 
     @Test
-    fun `tapping a hint does what its key does, so Backspace edits the filter, Enter saves a name, Esc closes the menu`() {
+    fun `a tapped hint acts as its key does, so Backspace edits the filter, Enter saves a name, Esc closes the menu`() {
         install("Alarm", "com.example.alarm")
         val activity = launch()
         awaitListed("Alarm")
@@ -1795,7 +1862,11 @@ class MainActivityTest {
     }
 
     /** From the selected app's menu, by keyboard: Add to group, then [name], made new when [new]. */
-    private fun addToGroup(activity: ActivityController<MainActivity>, name: String, new: Boolean) {
+    private fun addToGroup(
+        activity: ActivityController<MainActivity>,
+        name: String,
+        new: Boolean,
+    ) {
         openMenu(activity)
         chooseRow("Add to group")
         awaitListed("App info", listed = false)
@@ -1947,6 +2018,7 @@ class MainActivityTest {
 
     private val userManager: UserManager get() = application.getSystemService(UserManager::class.java)
     private val launcherApps: LauncherApps get() = application.getSystemService(LauncherApps::class.java)
+
     // UserHandle.of is not public API; an app uid of the profile names the same user.
     private val work: UserHandle = UserHandle.getUserHandleForUid(WORK_USER * PER_USER_RANGE)
 
@@ -1957,30 +2029,39 @@ class MainActivityTest {
     }
 
     /** [label]'s launcher activity, installed in the work profile. */
-    private fun installWork(label: String, packageName: String) {
-        val info = ActivityInfo().apply {
-            this.packageName = packageName
-            name = "$packageName.Main"
-            nonLocalizedLabel = label
-            applicationInfo = ApplicationInfo().apply { this.packageName = packageName }
-        }
+    private fun installWork(
+        label: String,
+        packageName: String,
+    ) {
+        val info =
+            ActivityInfo().apply {
+                this.packageName = packageName
+                name = "$packageName.Main"
+                nonLocalizedLabel = label
+                applicationInfo = ApplicationInfo().apply { this.packageName = packageName }
+            }
         shadowOf(launcherApps).addActivity(work, launcherActivity(info, work))
     }
 
     /** The framework's own [LauncherActivityInfo] for [info] in [user]; its constructors are hidden. */
-    private fun launcherActivity(info: ActivityInfo, user: UserHandle): LauncherActivityInfo {
+    private fun launcherActivity(
+        info: ActivityInfo,
+        user: UserHandle,
+    ): LauncherActivityInfo {
         val internalClass = Class.forName("android.content.pm.LauncherActivityInfoInternal")
         val internalConstructor =
             internalClass.constructors.first { it.parameterTypes.firstOrNull() == ActivityInfo::class.java }
-        val arguments = internalConstructor.parameterTypes.map { type ->
-            when (type) {
-                ActivityInfo::class.java -> info
-                UserHandle::class.java -> user
-                else -> null
+        val arguments =
+            internalConstructor.parameterTypes.map { type ->
+                when (type) {
+                    ActivityInfo::class.java -> info
+                    UserHandle::class.java -> user
+                    else -> null
+                }
             }
-        }
         val internal = internalConstructor.newInstance(*arguments.toTypedArray())
-        return LauncherActivityInfo::class.java.getDeclaredConstructor(Context::class.java, internalClass)
+        return LauncherActivityInfo::class.java
+            .getDeclaredConstructor(Context::class.java, internalClass)
             .apply { isAccessible = true }
             .newInstance(application, internal)
     }
@@ -2147,13 +2228,14 @@ class MainActivityTest {
         val callbacks: List<android.util.Pair<LauncherApps.Callback, *>> =
             ReflectionHelpers.getStaticField(ShadowLauncherApps::class.java, "callbacks")
         val callback = callbacks.single().first
-        val reports = listOf<(String) -> Unit>(
-            { callback.onPackageAdded(it, work) },
-            { callback.onPackageChanged(it, work) },
-            { callback.onPackageRemoved(it, work) },
-            { callback.onPackagesAvailable(arrayOf(it), work, false) },
-            { callback.onPackagesUnavailable(arrayOf(it), work, false) },
-        )
+        val reports =
+            listOf<(String) -> Unit>(
+                { callback.onPackageAdded(it, work) },
+                { callback.onPackageChanged(it, work) },
+                { callback.onPackageRemoved(it, work) },
+                { callback.onPackagesAvailable(arrayOf(it), work, false) },
+                { callback.onPackagesUnavailable(arrayOf(it), work, false) },
+            )
 
         reports.forEachIndexed { index, report ->
             val label = "Mail$index"
@@ -2186,7 +2268,10 @@ class MainActivityTest {
 @Implements(Activity::class)
 class StartActivityDenied : ShadowActivity() {
     @Implementation
-    protected fun startActivity(intent: Intent, options: Bundle?): Unit = throw SecurityException("Permission Denial")
+    protected fun startActivity(
+        intent: Intent,
+        options: Bundle?,
+    ): Unit = throw SecurityException("Permission Denial")
 }
 
 /**
@@ -2203,15 +2288,30 @@ class GlyphsFound : ShadowPaint() {
 @Implements(LauncherApps::class)
 class LauncherAppsRecorder : ShadowLauncherApps() {
     /** One start: its [kind] ([MAIN] or [DETAILS]), the [component] in the [user]'s profile, with its [options]. */
-    data class Started(val kind: String, val component: ComponentName, val user: UserHandle, val options: Bundle?)
+    data class Started(
+        val kind: String,
+        val component: ComponentName,
+        val user: UserHandle,
+        val options: Bundle?,
+    )
 
     @Implementation
-    protected fun startMainActivity(component: ComponentName, user: UserHandle, bounds: Rect?, options: Bundle?) {
+    protected fun startMainActivity(
+        component: ComponentName,
+        user: UserHandle,
+        bounds: Rect?,
+        options: Bundle?,
+    ) {
         started += Started(MAIN, component, user, options)
     }
 
     @Implementation
-    override fun startAppDetailsActivity(component: ComponentName, user: UserHandle, bounds: Rect?, options: Bundle?) {
+    override fun startAppDetailsActivity(
+        component: ComponentName,
+        user: UserHandle,
+        bounds: Rect?,
+        options: Bundle?,
+    ) {
         started += Started(DETAILS, component, user, options)
     }
 
