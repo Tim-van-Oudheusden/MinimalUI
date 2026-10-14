@@ -5,7 +5,6 @@ import android.content.pm.ApplicationInfo
 import android.content.pm.LauncherApps
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
-import android.net.Uri
 import android.os.Build
 import android.os.Process
 import android.os.UserHandle
@@ -87,16 +86,6 @@ fun PackageManager.isSystemApp(packageName: String): Boolean {
         }
     return info.flags and ApplicationInfo.FLAG_SYSTEM != 0
 }
-
-/** Android's App info screen for [this] app, in a task of its own as a home screen opens it. */
-fun LauncherApp.appInfoIntent(): Intent =
-    Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, packageUri()).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-
-/** Android's prompt to uninstall [this] app; the user confirms there. */
-fun LauncherApp.uninstallIntent(): Intent =
-    Intent(Intent.ACTION_DELETE, packageUri()).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-
-private fun LauncherApp.packageUri(): Uri = Uri.fromParts("package", packageName, null)
 
 /** Starts [this] app the way a home screen does: its existing task if it has one, a new one otherwise. */
 fun LauncherApp.launchIntent(): Intent =

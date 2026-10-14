@@ -3,6 +3,8 @@ agp = "9.4.1"
 kotlin = "2.4.21"
 activityCompose = "1.13.0"
 composeBom = "2026.09.00"
+# The first detekt release built against Kotlin 2.4 (#135); pinned exactly, an alpha has no compatibility promise.
+detekt = "2.0.0-alpha.6"
 junit = "4.13.2"
 jvmTarget = "17"
 kover = "0.9.11"
@@ -28,5 +30,6 @@ robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+detekt = { id = "dev.detekt", version.ref = "detekt" }
 kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }

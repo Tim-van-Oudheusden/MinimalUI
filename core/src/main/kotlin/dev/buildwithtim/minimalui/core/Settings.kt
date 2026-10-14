@@ -9,8 +9,8 @@ enum class Choice(
 ) {
     On,
     Off,
-    Three(3),
-    Five(5),
+    Three(count = 3),
+    Five(count = 5),
     Fifteen(RECENT_APPS_LIMIT),
 }
 

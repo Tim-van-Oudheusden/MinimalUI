@@ -6,7 +6,18 @@ plugins {
     alias(libs.plugins.kotlin.jvm) apply false
     alias(libs.plugins.kotlin.compose) apply false
     alias(libs.plugins.kover) apply false
+    alias(libs.plugins.detekt) apply false
     alias(libs.plugins.spotless)
+}
+
+// Static analysis for every Kotlin module (#135): detekt's default rules plus the overrides in config/detekt/detekt.yml
+// (the plugin's default config location). Its `detekt` task covers src/main and src/test, runs under `check` and fails
+// on a finding.
+subprojects {
+    apply(plugin = "dev.detekt")
+    extensions.configure<dev.detekt.gradle.extensions.DetektExtension> {
+        buildUponDefaultConfig = true
+    }
 }
 
 // Formatting for the whole repository: `./gradlew spotlessApply` fixes it, `spotlessCheck` (part of `check`) fails on

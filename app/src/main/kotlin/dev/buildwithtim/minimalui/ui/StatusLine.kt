@@ -94,7 +94,8 @@ private fun WifiGlyph(color: Color) {
         val centre = Offset(size.width / 2, size.height - dot)
         drawCircle(color, dot, centre)
         val outer = centre.y - stroke / 2
-        for (radius in listOf(outer * 0.4f, outer * 0.7f, outer)) {
+        val radii = listOf(outer * 0.4f, outer * 0.7f, outer)
+        for (radius in radii) {
             drawArc(
                 color = color,
                 startAngle = 225f,
@@ -130,10 +131,11 @@ private fun BatteryGlyph(
             cornerRadius = CornerRadius(3.dp.toPx()),
             style = Stroke(stroke),
         )
+        val terminalHeight = size.height * 0.4f
         drawRoundRect(
             color = outline,
-            topLeft = Offset(body.width, size.height * 0.3f),
-            size = Size(terminal, size.height * 0.4f),
+            topLeft = Offset(body.width, (size.height - terminalHeight) / 2),
+            size = Size(terminal, terminalHeight),
             cornerRadius = CornerRadius(terminal / 2),
         )
         val inset = stroke + 1.5.dp.toPx()

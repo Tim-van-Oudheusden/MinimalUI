@@ -193,6 +193,15 @@ formats the same way. Composables keep type-style names (`AppList`).
 A rule that misfires is turned off for the whole project in `.editorconfig`, with a comment saying why. Never
 silence one finding with `@Suppress` or a `ktlint-disable` comment.
 
+### Static analysis
+
+[detekt](https://detekt.dev) checks the Kotlin of every module (`src/main` and `src/test`) against its default rules
+for code smells: overlong or overly complex functions, swallowed exceptions, magic numbers. `./gradlew detekt`, part of
+`check`, fails on a finding; the report names the rule and lands in `<module>/build/reports/detekt/`. Fix the code: a
+function that grows past a size or complexity limit is split, not exempted. `config/detekt/detekt.yml` holds only the
+overrides, each with the reason: detekt's documented Compose settings, and size and complexity limits lifted for test
+sources. A rule that misfires is changed there for the whole project; never `@Suppress` a finding or add a baseline.
+
 ### Applying review suggestions
 
 Comment `/apply-suggestions` on a pull request to commit every ```` ```suggestion ```` block that reviewers with write

@@ -60,8 +60,10 @@ fun battery(
     charging: Boolean,
 ): Battery? {
     if (scale <= 0 || level !in 0..scale) return null
-    return Battery((level * 100 + scale / 2) / scale, charging)
+    return Battery((level * PERCENT + scale / 2) / scale, charging)
 }
+
+private const val PERCENT = 100
 
 /**
  * The time as the system's 12/24-hour setting shows it: `HH:mm` when [twentyFourHour], else `h:mm` and the
@@ -76,6 +78,8 @@ fun clockText(
 ): String {
     val mm = "%02d".format(minute)
     if (twentyFourHour) return "%02d:%s".format(hour, mm)
-    val twelveHour = if (hour % 12 == 0) 12 else hour % 12
-    return "$twelveHour:$mm ${if (hour < 12) am else pm}"
+    val twelveHour = if (hour % HALF_DAY_HOURS == 0) HALF_DAY_HOURS else hour % HALF_DAY_HOURS
+    return "$twelveHour:$mm ${if (hour < HALF_DAY_HOURS) am else pm}"
 }
+
+private const val HALF_DAY_HOURS = 12
