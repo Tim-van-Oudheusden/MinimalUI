@@ -23,10 +23,11 @@
 
 ## Status
 
-Early development (version 0.1.0). No phone is listed as supported until it has been tested on one:
-[`DEVICES.md`](DEVICES.md) lists the phones reported so far and how to report yours. Today the launcher
-shows every installed app in one alphabetical list and opens the one you pick. It hides Android's status bar and shows
-its own pill in the top-right corner instead: Wi-Fi (when connected), battery level and the time.
+Early development: the [latest release](https://github.com/Tim-van-Oudheusden/MinimalUI/releases/latest) is a 0.x
+version. No phone is listed as supported until it has been tested on one: [`DEVICES.md`](DEVICES.md) lists the phones
+reported so far and how to report yours. Today the launcher shows every installed app in one alphabetical list and
+opens the one you pick. It hides Android's status bar and shows its own pill in the top-right corner instead: Wi-Fi
+(when connected), battery level and the time.
 
 ## About
 
@@ -57,8 +58,8 @@ Android 9 (API 28) or newer. A hardware keyboard or D-pad is the intended input;
 Pick one:
 
 - **Download a release.** [Releases](https://github.com/Tim-van-Oudheusden/MinimalUI/releases) lists every published
-  version with `minimalui-<version>.apk` attached; no GitHub account is needed. Open the file on the phone and allow
-  installs from that source, or run `adb install minimalui-<version>.apk`. A release installs over an earlier one and
+  version with `minimalui-v<version>.apk` attached; no GitHub account is needed. Open the file on the phone and allow
+  installs from that source, or run `adb install minimalui-v<version>.apk`. A release installs over an earlier one and
   keeps your settings. A debug build (the next two options) is signed with a different key, so uninstall it first.
 - **Download a CI build.** Every CI run on GitHub uploads a debug APK of the latest code as the `minimalui-debug-apk`
   artifact, kept for 14 days. Open a recent run of the `CI` workflow under the repository's **Actions** tab (you must
