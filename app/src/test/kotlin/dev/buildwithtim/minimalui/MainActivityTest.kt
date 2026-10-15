@@ -1689,6 +1689,33 @@ class MainActivityTest {
     }
 
     @Test
+    fun `renaming an app uninstalled while the editor is open closes it and names nothing`() {
+        install("Alarm", "com.example.alarm")
+        install("Bell", "com.example.bell")
+        val activity = launch()
+        awaitListed("Bell")
+        press(Key.DirectionDown)
+        openMenu(activity)
+        chooseRow("Rename")
+        awaitEditor()
+        uninstall("com.example.bell")
+        application.sendBroadcast(Intent(Intent.ACTION_PACKAGE_REMOVED, packageUri("com.example.bell")))
+        repeat("Bell".length) { type(activity, KeyEvent.KEYCODE_DEL) }
+        typeChars(activity, "Ring")
+        rule.waitUntil(timeoutMillis = 5_000) { editorText() == "Ring" }
+        type(activity, KeyEvent.KEYCODE_ENTER)
+
+        awaitListed("Rename", listed = false)
+        assertStillHome(activity)
+        assertEquals(listOf("Alarm", "MinimalUI", "MinimalUI settings", "Groups"), rowsMatching(activity, ""))
+        // Back, the app keeps its own name: the one typed for it while it was gone was not kept.
+        install("Bell", "com.example.bell")
+        application.sendBroadcast(Intent(Intent.ACTION_PACKAGE_ADDED, packageUri("com.example.bell")))
+        awaitListed("Bell")
+        rule.onNodeWithText("Ring").assertDoesNotExist()
+    }
+
+    @Test
     fun `a new name is kept when the launcher starts again, and the recently used block shows it`() {
         install("Alarm", "com.example.alarm")
         install("Bell", "com.example.bell")
@@ -2006,6 +2033,32 @@ class MainActivityTest {
         chooseRow("Add to group")
         awaitListed("App info", listed = false)
         assertEquals(listOf("Work", "New group"), shownRows())
+    }
+
+    @Test
+    fun `Hide inside a group takes the app off its list, and the last one out closes the group`() {
+        install("Alarm", "com.example.alarm")
+        install("Chess", "com.example.chess", ApplicationInfo.CATEGORY_GAME)
+        install("Go", "com.example.go", ApplicationInfo.CATEGORY_GAME)
+        val activity = launch()
+        awaitListed("Go")
+        openGroups()
+        assertEquals(listOf("Games", "Other"), shownRows())
+        press(Key.Enter)
+        awaitListed("Other", listed = false)
+        assertEquals(listOf("Chess", "Go"), shownRows())
+
+        fromMenu(activity, "Hide")
+        assertEquals(listOf("Go"), shownRows())
+        rule.onNodeWithText("Go").assertIsFocused()
+        fromMenu(activity, "Hide")
+
+        awaitListed("Other")
+        assertEquals(listOf("Other"), shownRows())
+        rule.onNodeWithText("Other").assertIsFocused()
+        type(activity, KeyEvent.KEYCODE_ESCAPE)
+        awaitListed("Alarm")
+        assertEquals(listOf("Alarm", "MinimalUI", "MinimalUI settings", "Groups"), shownRows())
     }
 
     @Test
