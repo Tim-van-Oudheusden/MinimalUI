@@ -2,7 +2,7 @@
 
 <img src="docs/brand/banner/readme-banner.svg" alt="MinimalUI: a minimal Android launcher for keyboard-centric phones">
 
-[Download](https://github.com/Tim-van-Oudheusden/MinimalUI/releases/latest) · [Introduction video](https://youtu.be/S72aC8-c0lo) ·
+[Download](https://github.com/Tim-van-Oudheusden/MinimalUI/releases/latest) · [Introduction video](https://youtu.be/pnP0TemZbZI) ·
 [Devices](DEVICES.md) · [Project page](https://buildwithtim.dev/projects/minimal-android-launcher)
 
 [![CI](https://github.com/Tim-van-Oudheusden/MinimalUI/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Tim-van-Oudheusden/MinimalUI/actions/workflows/ci.yml)
@@ -34,9 +34,9 @@ A minimal Android launcher for keyboard-centric phones, such as those from Zinwa
 [MinUI](https://github.com/shauninman/MinUI) and [Cannoli](https://github.com/CannoliHQ/cannoli): a plain list of
 apps, driven entirely by keys.
 
-[![MinimalUI introduction video on YouTube](https://img.youtube.com/vi/S72aC8-c0lo/maxresdefault.jpg)](https://youtu.be/S72aC8-c0lo)
+[![MinimalUI introduction video on YouTube](https://img.youtube.com/vi/pnP0TemZbZI/maxresdefault.jpg)](https://youtu.be/pnP0TemZbZI)
 
-Watch the [introduction video](https://youtu.be/S72aC8-c0lo) on YouTube.
+Watch the [introduction video](https://youtu.be/pnP0TemZbZI) on YouTube.
 
 - **Keyboard first.** Every action has a key, and the bottom row of each screen names the keys that work there. Touch
   works too, but is never needed.
