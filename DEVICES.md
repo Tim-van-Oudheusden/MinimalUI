@@ -7,8 +7,7 @@ filed a [device report](#reporting-a-device); nothing is assumed from specificat
 
 | Phone | Android | Input | Build | Result | Report |
 | ----- | ------- | ----- | ----- | ------ | ------ |
-
-No device has been reported yet.
+| Xiaomi Poco F6 | 16 | Touch only | [v0.1.1](https://github.com/Tim-van-Oudheusden/MinimalUI/releases/tag/v0.1.1) (`a805bac`) | Works | [#173](https://github.com/Tim-van-Oudheusden/MinimalUI/issues/173) |
 
 **Result** is one of:
 
