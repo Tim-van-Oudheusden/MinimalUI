@@ -1700,6 +1700,13 @@ class MainActivityTest {
         awaitEditor()
         uninstall("com.example.bell")
         application.sendBroadcast(Intent(Intent.ACTION_PACKAGE_REMOVED, packageUri("com.example.bell")))
+        // The broadcast's reload runs off the main thread. Enter must come after it lands, or Bell is still there
+        // to name (#183). Nothing on screen changes until then, so this runs the main thread to deliver the broadcast
+        // and publish the reload.
+        rule.waitUntil(timeoutMillis = 5_000) {
+            rule.waitForIdle()
+            activity.get().loadedApps.none { it.packageName == "com.example.bell" }
+        }
         repeat("Bell".length) { type(activity, KeyEvent.KEYCODE_DEL) }
         typeChars(activity, "Ring")
         rule.waitUntil(timeoutMillis = 5_000) { editorText() == "Ring" }
