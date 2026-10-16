@@ -17,6 +17,10 @@ class TierClassifyScriptTest {
         env: Map<String, String> = emptyMap(),
     ) = runScript("scripts/tier-classify.sh", env = env, stdin = paths.joinToString("\n"))
 
+    /** Classifies [paths] fed NUL-terminated with `-z`, as `git diff -z --name-only` prints them. */
+    private fun classifyNul(vararg paths: String) =
+        runScript("scripts/tier-classify.sh", "-z", stdin = paths.joinToString("") { "$it\u0000" })
+
     private fun classifyWith(
         policy: String,
         vararg paths: String,
@@ -121,6 +125,49 @@ class TierClassifyScriptTest {
         val result = classify("docs/a.md", env = mapOf("RISK_TIER_POLICY" to temp.root.resolve("absent.policy").path))
 
         assertNotEquals(0, result.exitCode)
+        assertFalse(result.stdout, result.stdout.contains("tier="))
+    }
+
+    @Test
+    fun `with -z, rates paths holding non-ASCII, quotes, backslashes or tabs by their rule`() {
+        val result =
+            classifyNul(
+                ".github/workflows/d\u00e9ploy.yml",
+                "scripts/\"q\".sh",
+                "scripts/back\\slash.sh",
+                "app/tab\there.gradle.kts",
+                "docs/Caf\u00e9.md",
+            )
+
+        assertEquals(result.stderr, 0, result.exitCode)
+        assertEquals(
+            mapOf(
+                ".github/workflows/d\u00e9ploy.yml" to "high",
+                "scripts/\"q\".sh" to "high",
+                "scripts/back\\slash.sh" to "high",
+                "\$'app/tab\\there.gradle.kts'" to "high",
+                "docs/Caf\u00e9.md" to "low",
+            ),
+            result.tiers(),
+        )
+        assertEquals("high", result.overall())
+    }
+
+    @Test
+    fun `with -z, a newline in a file name cannot print a second tier line`() {
+        val result = classifyNul("scripts/a.sh", "docs/x\ntier=low")
+
+        assertEquals(result.stderr, 0, result.exitCode)
+        assertEquals("low", result.tiers()["\$'docs/x\\ntier=low'"])
+        assertEquals("high", result.overall())
+    }
+
+    @Test
+    fun `rejects an unknown argument with a usage line and no tier`() {
+        val result = runScript("scripts/tier-classify.sh", "-0")
+
+        assertEquals(2, result.exitCode)
+        assertTrue(result.stderr, result.stderr.contains("usage:"))
         assertFalse(result.stdout, result.stdout.contains("tier="))
     }
 
