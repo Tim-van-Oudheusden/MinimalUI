@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# Change classification: reads changed file paths on stdin, one per line or
-# NUL-terminated with -z, prints each path with its risk tier, then the PR's
-# overall tier as `tier=<low|medium|high>`. The highest tier of any changed
-# file wins.
+# Change classification: reads changed file paths (one per line) on stdin,
+# prints each path with its risk tier, then the PR's overall tier as
+# `tier=<low|medium|high>`. The highest tier of any changed file wins.
 #
-# Feed it `git diff -z --name-only` with -z: without -z, git C-quotes any path
-# holding non-ASCII, `"`, `\` or a control character, and a quoted path matches
-# no rule. A path holding a control character is printed `%q`-quoted, so a
-# newline in a file name cannot forge a `tier=` line.
+# With -z, paths are NUL-terminated, as `git diff -z --name-only` prints them.
+# Use it with git: without -z, git C-quotes any path holding non-ASCII, `"`,
+# `\` or a control character, and the quoted path matches no rule. A path
+# holding a control character is printed %q-quoted, so a newline in a file
+# name cannot forge a `tier=` line.
 #
 # Per-path tiers come from the policy file .github/policies/risk-tiers.policy
 # (RISK_TIER_POLICY overrides the path): the first rule whose glob matches a
@@ -28,10 +28,10 @@ fail() {
 }
 
 delim=$'\n'
-case "$#:${1:-}" in
-  0:) ;;
-  1:-z) delim='' ;;
-  *) fail "usage: tier-classify.sh [-z]" ;;
+case "$*" in
+  "") ;;
+  -z) delim='' ;;
+  *) fail "usage: tier-classify.sh [-z] < paths" ;;
 esac
 
 [ -r "$policy" ] || fail "cannot read policy file ${policy}"
