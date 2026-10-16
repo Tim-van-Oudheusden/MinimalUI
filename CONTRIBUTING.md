@@ -334,6 +334,25 @@ no downgrade path without uninstalling, so pulling one back is not a `git revert
 - Compose: stateless composables that take state and callbacks; every interactive element must be reachable and usable
   by keyboard focus.
 
+## Adding a translation
+
+Every user-facing string already goes through `stringResource(R.string.…)` — there is no hardcoded text to find and
+replace — so a new language is just a new resource directory:
+
+1. Copy `app/src/main/res/values/strings.xml` to `app/src/main/res/values-<lang>/strings.xml`, where `<lang>` is the
+   target language's ISO 639-1 code (e.g. `nl` for Dutch, `de` for German), or `<lang>-r<REGION>` for a
+   region-specific variant (e.g. `pt-rBR`).
+2. Translate each `<string name="…">` value; keep the `name` attributes and any `%s`/`%d` format placeholders
+   unchanged, in the same order as the English source.
+3. Leave `app/src/main/res/values/strings.xml` (the English default) untouched in the same change — it's the
+   fallback for any string a translation hasn't caught up on yet.
+4. Any new string added anywhere in `app/src/main/kotlin` must go through `stringResource`/`strings.xml`, never a
+   hardcoded literal, so it stays translatable.
+
+`AndroidManifest.xml` already declares `android:supportsRtl="true"` and the app's sort order
+(`core/.../AppOrdering.kt`) already uses a locale-aware `Collator`, so a right-to-left or non-Latin-collation
+language needs no code changes beyond the `strings.xml` translation itself.
+
 ## Dependencies
 
 - Ask before adding, upgrading, or removing a dependency or plugin; state coordinates, version, and rationale.
