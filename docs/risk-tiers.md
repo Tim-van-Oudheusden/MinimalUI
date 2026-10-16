@@ -17,12 +17,16 @@ editing either. A change to the policy takes effect for the PRs after it merges.
 Run it locally against your branch:
 
 ```bash
-git diff --name-only --no-renames origin/main...HEAD | scripts/tier-classify.sh
+git diff -z --name-only --no-renames origin/main...HEAD | scripts/tier-classify.sh -z
 ```
 
 `--no-renames` matters: with rename detection on, a moved file is listed only
 under its new path, so moving `.github/workflows/ci.yml` to `docs/ci.yml` would
 read as a low-risk docs change. Without it, the old path is listed too.
+
+`-z` matters too: without it, git C-quotes a path holding non-ASCII, `"`, `\`
+or a control character (`"d\303\251ploy.yml"`), the quoted path matches no
+rule, and a high-risk file reads as medium.
 
 ## Tier: high
 
