@@ -36,6 +36,12 @@ class MainActivity : ComponentActivity() {
      */
     internal val recentApps: List<LauncherApp> get() = state.recentApps
 
+    /**
+     * The installed apps as last loaded, before aliases and sorting; empty until the first load is published. A reload
+     * runs off the main thread, so this is how to tell that one has landed (#183).
+     */
+    internal val loadedApps: List<LauncherApp> get() = state.loaded?.apps.orEmpty()
+
     // Lazy: the system services exist only once the activity is attached.
     private val statusWatcher by lazy { StatusWatcher(this) { state.status = it } }
     private val userManager by lazy { getSystemService(UserManager::class.java) }
