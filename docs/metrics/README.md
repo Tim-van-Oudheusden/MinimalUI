@@ -89,11 +89,12 @@ Informational only; it never fails the run. The path rules live in `.github/poli
 review each expects are defined in [`docs/risk-tiers.md`](../risk-tiers.md).
 
 ```bash
-git diff --name-only --no-renames origin/main...HEAD | scripts/tier-classify.sh
+git diff -z --name-only --no-renames origin/main...HEAD | scripts/tier-classify.sh -z
 ```
 
 `--no-renames` lists a file moved out of a high-risk path under its old path too, as `tier-classifier.yml` does;
-without it, the move reads as a change to its new path only.
+without it, the move reads as a change to its new path only. `-z` passes the paths raw, so a name holding non-ASCII,
+`"`, `\` or a control character is not quoted by git and still matches its rule.
 
 ## Adding a metric
 

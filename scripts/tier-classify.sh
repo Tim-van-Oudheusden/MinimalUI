@@ -1,7 +1,13 @@
 #!/usr/bin/env bash
-# Change classification: reads changed file paths (one per line) on stdin,
-# prints each path with its risk tier, then the PR's overall tier as
-# `tier=<low|medium|high>`. The highest tier of any changed file wins.
+# Change classification: reads changed file paths on stdin, one per line or
+# NUL-terminated with -z, prints each path with its risk tier, then the PR's
+# overall tier as `tier=<low|medium|high>`. The highest tier of any changed
+# file wins.
+#
+# Feed it `git diff -z --name-only` with -z: without -z, git C-quotes any path
+# holding non-ASCII, `"`, `\` or a control character, and a quoted path matches
+# no rule. A path holding a control character is printed `%q`-quoted, so a
+# newline in a file name cannot forge a `tier=` line.
 #
 # Per-path tiers come from the policy file .github/policies/risk-tiers.policy
 # (RISK_TIER_POLICY overrides the path): the first rule whose glob matches a
@@ -21,6 +27,13 @@ fail() {
   exit 2
 }
 
+delim=$'\n'
+case "$#:${1:-}" in
+  0:) ;;
+  1:-z) delim='' ;;
+  *) fail "usage: tier-classify.sh [-z]" ;;
+esac
+
 [ -r "$policy" ] || fail "cannot read policy file ${policy}"
 
 rule_ranks=()
@@ -39,7 +52,7 @@ while IFS=$' \t\r' read -r tier glob extra || [ -n "${tier:-}" ]; do
 done < "$policy"
 
 max=1
-while IFS= read -r path || [ -n "$path" ]; do
+while IFS= read -r -d "$delim" path || [ -n "$path" ]; do
   [ -n "$path" ] || continue
   r=2
   for i in "${!rule_globs[@]}"; do
@@ -50,7 +63,9 @@ while IFS= read -r path || [ -n "$path" ]; do
       break
     fi
   done
-  printf '%-6s  %s\n' "${names[$r]}" "$path"
+  shown="$path"
+  [[ $path == *[[:cntrl:]]* ]] && printf -v shown '%q' "$path"
+  printf '%-6s  %s\n' "${names[$r]}" "$shown"
   [ "$r" -gt "$max" ] && max="$r"
 done
 

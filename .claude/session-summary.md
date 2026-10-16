@@ -9,18 +9,18 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 
 ## Latest session
 
-- **Date:** 2026-10-14
-- **Worked:** #162 → this branch (`SECURITY.md`; README docs table and `SECURITY-AI.md` Reporting point at it). Closed
-  out #147: ran `Nightly compliance` by hand after PR #160 merged (run 38568557946, green).
-- **Outcome:** all 9 Dependabot alerts are `fixed` (13:03Z); the dependency-graph SBOM now lists only the patched
-  build-tool versions. Private vulnerability reporting was already enabled; GitHub shows the policy once #162 merges.
-- **Open follow-ups:** none. After merge, `gh repo view --json isSecurityPolicyEnabled` should be true.
+- **Date:** 2026-10-16
+- **Worked:** #177 → this branch. `scripts/tier-classify.sh -z` reads NUL-terminated paths and prints a path holding a
+  control character `%q`-quoted; the documented local commands in `docs/risk-tiers.md` and `docs/metrics/README.md`
+  use `git diff -z ... | scripts/tier-classify.sh -z`.
+- **Outcome:** a high-risk file whose name git C-quotes (non-ASCII, `"`, `\`, tab) keeps its tier when fed with `-z`.
+- **Open follow-ups:** after this merges, a maintainer changes the `Classify changed files` step of
+  `.github/workflows/tier-classifier.yml` to `git diff -z ... | bash "$classifier" -z` (diff in #177). Not before: the
+  job runs the base branch's script, which ignores `-z` until this lands. App tokens without `workflows` cannot push it.
 - **Notes for next session:**
-  - No JDK on the host: `scripts/sandbox-gradlew.sh check assembleDebug` (works since #159 was fixed).
-  - Dependabot alerts on build-tool transitives only close when a new graph is submitted: merging the fix is not
-    enough; dispatch `Nightly compliance` (or wait for 03:23Z).
-  - To find which configuration resolves a vulnerable version, an init script that resolves every
-    `buildscript.configurations + configurations` and prints matches mirrors what dependency submission sees;
-    `:<module>:dependencies` alone misses the root `classpath`.
-  - The headless emulator (`-no-window`) segfaults on this host; `android emulator start` (windowed) works.
-  - detekt is an alpha: a Dependabot bump may rename rules or config keys; check `detekt.yml` against its changelog.
+  - `runScript` writes stdin after starting the script, so a test of a script that exits before reading stdin must
+    pass no stdin, or the write fails with `Stream closed`.
+  - On a host whose `jq` is `jaq`, the `AutoQaTuner`, `PrMetrics` and `QualityReport` script tests fail on jq syntax
+    (`$module`, `$label`); use the sandbox image or real jq.
+  - The JVM writes non-ASCII file names as `?` when `LANG` is unset, so a test that creates such a file is
+    locale-dependent; feed the script the path on stdin instead.
