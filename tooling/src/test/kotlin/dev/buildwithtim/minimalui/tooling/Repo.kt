@@ -1,6 +1,7 @@
 package dev.buildwithtim.minimalui.tooling
 
 import java.io.File
+import java.io.IOException
 import java.util.concurrent.TimeUnit
 
 /** The repository under test; `tooling/build.gradle.kts` passes its root as the `repo.root` system property. */
@@ -80,7 +81,12 @@ fun runScript(
                 .redirectError(err)
                 .apply { environment().putAll(env) }
                 .start()
-        process.outputStream.bufferedWriter().use { it.write(stdin) }
+        try {
+            process.outputStream.bufferedWriter().use { it.write(stdin) }
+        } catch (ignored: IOException) {
+            // The script exited before reading all of stdin (a usage or policy error); its exit code and output
+            // below are the result.
+        }
         check(process.waitFor(60, TimeUnit.SECONDS)) { "$script did not finish within 60 s" }
         return ScriptResult(process.exitValue(), out.readText(), err.readText())
     } finally {
