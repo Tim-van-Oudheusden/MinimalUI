@@ -2317,6 +2317,22 @@ class MainActivityTest {
     }
 
     @Test
+    fun `a LauncherApps report queued before the launcher was destroyed does not crash it`() {
+        install("Alarm", "com.example.alarm")
+        val activity = launch()
+        awaitListed("Alarm")
+        val callbacks: List<android.util.Pair<LauncherApps.Callback, *>> =
+            ReflectionHelpers.getStaticField(ShadowLauncherApps::class.java, "callbacks")
+        val callback = callbacks.single().first
+        activity.pause().stop().destroy()
+        controller = null
+
+        // Delivered after destroy, as LauncherApps delivers a report it queued on the main looper before
+        // unregisterCallback (#187).
+        rule.runOnUiThread { callback.onPackageAdded("com.example.alarm", android.os.Process.myUserHandle()) }
+    }
+
+    @Test
     @Config(shadows = [GlyphsFound::class])
     fun `while work apps are turned off they stay listed, dim, and turning them on again brightens them`() {
         install("Alarm", "com.example.alarm")

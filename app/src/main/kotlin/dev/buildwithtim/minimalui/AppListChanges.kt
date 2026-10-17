@@ -16,12 +16,20 @@ internal class AppListChanges(
     private val launcherApps: LauncherApps,
     private val refresh: () -> Unit,
 ) {
+    // LauncherApps queues each report on the main looper and still delivers one queued before unregisterCallback, so a
+    // report can arrive after [unregister], when its refresh would run against a destroyed activity (#187).
+    private var listening = false
+
+    private fun changed() {
+        if (listening) refresh()
+    }
+
     private val listChanges =
         object : BroadcastReceiver() {
             override fun onReceive(
                 context: Context,
                 intent: Intent,
-            ) = refresh()
+            ) = changed()
         }
 
     // The other profiles' package changes (#78), which the package broadcasts only report for the launcher's own user.
@@ -30,32 +38,33 @@ internal class AppListChanges(
             override fun onPackageAdded(
                 packageName: String,
                 user: UserHandle,
-            ) = refresh()
+            ) = changed()
 
             override fun onPackageChanged(
                 packageName: String,
                 user: UserHandle,
-            ) = refresh()
+            ) = changed()
 
             override fun onPackageRemoved(
                 packageName: String,
                 user: UserHandle,
-            ) = refresh()
+            ) = changed()
 
             override fun onPackagesAvailable(
                 packageNames: Array<out String>,
                 user: UserHandle,
                 replacing: Boolean,
-            ) = refresh()
+            ) = changed()
 
             override fun onPackagesUnavailable(
                 packageNames: Array<out String>,
                 user: UserHandle,
                 replacing: Boolean,
-            ) = refresh()
+            ) = changed()
         }
 
     fun register() {
+        listening = true
         context.registerReceiver(
             listChanges,
             IntentFilter().apply {
@@ -80,6 +89,7 @@ internal class AppListChanges(
     }
 
     fun unregister() {
+        listening = false
         context.unregisterReceiver(listChanges)
         launcherApps.unregisterCallback(profilePackageChanges)
     }
