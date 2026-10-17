@@ -67,6 +67,17 @@ class PrMetricsScriptTest {
         assertTrue(report().stdout.contains("PRs closed since 2026-09-14 (last 28 days)."))
     }
 
+    // `shift 2` with one argument left shifts nothing, so an unguarded parser loops on the same flag forever.
+    @Test
+    fun `rejects a trailing flag that has no value`() {
+        for (args in listOf(listOf("--days", "28", "--since"), listOf("--since", "2026-09-14", "--days"))) {
+            val result = runScript("scripts/pr-metrics.sh", *args.toTypedArray(), stdin = "[]")
+
+            assertEquals(args.last(), 2, result.exitCode)
+            assertTrue(result.stderr, result.stderr.contains("usage:"))
+        }
+    }
+
     @Test
     fun `fails on input that is not a PR list`() {
         val result = report("not json")
