@@ -190,6 +190,39 @@ class ApplyReviewSuggestionsScriptTest {
         assertEquals("# Title\nFence code with ```kotlin``` blocks.\n", readme.readText())
     }
 
+    // CommonMark: a closing fence holds only backticks and spaces, so ```kotlin is the suggestion's content (#189).
+    @Test
+    fun `keeps a suggested line that opens a code block, ending the block only at a bare fence`() {
+        val readme = file("README.md", "Install:\n```kt\nval a = 1\n```\n")
+
+        val result =
+            apply(
+                comment(id = 1, path = "README.md", line = 2, body = suggestion("```kotlin\n")),
+                comment(id = 2, path = "README.md", line = 3, body = suggestion("val a = 2\n``` not a fence\n")),
+            )
+
+        assertEquals(result.stderr, 0, result.exitCode)
+        assertEquals("Install:\n```kotlin\nval a = 2\n``` not a fence\n```\n", readme.readText())
+    }
+
+    @Test
+    fun `keeps a code block inside a suggestion opened with a longer fence`() {
+        val readme = file("README.md", "# Title\nRun it.\n")
+
+        val result =
+            apply(
+                comment(
+                    path = "README.md",
+                    line = 2,
+                    body = "Nit:\n````suggestion\nRun it:\n```sh\n./gradlew test\n```\n`````  \nThanks.\n",
+                ),
+            )
+
+        assertEquals(result.stderr, 0, result.exitCode)
+        assertEquals("# Title\nRun it:\n```sh\n./gradlew test\n```\n", readme.readText())
+        assertEquals("applied: README.md:2-2 (comment 1)\n", result.stdout)
+    }
+
     @Test
     fun `skips a range past the end of the file`() {
         val a = file("a.kt", "one\n")
