@@ -336,8 +336,8 @@ no downgrade path without uninstalling, so pulling one back is not a `git revert
 
 ## Adding a translation
 
-Every user-facing string already goes through `stringResource(R.string.…)` — there is no hardcoded text to find and
-replace — so a new language is just a new resource directory:
+Every string in `app/src/main/kotlin` goes through `stringResource(R.string.…)`, so a new language is a new resource
+directory (for what it does not cover yet, see [below](#what-a-translation-does-not-change)):
 
 1. Copy `app/src/main/res/values/strings.xml` to `app/src/main/res/values-<lang>/strings.xml`, where `<lang>` is the
    target language's ISO 639-1 code (e.g. `nl` for Dutch, `de` for German), or `<lang>-r<REGION>` for a
@@ -349,9 +349,20 @@ replace — so a new language is just a new resource directory:
 4. Any new string added anywhere in `app/src/main/kotlin` must go through `stringResource`/`strings.xml`, never a
    hardcoded literal, so it stays translatable.
 
-`AndroidManifest.xml` already declares `android:supportsRtl="true"` and the app's sort order
-(`core/.../AppOrdering.kt`) already uses a locale-aware `Collator`, so a right-to-left or non-Latin-collation
-language needs no code changes beyond the `strings.xml` translation itself.
+`AndroidManifest.xml` already declares `android:supportsRtl="true"`, so a right-to-left language needs no code change
+to lay out.
+
+### What a translation does not change
+
+- **The automatic group names stay in English.** Games, Audio, Video, Images, Social, News, Maps, Productivity,
+  Accessibility and Other are the names of the `AppCategory` enum in `core/.../AppGroups.kt`, and `Work` is its
+  `WORK_GROUP` constant, which is also the suffix that tells a work app apart from a personal app of the same name.
+  None of them is in `strings.xml`. They are also the groups' identity, since a user group of the same name joins the
+  automatic one. Making them translatable is a code change, not part of a translation.
+- **The sort order is the same in every language.** `labelCollator()` in `core/.../AppOrdering.kt` uses the root
+  collation (`Locale.ROOT`), not the phone's language: accents sort next to their base letter, and other scripts sort
+  after Latin, grouped by script. A language's own rules are not applied. In Swedish, for example, `Å`, `Ä` and `Ö`
+  come after `Z`, but MinimalUI sorts them with `A` and `O`.
 
 ## Dependencies
 
