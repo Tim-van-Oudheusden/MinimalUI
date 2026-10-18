@@ -63,7 +63,8 @@ fi
 
 # Coverage rows look like `| core | 97.50% | 93.10% |`; a failed run's `| app | ❌ n/a | ❌ n/a |` does not match.
 # Proposals are computed in hundredths and rounded before flooring, so float error (70.1 - 0.1 = 69.999...) cannot
-# drop a value below a whole percent.
+# drop a value below a whole percent. Only the proposal is rounded down, never the current floor, so a fractional floor
+# (79.99) is kept rather than lowered to 79.
 tune="$(
   cat <<'JQ'
 ($report | split("\n")
@@ -79,7 +80,7 @@ tune="$(
         floor: $floor,
         observed: $seen,
         proposed: (if $seen == null then $floor
-          else [$floor, ((($seen | tonumber) - $margin) * 100 | round) / 100 | floor] | max end)
+          else [$floor, (((($seen | tonumber) - $margin) * 100 | round) / 100 | floor)] | max end)
       }] as $rows
 | {rows: $rows, config: (reduce $rows[] as $r (.; .floors[$r.module][$r.metric] = $r.proposed))}
 JQ

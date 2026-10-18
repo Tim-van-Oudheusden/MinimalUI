@@ -83,6 +83,19 @@ class AutoQaTunerScriptTest {
     }
 
     @Test
+    fun `keeps a fractional floor instead of rounding it down`() {
+        config.writeText("{\"margin\": 2, \"floors\": {\"core\": {\"functions\": 97.5, \"lines\": 90.25}}}\n")
+        writeReport("| core | 96.00% | 91.00% |")
+
+        val result = tune("--write")
+
+        assertEquals(result.stderr, 0, result.exitCode)
+        assertTrue(result.stdout, result.stdout.contains("| core | functions | 97.5% | 96.00% | 97.5% |"))
+        assertTrue(result.stdout, result.stdout.contains("| core | lines | 90.25% | 91.00% | 90.25% |"))
+        assertTrue(config.readText(), config.readText().contains("\"functions\": 97.5,"))
+    }
+
+    @Test
     fun `keeps a module's floors when the report has no coverage for it`() {
         writeConfig(2, "app" to (10 to 12), "core" to (90 to 90))
         writeReport("| app | ❌ n/a | ❌ n/a |")
