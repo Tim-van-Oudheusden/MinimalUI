@@ -60,7 +60,9 @@ Pick one:
 - **Download a release.** [Releases](https://github.com/Tim-van-Oudheusden/MinimalUI/releases) lists every published
   version with `minimalui-v<version>.apk` attached; no GitHub account is needed. Open the file on the phone and allow
   installs from that source, or run `adb install minimalui-v<version>.apk`. A release installs over an earlier one and
-  keeps your settings. A debug build (the next two options) is signed with a different key, so uninstall it first.
+  keeps your settings. A debug build (the next two options) is signed with a different key, so uninstall it first;
+  that erases your favourites, collections, renames, hidden apps, groups and settings
+  ([Where your setup is kept](docs/usage.md#where-your-setup-is-kept)).
 - **Download a CI build.** Every CI run on GitHub uploads a debug APK of the latest code as the `minimalui-debug-apk`
   artifact, kept for 14 days. Open a recent run of the `CI` workflow under the repository's **Actions** tab (you must
   be signed in to GitHub), download the artifact, unzip it, and install `app-debug.apk` on the phone. You can do this
@@ -180,7 +182,7 @@ Linux](CONTRIBUTING.md#running-it-in-an-emulator-on-linux) sets one up.
 
 | Document | Covers |
 | --- | --- |
-| [`docs/usage.md`](docs/usage.md) | Every screen in detail: the home screen, menus, collections, groups, work apps, settings |
+| [`docs/usage.md`](docs/usage.md) | Every screen in detail: the home screen, menus, collections, groups, work apps, settings, where your setup is kept |
 | [`DEVICES.md`](DEVICES.md) | Phones MinimalUI has been tried on, and how to report yours |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | Setup, emulator, project layout, workflow, quality gates, releasing |
 | [`docs/testing.md`](docs/testing.md) | Where each test runs, coverage floors, quality reports, store screenshots |
