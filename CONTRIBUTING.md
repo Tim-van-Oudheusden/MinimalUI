@@ -1,6 +1,7 @@
 # Contributing
 
-Thanks for helping out. This guide covers how to get set up, find work, and ship changes through review.
+Thanks for helping out. This guide covers how to get set up, find work, and ship changes through review. All
+participation is covered by the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 Stack: Kotlin, Jetpack Compose, Gradle (Kotlin DSL with a version catalog), Android lint, JUnit.
 

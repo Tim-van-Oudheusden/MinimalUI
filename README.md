@@ -198,6 +198,8 @@ Linux](CONTRIBUTING.md#running-it-in-an-emulator-on-linux) sets one up.
 See [`CONTRIBUTING.md`](CONTRIBUTING.md) for setup, project layout and the quality gates. AI agents follow
 [`AGENTS.md`](AGENTS.md).
 
+Participation in this project is governed by the [Code of Conduct](CODE_OF_CONDUCT.md).
+
 ## Acknowledgments
 
 - [MinUI](https://github.com/shauninman/MinUI) by Shaun Inman, for the one-list interface, the inverted selection and
