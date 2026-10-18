@@ -162,6 +162,122 @@ class TierClassifyScriptTest {
         assertEquals("high", result.overall())
     }
 
+    // Without -z: the Risk tier job pipes plain `git diff --name-only`, which C-quotes these paths (#193).
+
+    @Test
+    fun `without -z, decodes a C-quoted path and rates it by its rule`() {
+        val result = classify("\".github/workflows/d\\303\\251ploy.yml\"")
+
+        assertEquals(result.stderr, 0, result.exitCode)
+        assertEquals(mapOf(".github/workflows/déploy.yml" to "high"), result.tiers())
+        assertEquals("high", result.overall())
+    }
+
+    @Test
+    fun `without -z, decodes C-quoted quotes, backslashes and tabs`() {
+        val result =
+            classify("\"scripts/\\\"q\\\".sh\"", "\"scripts/back\\\\slash.sh\"", "\"app/tab\\there.gradle.kts\"")
+
+        assertEquals(result.stderr, 0, result.exitCode)
+        assertEquals(
+            mapOf(
+                "scripts/\"q\".sh" to "high",
+                "scripts/back\\slash.sh" to "high",
+                "\$'app/tab\\there.gradle.kts'" to "high",
+            ),
+            result.tiers(),
+        )
+    }
+
+    @Test
+    fun `without -z, a C-quoted newline cannot print a second tier line`() {
+        val result = classify("\"scripts/x\\ntier=low\"")
+
+        assertEquals(result.stderr, 0, result.exitCode)
+        assertEquals(mapOf("\$'scripts/x\\ntier=low'" to "high"), result.tiers())
+        assertEquals("high", result.overall())
+    }
+
+    @Test
+    fun `without -z, keeps a percent sign and an escaped backslash before digits`() {
+        val result = classify("\"docs/100%d \\303\\251.md\"", "\"scripts/a\\\\101.sh\"")
+
+        assertEquals(result.stderr, 0, result.exitCode)
+        assertEquals(mapOf("docs/100%d é.md" to "low", "scripts/a\\101.sh" to "high"), result.tiers())
+    }
+
+    @Test
+    fun `without -z, matches a line that is not exactly C-quoted as written`() {
+        val lines = listOf("\"docs/a.md", "\"docs/a\\q.md\"", "\"docs/\"a\".md\"", "\"docs/a\\1.md\"", "x\"docs/a.md\"")
+
+        val result = classify(*lines.toTypedArray())
+
+        assertEquals(result.stderr, 0, result.exitCode)
+        assertEquals(lines.associateWith { if (it == "\"docs/a.md") "low" else "medium" }, result.tiers())
+    }
+
+    @Test
+    fun `with -z, does not decode a name that looks C-quoted`() {
+        val result = classifyNul("\"docs/\\303.md\"")
+
+        assertEquals(mapOf("\"docs/\\303.md\"" to "medium"), result.tiers())
+    }
+
+    @Test
+    fun `rates git diff --name-only output by the paths it names, whatever core-quotePath says`() {
+        val paths =
+            listOf(
+                ".github/workflows/déploy.yml",
+                "scripts/\"q\".sh",
+                "scripts/back\\slash.sh",
+                "app/tab\there.gradle.kts",
+                "docs/100%.md",
+            )
+        val repo = temp.newFolder("repo")
+
+        // The names go in as UTF-8 on stdin, not as File names or arguments, which the JVM encodes in the locale's
+        // charset: without a UTF-8 locale, é would reach the disk as ?.
+        fun bash(
+            script: String,
+            stdin: String = "",
+        ): String {
+            val process = ProcessBuilder("bash", "-c", script).directory(repo).redirectErrorStream(true).start()
+            process.outputStream.use { it.write(stdin.toByteArray(Charsets.UTF_8)) }
+            val output = process.inputStream.readBytes().toString(Charsets.UTF_8)
+            assertEquals(output, 0, process.waitFor())
+            return output
+        }
+        bash(
+            """
+            set -e
+            git init -q
+            git -c user.name=t -c user.email=t@t commit -q --allow-empty -m base
+            while IFS= read -r -d '' path; do mkdir -p "${'$'}(dirname "${'$'}path")"; echo x > "${'$'}path"; done
+            git add -A
+            git -c user.name=t -c user.email=t@t commit -q -m change
+            """.trimIndent(),
+            stdin = paths.joinToString("") { "$it\u0000" },
+        )
+
+        for (quotePath in listOf("true", "false")) {
+            val diff = bash("git -c core.quotePath=$quotePath diff --name-only --no-renames HEAD~1...HEAD")
+            val result = runScript("scripts/tier-classify.sh", stdin = diff)
+
+            assertEquals(result.stderr, 0, result.exitCode)
+            assertEquals(
+                quotePath,
+                mapOf(
+                    ".github/workflows/déploy.yml" to "high",
+                    "scripts/\"q\".sh" to "high",
+                    "scripts/back\\slash.sh" to "high",
+                    "\$'app/tab\\there.gradle.kts'" to "high",
+                    "docs/100%.md" to "low",
+                ),
+                result.tiers(),
+            )
+        }
+    }
+
     @Test
     fun `rejects an unknown argument with a usage line and no tier`() {
         val result = runScript("scripts/tier-classify.sh", "-0")

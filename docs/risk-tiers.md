@@ -24,9 +24,11 @@ git diff -z --name-only --no-renames origin/main...HEAD | scripts/tier-classify.
 under its new path, so moving `.github/workflows/ci.yml` to `docs/ci.yml` would
 read as a low-risk docs change. Without it, the old path is listed too.
 
-`-z` matters too: without it, git C-quotes a path holding non-ASCII, `"`, `\`
-or a control character (`"d\303\251ploy.yml"`), the quoted path matches no
-rule, and a high-risk file reads as medium.
+`-z` passes the paths NUL-terminated. Without it, git C-quotes a path holding
+non-ASCII, `"`, `\` or a control character (`"d\303\251ploy.yml"`); the script
+decodes a line in exactly that form back to the path before matching it, so a
+high-risk file such as `.github/workflows/déploy.yml` is still high. A line that
+is not exactly git's quoting is matched as written.
 
 ## Tier: high
 
