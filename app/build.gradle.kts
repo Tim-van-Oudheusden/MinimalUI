@@ -30,8 +30,8 @@ android {
         // Android 9: the oldest release shipped on the targeted keyboard phones (Unihertz Titan).
         minSdk = 28
         targetSdk = 37
-        versionCode = 2
-        versionName = "0.1.1"
+        versionCode = 3
+        versionName = "0.1.2"
         buildConfigField("String", "BUILD_COMMIT", "\"$buildCommit\"")
     }
 
