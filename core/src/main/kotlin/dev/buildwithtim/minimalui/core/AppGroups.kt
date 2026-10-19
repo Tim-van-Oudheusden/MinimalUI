@@ -59,9 +59,9 @@ fun appGroups(
 }
 
 /**
- * The automatic group of the apps of another profile than the launcher's own user (#78): a work profile's apps are
- * listed there only, not in their category's group nor in the root's full list. Also what tells a work app apart from
- * an app of the same name ([duplicateSuffixes]).
+ * The automatic group of the apps of a work profile (#78): they are listed there only, not in their category's group
+ * nor in the root's full list. Also what tells a work app apart from an app of the same name ([duplicateSuffixes]). An
+ * app clone (#201) is listed as a personal app is, and told apart by [CLONE_SUFFIX] instead.
  */
 const val WORK_GROUP = "Work"
 

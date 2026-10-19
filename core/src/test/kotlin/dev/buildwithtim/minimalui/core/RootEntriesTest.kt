@@ -170,6 +170,14 @@ class RootEntriesTest {
     }
 
     @Test
+    fun `an app clone is in the full list after the app it copies, as a personal app is`() {
+        val cloneBell = app("Bell").copy(profile = 11L, isClone = true)
+        val withClone = apps.take(2) + cloneBell + apps.drop(2)
+
+        assertEquals(withClone.map { RootEntry.App(it) }, rootEntries(withClone, RecentApps(), Settings()))
+    }
+
+    @Test
     fun `with only work apps the root is the Groups row alone`() {
         assertEquals(listOf(RootEntry.Groups), rootEntries(listOf(workBell), RecentApps(), Settings()))
     }
