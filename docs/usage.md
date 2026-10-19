@@ -19,12 +19,12 @@ stays. Home instead clears the filter and returns to the top.
 
 ## The app menu
 
-The app menu replaces the list until it is closed: App info, Uninstall (dim and inactive for system apps, work apps and
-the Settings entry), Add to favourites or Remove from favourites, Add to collection, Add to group, Rename (dim and
-inactive for the MinimalUI settings row), Hide or Unhide (dim and inactive for Android's Settings and the MinimalUI
-settings row, so the way back to another home app always stays listed), and, when there are recently used apps, Remove
-from recently used and Clear recently used. After an action, Back or Esc, the list comes back with the same app
-highlighted.
+The app menu replaces the list until it is closed: App info, Uninstall (dim and inactive for system apps, work apps, app
+clones and the Settings entry), Add to favourites or Remove from favourites, Add to collection, Add to group, Rename
+(dim and inactive for the MinimalUI settings row), Hide or Unhide (dim and inactive for Android's Settings and the
+MinimalUI settings row, so the way back to another home app always stays listed), and, when there are recently used
+apps, Remove from recently used and Clear recently used. After an action, Back or Esc, the list comes back with the same
+app highlighted.
 
 ## Renaming apps
 
@@ -34,8 +34,8 @@ and shown in the recently used block, favourites, collections and Hidden apps by
 its new place. An empty name, or the app's own, gives it back its own name. Names are kept by app in the app's private
 storage, so they survive app updates and reinstalls. When two apps are listed under the same name (letter case
 ignored), each shows its package name after it, smaller and in grey (or its activity's name when both come from one
-package); a work app shows `Work` there instead, and an app whose name only work apps share shows nothing. Typing
-never matches that part.
+package); a work app shows `Work` there instead and an app clone `Clone`, and an app whose name only work apps or app
+clones share shows nothing. Typing never matches that part.
 
 ## Hiding apps
 
@@ -82,6 +82,14 @@ inactive (remove work apps from the work profile's own settings). A work app and
 apps everywhere. While work apps are turned off (work mode paused), the Work group still lists them in grey; opening
 one lets Android offer to turn work apps back on. The list updates when a work profile is added or removed, work mode
 is paused or resumed, or an app is installed or removed in the profile.
+
+## App clones
+
+On Android 15 and newer, the second copies that Android's app cloning makes (also called dual or parallel apps) are
+listed as personal apps are: in the home screen's full list and in their category's group, told apart from the app
+they copy by `Clone` after the name. A clone opens in its own profile and App info shows its details; Uninstall is
+inactive (remove a clone from Android's own settings). A clone and the app it copies are two apps everywhere. Android
+14 does not tell a launcher which profile holds the clones, so there they are listed as work apps.
 
 ## MinimalUI settings
 

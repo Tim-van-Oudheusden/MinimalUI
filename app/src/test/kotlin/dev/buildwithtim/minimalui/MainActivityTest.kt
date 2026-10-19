@@ -10,6 +10,7 @@ import android.content.pm.ActivityInfo
 import android.content.pm.ApplicationInfo
 import android.content.pm.LauncherActivityInfo
 import android.content.pm.LauncherApps
+import android.content.pm.LauncherUserInfo
 import android.content.pm.PackageInfo
 import android.graphics.Paint
 import android.graphics.Rect
@@ -2237,6 +2238,84 @@ class MainActivityTest {
         assertEquals(listOf("Mail", "MinimalUI", "MinimalUI settings", "Groups"), shownRows())
     }
 
+    private val clone: UserHandle = UserHandle.getUserHandleForUid(CLONE_USER * PER_USER_RANGE)
+
+    /** An app-clone profile of the user (#201), as Android's app cloning makes one: neither managed nor hidden. */
+    private fun addCloneProfile() {
+        shadowOf(userManager).addProfile(0, CLONE_USER, "Clone", 0)
+        shadowOf(userManager).setSerialNumberForUser(clone, CLONE_SERIAL)
+    }
+
+    /** [label]'s launcher activity of the [category], cloned into the app-clone profile. */
+    private fun installClone(
+        label: String,
+        packageName: String,
+        category: Int,
+    ) {
+        val info =
+            ActivityInfo().apply {
+                this.packageName = packageName
+                name = "$packageName.Main"
+                nonLocalizedLabel = label
+                applicationInfo =
+                    ApplicationInfo().apply {
+                        this.packageName = packageName
+                        this.category = category
+                    }
+            }
+        shadowOf(launcherApps).addActivity(clone, launcherActivity(info, clone))
+    }
+
+    @Test
+    @Config(shadows = [GlyphsFound::class, ProfileTypes::class])
+    fun `an app clone is listed as a personal app is, told apart by Clone, also from a work copy`() {
+        install("Chat", "com.example.chat", ApplicationInfo.CATEGORY_SOCIAL)
+        addWorkProfile()
+        installWork("Chat", "com.example.chat")
+        addCloneProfile()
+        installClone("Chat", "com.example.chat", ApplicationInfo.CATEGORY_SOCIAL)
+        val activity = launch()
+        awaitListed("Chat")
+        assertEquals(listOf("Chat", "Chat Clone", "MinimalUI", "MinimalUI settings", "Groups"), shownRows())
+
+        openGroups()
+        assertEquals(listOf("Social", "Work", "Other"), shownRows())
+        press(Key.Enter)
+        awaitListed("Other", listed = false)
+        assertEquals(listOf("Chat", "Chat Clone"), shownRows())
+        type(activity, KeyEvent.KEYCODE_ESCAPE)
+        type(activity, KeyEvent.KEYCODE_ESCAPE)
+
+        awaitListed("Groups")
+        assertEquals(listOf("Chat", "Chat Work", "Chat Clone"), rowsMatching(activity, "chat"))
+    }
+
+    @Test
+    @Config(shadows = [GlyphsFound::class, ProfileTypes::class])
+    fun `an app clone opens through LauncherApps in its profile, and cannot be uninstalled`() {
+        LauncherAppsRecorder.started.clear()
+        install("Chat", "com.example.chat", ApplicationInfo.CATEGORY_SOCIAL)
+        addCloneProfile()
+        installClone("Chat", "com.example.chat", ApplicationInfo.CATEGORY_SOCIAL)
+        val activity = launch()
+        awaitListed("Chat Clone")
+        press(Key.DirectionDown)
+        rule.onNodeWithText("Chat Clone").assertIsFocused()
+        openMenu(activity)
+        rule.onNodeWithText("Uninstall").assertIsNotEnabled()
+        type(activity, KeyEvent.KEYCODE_ESCAPE)
+        awaitListed("Chat Clone")
+
+        press(Key.Enter)
+
+        val started = LauncherAppsRecorder.started.single()
+        assertEquals(LauncherAppsRecorder.MAIN, started.kind)
+        assertEquals(ComponentName("com.example.chat", "com.example.chat.Main"), started.component)
+        assertEquals(clone, started.user)
+        assertNull(shadowOf(application).nextStartedActivity)
+        assertEquals(listOf(CLONE_SERIAL), activity.get().recentApps.map { it.profile })
+    }
+
     @Test
     @Config(shadows = [GlyphsFound::class])
     fun `a work profile added or removed reloads the list`() {
@@ -2373,7 +2452,7 @@ class GlyphsFound : ShadowPaint() {
 
 /** Records what the launcher starts through LauncherApps, which Robolectric cannot start. */
 @Implements(LauncherApps::class)
-class LauncherAppsRecorder : ShadowLauncherApps() {
+open class LauncherAppsRecorder : ShadowLauncherApps() {
     /** One start: its [kind] ([MAIN] or [DETAILS]), the [component] in the [user]'s profile, with its [options]. */
     data class Started(
         val kind: String,
@@ -2409,7 +2488,35 @@ class LauncherAppsRecorder : ShadowLauncherApps() {
     }
 }
 
+/**
+ * Gives each profile its type, as LauncherApps does from API 35 on: [CLONE_USER]'s is an app clone's (#201), any
+ * other's a work profile's. Robolectric's LauncherApps knows no types. Records starts as [LauncherAppsRecorder] does.
+ */
+@Implements(LauncherApps::class)
+class ProfileTypes : LauncherAppsRecorder() {
+    @Implementation
+    protected fun getLauncherUserInfo(user: UserHandle): LauncherUserInfo {
+        val clone = user == UserHandle.getUserHandleForUid(CLONE_USER * PER_USER_RANGE)
+        val type = if (clone) UserManager.USER_TYPE_PROFILE_CLONE else UserManager.USER_TYPE_PROFILE_MANAGED
+        // Its builder is hidden API.
+        val builder =
+            ReflectionHelpers.callConstructor(
+                Class.forName("android.content.pm.LauncherUserInfo\$Builder"),
+                ClassParameter.from(String::class.java, type),
+                ClassParameter.from(
+                    Int::class.javaPrimitiveType,
+                    if (clone) CLONE_SERIAL.toInt() else WORK_SERIAL.toInt(),
+                ),
+            )
+        return ReflectionHelpers.callInstanceMethod(builder, "build")
+    }
+}
+
 // The work profile's user id and serial number in the tests, as the emulator's first created profile has.
 private const val WORK_USER = 10
 private const val WORK_SERIAL = 10L
 private const val PER_USER_RANGE = 100_000
+
+// The app-clone profile's (#201), created after the work profile.
+private const val CLONE_USER = 11
+private const val CLONE_SERIAL = 11L

@@ -99,6 +99,15 @@ class AppGroupsTest {
     }
 
     @Test
+    fun `an app clone is in its category's group as a personal app is, and makes no Work group`() {
+        val cloneChess = chess.copy(profile = 11L, isClone = true)
+        val groups = appGroups(listOf(chess, cloneChess, notes))
+
+        assertEquals(listOf("Games", "Other"), groups.names())
+        assertEquals(listOf(chess, cloneChess), groups.single { it.name == "Games" }.apps)
+    }
+
+    @Test
     fun `Android's category codes map to their automatic groups, anything else to Other`() {
         val codes = (-1..9).associateWith { appCategory(it, sdk = 35) }
 

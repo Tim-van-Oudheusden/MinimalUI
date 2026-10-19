@@ -18,6 +18,15 @@ class LauncherAppTest {
     }
 
     @Test
+    fun `an app clone belongs to another profile, keyed by its serial number, but is not a work app`() {
+        val cloneMail = mail.copy(profile = 11L, isClone = true)
+
+        assertEquals("11:com.example.mail/com.example.mail.Main", cloneMail.component)
+        assertEquals(listOf(false, true, true), listOf(mail, workMail, cloneMail).map { it.isOtherProfile })
+        assertEquals(listOf(false, true, false), listOf(mail, workMail, cloneMail).map { it.isWorkApp })
+    }
+
+    @Test
     fun `every store keeps a work copy and a personal copy apart, and reads both back`() {
         val favourites = Favourites().toggled(workMail)
         val recents = RecentApps().opened(workMail, listOf(mail, workMail))

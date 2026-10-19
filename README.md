@@ -101,8 +101,8 @@ the keys also work by touch. Screens narrower than 320 dp show only the right-ha
 | Back or Esc                  | Close the open list, one at a time; does nothing on the home screen           |
 | Home                         | Close every open list and return to the top of the home screen                |
 
-How each screen behaves (the home screen's blocks, the app menu, renaming, hiding, collections, groups, work apps and
-MinimalUI's own settings) is described in [`docs/usage.md`](docs/usage.md).
+How each screen behaves (the home screen's blocks, the app menu, renaming, hiding, collections, groups, work apps, app
+clones and MinimalUI's own settings) is described in [`docs/usage.md`](docs/usage.md).
 
 ## Tech stack
 
@@ -182,7 +182,7 @@ Linux](CONTRIBUTING.md#running-it-in-an-emulator-on-linux) sets one up.
 
 | Document | Covers |
 | --- | --- |
-| [`docs/usage.md`](docs/usage.md) | Every screen in detail: the home screen, menus, collections, groups, work apps, settings, where your setup is kept |
+| [`docs/usage.md`](docs/usage.md) | Every screen in detail: the home screen, menus, collections, groups, work apps, app clones, settings, where your setup is kept |
 | [`DEVICES.md`](DEVICES.md) | Phones MinimalUI has been tried on, and how to report yours |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | Setup, emulator, project layout, workflow, quality gates, releasing |
 | [`docs/testing.md`](docs/testing.md) | Where each test runs, coverage floors, quality reports, store screenshots |

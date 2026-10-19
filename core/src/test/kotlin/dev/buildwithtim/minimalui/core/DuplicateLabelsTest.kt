@@ -68,6 +68,31 @@ class DuplicateLabelsTest {
     }
 
     @Test
+    fun `an app clone is told apart by Clone, also from a work copy of the same app`() {
+        val clonePhone = phone.copy(profile = 11L, isClone = true)
+        val cloneContacts =
+            LauncherApp(
+                "Phone",
+                "com.android.dialer",
+                "com.android.dialer.ContactsActivity",
+                profile = 11L,
+                isClone = true,
+            )
+        val workPhone = phone.copy(profile = 10L)
+
+        assertEquals("Clone", CLONE_SUFFIX)
+        assertEquals(mapOf(clonePhone to CLONE_SUFFIX), duplicateSuffixes(listOf(phone, clonePhone, camera)))
+        assertEquals(
+            mapOf(workPhone to WORK_GROUP, clonePhone to CLONE_SUFFIX),
+            duplicateSuffixes(listOf(phone, workPhone, clonePhone)),
+        )
+        assertEquals(
+            mapOf(clonePhone to "$CLONE_SUFFIX Main", cloneContacts to "$CLONE_SUFFIX ContactsActivity"),
+            duplicateSuffixes(listOf(phone, clonePhone, cloneContacts)),
+        )
+    }
+
+    @Test
     fun `the suffix is never matched by the filter`() {
         val shown = listOf(phone, otherPhone)
 

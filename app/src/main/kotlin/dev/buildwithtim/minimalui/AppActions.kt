@@ -7,7 +7,7 @@ import dev.buildwithtim.minimalui.core.LauncherApp
 import dev.buildwithtim.minimalui.core.MenuAction
 import dev.buildwithtim.minimalui.core.contextMenu
 import dev.buildwithtim.minimalui.core.isLauncherSettings
-import dev.buildwithtim.minimalui.core.isWorkApp
+import dev.buildwithtim.minimalui.core.isOtherProfile
 import dev.buildwithtim.minimalui.core.keepsMenu
 import dev.buildwithtim.minimalui.core.listsClosing
 
@@ -54,7 +54,7 @@ internal class AppActions(
                 isHidden = app in stores.hidden,
                 isLauncherSettings = app.isLauncherSettings,
                 isGroupMember = group != null && stores.userGroups.holds(group, app),
-                isWorkApp = app.isWorkApp,
+                isOtherProfile = app.isOtherProfile,
             )
         state.push(Screen.Menu(app, contextMenu(facts), collection, group))
     }
