@@ -90,3 +90,12 @@ to find it). They replace the list until closed, the way the app menu does: Cloc
 those items in the status pill (both on by default), Recently used sizes the block at the top of the list, Hidden apps
 lists the apps you hid, and About at the bottom shows the version and the commit the app was built from. Settings are
 kept in the app's private storage.
+
+## Where your setup is kept
+
+Favourites, recently used apps, collections, renamed apps, hidden apps, your groups and MinimalUI's settings are all
+kept in the app's private storage on the phone. Installing a newer release over the one you have keeps them.
+Uninstalling MinimalUI, or **Clear storage** in Android's App info for it, erases them all, and there is no way to get
+them back: MinimalUI is left out of Android's backup and of its transfer to a new phone, so on a new phone it starts
+empty. This is also why switching between a debug build and a release, which needs an uninstall first (see the
+README's [Installing](../README.md#installing)), starts over from an empty setup.
