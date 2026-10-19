@@ -48,20 +48,32 @@ fun UserManager.otherProfiles(): List<UserHandle> = userProfiles.filter { it != 
 
 /**
  * Every launcher activity of the [users]' profiles other than the launcher's own (#78), each marked with its profile's
- * serial number, the id the launcher stores it by. They take no category: a work app's only group is Work.
+ * serial number, the id the launcher stores it by. A work app takes no category: its only group is Work. An app of an
+ * app-clone profile (#201) is marked a clone and keeps its category, as it is listed with the personal apps.
  */
 fun LauncherApps.otherProfileApps(users: UserManager): List<LauncherApp> =
     users.otherProfiles().flatMap { user ->
         val serial = users.getSerialNumberForUser(user)
+        val clone = isCloneProfile(user)
         getActivityList(null, user).map { info ->
             LauncherApp(
                 label = info.label.toString(),
                 packageName = info.componentName.packageName,
                 activityName = info.componentName.className,
+                category = if (clone) info.applicationInfo.groupCategory() else null,
                 profile = serial,
+                isClone = clone,
             )
         }
     }
+
+/**
+ * Whether [user] is an app-clone profile (#201), which Android lists to launchers next to the personal apps. Only API
+ * 35 and newer tell a launcher a profile's type; before that every other profile counts as a work profile.
+ */
+private fun LauncherApps.isCloneProfile(user: UserHandle): Boolean =
+    Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM &&
+        getLauncherUserInfo(user)?.userType == UserManager.USER_TYPE_PROFILE_CLONE
 
 /** The serial numbers of the other profiles whose apps are turned off (work mode paused, #78). */
 fun UserManager.pausedProfiles(): Set<Long> =

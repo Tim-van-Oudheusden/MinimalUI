@@ -11,7 +11,7 @@ import android.os.Bundle
 import android.os.UserHandle
 import android.os.UserManager
 import dev.buildwithtim.minimalui.core.LauncherApp
-import dev.buildwithtim.minimalui.core.isWorkApp
+import dev.buildwithtim.minimalui.core.isOtherProfileApp
 
 /**
  * Starts apps and Android's screens for them from [activity], without crashing the launcher when one cannot start:
@@ -23,9 +23,9 @@ internal class AppStarter(
     private val userManager: UserManager,
     private val refresh: () -> Unit,
 ) {
-    /** Whether [app] started, in its own profile (#78). */
+    /** Whether [app] started, in its own profile (#78): a work app or an app clone (#201) through [LauncherApps]. */
     fun launch(app: LauncherApp): Boolean =
-        if (app.isWorkApp) {
+        if (app.isOtherProfileApp) {
             startInProfile(app, LauncherApps::startMainActivity)
         } else {
             start(app.launchIntent())
@@ -33,7 +33,7 @@ internal class AppStarter(
 
     /** Android's App info screen for [app], in its own profile. */
     fun showInfo(app: LauncherApp) {
-        if (app.isWorkApp) {
+        if (app.isOtherProfileApp) {
             startInProfile(app, LauncherApps::startAppDetailsActivity)
         } else {
             start(app.appInfoIntent())

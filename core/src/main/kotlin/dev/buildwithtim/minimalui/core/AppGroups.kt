@@ -65,6 +65,12 @@ fun appGroups(
  */
 const val WORK_GROUP = "Work"
 
+/**
+ * What tells an app clone (#201) apart from the personal app it copies ([duplicateSuffixes]), Android's own name for
+ * the clone profile. A clone is listed as a personal app otherwise: in the root's full list and its category's group.
+ */
+const val CLONE_MARK = "Clone"
+
 /** The automatic groups [this] app falls in, by name: [WORK_GROUP] alone for a work app, else its category's if any. */
 internal val LauncherApp.automaticGroups: List<String>
     get() = if (isWorkApp) listOf(WORK_GROUP) else listOfNotNull(category?.name)

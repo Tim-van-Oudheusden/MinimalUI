@@ -175,6 +175,18 @@ class RootEntriesTest {
     }
 
     @Test
+    fun `an app clone is in the full list, after the app it copies`() {
+        val cloneBell = app("Bell").copy(profile = 11L, isClone = true)
+        val withClone = (apps + cloneBell).sortedForDisplay()
+
+        assertEquals(
+            withClone.map { RootEntry.App(it) },
+            rootEntries(withClone, RecentApps(), Settings()),
+        )
+        assertEquals(cloneBell, withClone[withClone.indexOf(app("Bell")) + 1])
+    }
+
+    @Test
     fun `the selection follows the very app, not its copy in another profile`() {
         val withWork = listOf(app("Alarm"), app("Bell"), workBell)
         val before = listOf(RootEntry.App(workBell, RootSection.Recent), RootEntry.Blank()) + RootEntry.App(app("Bell"))

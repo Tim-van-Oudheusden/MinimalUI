@@ -72,7 +72,8 @@ data class CollectionPlace(
  * one of the recently used apps ([isRecent]), whether there are any recently used apps at all ([hasRecents]), whether
  * it is a favourite ([isFavourite]), its [place] when the menu was opened inside a collection, and whether it is
  * hidden ([isHidden]), whether the menu was opened inside a user group that holds it ([isGroupMember], #69), and
- * whether it belongs to a work profile ([isWorkApp], #78).
+ * whether it belongs to another profile than the launcher's own, a work profile (#78) or an app clone (#201)
+ * ([isWorkApp]).
  */
 data class AppFacts(
     val isSystem: Boolean,
