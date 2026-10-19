@@ -1,6 +1,7 @@
 package dev.buildwithtim.minimalui
 
 import android.content.Context
+import android.content.pm.ApplicationInfo
 import androidx.test.core.app.ApplicationProvider
 import dev.buildwithtim.minimalui.core.Aliases
 import dev.buildwithtim.minimalui.core.AppCollections
@@ -14,6 +15,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.xmlpull.v1.XmlPullParser
 
 /**
  * The preferences file and key each of the user's choices lives under, as released versions wrote them (v0.1.1): an
@@ -97,7 +99,53 @@ class LauncherStoresTest {
         assertEquals(AppCollections(mapOf("Morning" to listOf(ALARM, BELL))), reloaded.collections)
     }
 
+    @Test
+    fun `leaves every store out of Android's backup and its transfer to a new phone`() {
+        // docs/usage.md promises a new phone starts empty. Up to Android 11 allowBackup="false" turns off both backup
+        // and transfer; from Android 12 it no longer covers device-to-device transfer, which only the exclusions under
+        // <device-transfer> in the data extraction rules keep out.
+        val app = context.applicationInfo
+        assertEquals(0, app.flags and ApplicationInfo.FLAG_ALLOW_BACKUP)
+        assertEquals(R.xml.data_extraction_rules, manifestApplicationAttribute("dataExtractionRules"))
+
+        val rules = extractionRules()
+        for (section in listOf("cloud-backup", "device-transfer")) {
+            assertEquals(section, APP_DATA_DOMAINS.map { "exclude $it ." }.toSet(), rules[section]?.toSet())
+        }
+    }
+
+    /** A resource reference on the packaged manifest's <application>, which ApplicationInfo keeps hidden. */
+    private fun manifestApplicationAttribute(name: String): Int {
+        val parser = context.assets.openXmlResourceParser("AndroidManifest.xml")
+        while (parser.next() != XmlPullParser.END_DOCUMENT) {
+            if (parser.eventType == XmlPullParser.START_TAG && parser.name == "application") {
+                return parser.getAttributeResourceValue(ANDROID, name, 0)
+            }
+        }
+        error("no <application> in the manifest")
+    }
+
+    /** Each section of the data extraction rules (depth 2), with its rules (depth 3) as "tag domain path" lines. */
+    private fun extractionRules(): Map<String, List<String>> {
+        val sections = mutableMapOf<String, MutableList<String>>()
+        val parser = context.resources.getXml(R.xml.data_extraction_rules)
+        while (parser.next() != XmlPullParser.END_DOCUMENT) {
+            if (parser.eventType != XmlPullParser.START_TAG) continue
+            if (parser.depth == 2) sections[parser.name] = mutableListOf()
+            if (parser.depth == 3) {
+                val domain = parser.getAttributeValue(null, "domain")
+                sections.values.last() += "${parser.name} $domain ${parser.getAttributeValue(null, "path")}"
+            }
+        }
+        return sections
+    }
+
     private companion object {
+        const val ANDROID = "http://schemas.android.com/apk/res/android"
+
+        // The domains of the app's own credential-encrypted storage, where every store's preferences file lives.
+        val APP_DATA_DOMAINS = listOf("root", "file", "database", "sharedpref", "external")
+
         const val ALARM = "com.example.alarm/com.example.alarm.MainActivity"
         const val BELL = "com.example.bell/com.example.bell.MainActivity"
 
