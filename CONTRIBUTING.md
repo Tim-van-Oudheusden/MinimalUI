@@ -356,11 +356,13 @@ to lay out.
 
 ### What a translation does not change
 
-- **The automatic group names stay in English.** Games, Audio, Video, Images, Social, News, Maps, Productivity,
-  Accessibility and Other are the names of the `AppCategory` enum in `core/.../AppGroups.kt`, and `Work` is its
-  `WORK_GROUP` constant, which is also the suffix that tells a work app apart from a personal app of the same name.
-  None of them is in `strings.xml`. They are also the groups' identity, since a user group of the same name joins the
-  automatic one. Making them translatable is a code change, not part of a translation.
+- **The automatic group names and the profile suffixes stay in English.** Games, Audio, Video, Images, Social, News,
+  Maps, Productivity, Accessibility and Other are the names of the `AppCategory` enum in `core/.../AppGroups.kt`, and
+  `Work` is its `WORK_GROUP` constant, which is also the suffix that tells a work app apart from a personal app of the
+  same name. None of them is in `strings.xml`. They are also the groups' identity, since a user group of the same name
+  joins the automatic one. `Clone`, the suffix that tells an app clone apart from the app it copies, is not in
+  `strings.xml` either: it is the `CLONE_SUFFIX` constant in `core/.../DuplicateLabels.kt`. Making any of them
+  translatable is a code change, not part of a translation.
 - **The sort order is the same in every language.** `labelCollator()` in `core/.../AppOrdering.kt` uses the root
   collation (`Locale.ROOT`), not the phone's language: accents sort next to their base letter, and other scripts sort
   after Latin, grouped by script. A language's own rules are not applied. In Swedish, for example, `Å`, `Ä` and `Ö`
