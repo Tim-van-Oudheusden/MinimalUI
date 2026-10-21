@@ -57,15 +57,25 @@ startup crash; don't assume the reporter already knows it.
 
 ### Maintainer-side: pulling back the release
 
-1. If the broken release is recent and likely has few installs, delete it so it stops being offered as the latest
-   download: `gh release delete <tag> --cleanup-tag` (removes the GitHub release and its tag; add `--yes` for
-   non-interactive use). Do this only before a known-good next release is ready to take its place, otherwise
-   `Releases` briefly has nothing current to point to.
-2. If the broken release has already seen meaningful uptake, leave it published — deleting it does not reach devices
-   that already downloaded it — and instead ship the fix forward as fast as possible: bump `versionName`/`versionCode`
-   in the same PR that fixes the bug, per `CONTRIBUTING.md#cutting-a-release`. Note in the release notes (or a pinned
-   issue) that the previous version should be upgraded away from immediately.
-3. Either way, file or update a GitHub issue describing user impact and link it from the fix PR (`Fixes #<number>`),
+1. To stop new downloads at once, keep the release and remove only its APK, then say in its notes why it was pulled:
+
+   ```bash
+   gh release delete-asset <tag> minimalui-<tag>.apk --yes
+   gh release edit <tag> --notes "Pulled: <one line on what breaks>. See #<issue>."
+   gh release edit <previous-tag> --latest   # optional: point Latest at the last good release
+   ```
+
+   **Don't `gh release delete` it while `main` still has its `versionName`.** The Release workflow publishes any
+   `versionName` on `main` that has no release (`CONTRIBUTING.md#releasing`), and it runs on every merge that touches
+   `app/build.gradle.kts`. So the next such merge, or a manual rerun, publishes that version again. With
+   `--cleanup-tag` it builds the current `main` under the old tag and `versionCode`, so devices that already have the
+   broken build are never offered it. Without `--cleanup-tag` it republishes the broken commit. Keeping the release
+   and its tag keeps the version marked as released. Delete it, if at all, only after the fix-forward release
+   (step 2) is published.
+2. Ship the fix forward as fast as possible: pulling the APK does not reach devices that already downloaded it. Bump
+   `versionName`/`versionCode` in the same PR that fixes the bug, per `CONTRIBUTING.md#cutting-a-release`. Note in the
+   release notes (or a pinned issue) that the previous version should be upgraded away from immediately.
+3. File or update a GitHub issue describing user impact and link it from the fix PR (`Fixes #<number>`),
    so the regression and its resolution are in the same place a future rollback runbook update would look.
 
 ## Prevention
