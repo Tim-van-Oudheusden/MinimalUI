@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Android 12+: the launcher stores nothing worth restoring yet, so back up and transfer nothing. -->
+<!-- Android 12+: back up and transfer nothing. The setup leaves the phone only in a file the user exports from
+     MinimalUI settings (#208), never through Android's backup or its transfer to a new phone. -->
 <data-extraction-rules>
     <cloud-backup>
         <exclude domain="root" path="." />

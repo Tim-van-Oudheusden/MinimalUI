@@ -20,8 +20,11 @@ and replaces it with two harder constraints:
   is lower than the one already on the device (`INSTALL_FAILED_VERSION_DOWNGRADE`), and the release build is not
   debuggable, so `adb install -d` cannot override it either. A user cannot downgrade to a known-good release without
   **uninstalling first** — and since `android:allowBackup="false"` and the app holds no `INTERNET` permission (no
-  backup transport exists), uninstalling loses every favourite, collection, rename, hidden app and group with no
-  recovery path.
+  backup transport exists), uninstalling loses every favourite, collection, rename, hidden app and group unless the
+  user saved them first with **MinimalUI settings → Export setup** and brings them back with **Import setup** after
+  reinstalling ([`docs/usage.md`](../usage.md#where-your-setup-is-kept)). Import setup only exists in releases that
+  have it, so a downgrade to an older release than that still starts empty; and a broken release that crashes before
+  its list loads cannot export at all.
 - **It can be the one screen that reaches Settings.** If the broken release crashes `MainActivity` on every launch,
   Android keeps relaunching it as the HOME app, and there is no in-app fallback UI to escape it. See **HOME-app
   lockout** below before assuming a user can just "open Settings and switch launchers."
@@ -32,6 +35,8 @@ and replaces it with two harder constraints:
 
 1. The user can still reach **Settings** from the MinimalUI list (README.md "Making it your home screen") and switch
    the default home app away from MinimalUI, or use the app's own uninstall entry from a long-press/menu action.
+   Before uninstalling to downgrade, point them at **MinimalUI settings → Export setup**, so **Import setup** in the
+   known-good release brings their setup back.
 2. File or triage the GitHub issue, fix forward, and cut a new release with a higher `versionCode` per
    `CONTRIBUTING.md#cutting-a-release`. There is no mechanism to amend a published APK in place — a fix always ships
    as a new, higher `versionCode` release.
@@ -50,7 +55,8 @@ Android recovery path does not depend on MinimalUI working:
    **Settings → Apps → MinimalUI → Uninstall**.
 3. Reboot normally. The device now opens its stock launcher instead of crash-looping MinimalUI.
 4. Advise the user to wait for a fixed release before reinstalling, or to sideload a known-good APK — which still
-   requires the uninstall-and-lose-settings path above, since the install already on the device is the broken one.
+   requires the uninstall path above, since the install already on the device is the broken one. A setup they
+   exported before the broken release imports again with **Import setup**; without one, it starts empty.
 
 Put this sequence (Safe Mode → switch default app or uninstall) directly in the response to any issue reporting a
 startup crash; don't assume the reporter already knows it.

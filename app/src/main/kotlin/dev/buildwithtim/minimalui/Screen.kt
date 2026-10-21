@@ -1,6 +1,7 @@
 package dev.buildwithtim.minimalui
 
 import dev.buildwithtim.minimalui.core.LauncherApp
+import dev.buildwithtim.minimalui.core.LauncherSetup
 import dev.buildwithtim.minimalui.core.MenuItem
 import dev.buildwithtim.minimalui.core.ScreenStack
 import dev.buildwithtim.minimalui.core.SettingsLink
@@ -24,7 +25,7 @@ internal sealed interface Screen {
     /** Choosing or naming a user group for an app, and renaming a user group. */
     sealed interface OfGroupEdit : Screen
 
-    /** MinimalUI's settings and the lists their links open. */
+    /** MinimalUI's settings, the lists their links open, and the question an imported setup asks. */
     sealed interface OfSettings : Screen
 
     /** The app list (its selection is kept by the activity's content, which outlives every other screen). */
@@ -117,6 +118,13 @@ internal sealed interface Screen {
     /** The list a settings link opens, on its first row each time it opens. */
     class Link(
         val link: SettingsLink,
+    ) : OfSettings {
+        val list = PillListState()
+    }
+
+    /** The question a [setup] read from a file asks before it replaces the current one (#208). */
+    class ImportSetup(
+        val setup: LauncherSetup,
     ) : OfSettings {
         val list = PillListState()
     }

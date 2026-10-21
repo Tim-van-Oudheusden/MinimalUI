@@ -95,15 +95,29 @@ inactive (remove a clone from Android's own settings). A clone and the app it co
 
 MinimalUI's own settings open from the **MinimalUI settings** row, listed right after Android's Settings (type `min`
 to find it). They replace the list until closed, the way the app menu does: Clock and Battery percentage show or hide
-those items in the status pill (both on by default), Recently used sizes the block at the top of the list, Hidden apps
-lists the apps you hid, and About at the bottom shows the version and the commit the app was built from. Settings are
-kept in the app's private storage.
+those items in the status pill (both on by default), Recently used sizes the block at the top of the list, Export
+setup and Import setup carry your setup to and from a file ([below](#where-your-setup-is-kept)), Hidden apps lists the
+apps you hid, and About at the bottom shows the version and the commit the app was built from. Settings are kept in
+the app's private storage.
 
 ## Where your setup is kept
 
 Favourites, recently used apps, collections, renamed apps, hidden apps, your groups and MinimalUI's settings are all
 kept in the app's private storage on the phone. Installing a newer release over the one you have keeps them.
-Uninstalling MinimalUI, or **Clear storage** in Android's App info for it, erases them all, and there is no way to get
-them back: MinimalUI is left out of Android's backup and of its transfer to a new phone, so on a new phone it starts
-empty. This is also why switching between a debug build and a release, which needs an uninstall first (see the
-README's [Installing](../README.md#installing)), starts over from an empty setup.
+Uninstalling MinimalUI, or **Clear storage** in Android's App info for it, erases them all. MinimalUI is left out of
+Android's backup and of its transfer to a new phone, so a file you export is the only copy that survives.
+
+**Export setup** in MinimalUI settings opens Android's file picker to save the whole setup as one file,
+`minimalui-setup.json` unless you name it otherwise, wherever you choose: the phone's Downloads, an SD card, or a cloud
+drive's folder if one is installed. **Import setup** opens the picker to choose such a file, then asks before it
+changes anything: **Replace current setup** puts every favourite, collection, rename, hidden app, group, recently used
+app and setting from the file in place of the ones you have, and **Keep current setup** (or Back) leaves them as they
+are. A file that is not a MinimalUI setup, or one exported by a newer MinimalUI than the one importing it, is refused.
+MinimalUI needs no permission for either: the picker hands it the one file you chose, and nothing goes over the
+network.
+
+Export first, then import after installing, whenever an uninstall is coming: switching between a debug build and a
+release, which needs an uninstall first (see the README's [Installing](../README.md#installing)), going back to an
+older release that has Import setup, or moving to a new phone. Apps are kept by package and activity, so on a new
+phone the setup applies to the same apps once they are installed there; a work app's place depends on its work
+profile, which a new phone numbers anew.

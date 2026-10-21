@@ -8,6 +8,7 @@ import dev.buildwithtim.minimalui.core.Aliases
 import dev.buildwithtim.minimalui.core.AppCollections
 import dev.buildwithtim.minimalui.core.Favourites
 import dev.buildwithtim.minimalui.core.HiddenApps
+import dev.buildwithtim.minimalui.core.LauncherSetup
 import dev.buildwithtim.minimalui.core.RecentApps
 import dev.buildwithtim.minimalui.core.Settings
 import dev.buildwithtim.minimalui.core.UserGroups
@@ -63,6 +64,21 @@ internal class LauncherStores(
     /** The groups the user made (#69), shown merged with the automatic ones from the apps' categories. */
     var userGroups by mutableStateOf(groupsStore.load())
         private set
+
+    /** Everything above as one setup, for Export setup (#208). */
+    val setup: LauncherSetup
+        get() = LauncherSetup(settings, recents, favourites, collections, hidden, aliases, userGroups)
+
+    /** Every store replaced by [imported]'s and written back, as a confirmed Import setup does (#208). */
+    fun replaceWith(imported: LauncherSetup) {
+        save(imported.settings)
+        save(imported.recents)
+        save(imported.favourites)
+        save(imported.collections)
+        save(imported.hidden)
+        save(imported.aliases)
+        save(imported.userGroups)
+    }
 
     fun save(changed: RecentApps) {
         recents = changed

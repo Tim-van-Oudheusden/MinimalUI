@@ -52,6 +52,12 @@ enum class MenuAction {
 
     /** In a group's menu: deletes the user group; its apps stay installed, and in any automatic group of its name. */
     DeleteGroup,
+
+    /** Confirming an imported setup (#208): it replaces every favourite, collection, rename, group and setting. */
+    ReplaceSetup,
+
+    /** Turning an imported setup down: the current one stays as it is. */
+    KeepSetup,
 }
 
 /** One row of the context menu. A disabled row is still listed, drawn dim, and does nothing when chosen. */
@@ -127,3 +133,9 @@ fun contextMenu(facts: AppFacts): List<MenuItem> =
  */
 fun groupMenu(isUserGroup: Boolean): List<MenuItem> =
     listOf(MenuItem(MenuAction.RenameGroup, isUserGroup), MenuItem(MenuAction.DeleteGroup, isUserGroup))
+
+/**
+ * The question an imported setup asks before it replaces the current one (#208): replace it, the first row, or keep it.
+ * Nothing changes until the user confirms.
+ */
+val importSetupMenu: List<MenuItem> = listOf(MenuItem(MenuAction.ReplaceSetup), MenuItem(MenuAction.KeepSetup))

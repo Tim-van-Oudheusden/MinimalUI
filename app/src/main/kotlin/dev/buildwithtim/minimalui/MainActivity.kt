@@ -50,6 +50,10 @@ class MainActivity : ComponentActivity() {
     // One worker thread: loads never run side by side on a slow device, and superseded ones are skipped.
     private val worker = Executors.newSingleThreadExecutor()
 
+    // Exported and imported setups (#208) are written and read on their own thread, so a slow file provider never
+    // holds up a reload of the list.
+    private val fileWorker = Executors.newSingleThreadExecutor()
+
     // Lazy: the package manager and main executor exist only once the activity is attached.
     private val loader by lazy {
         LatestLoader(
@@ -73,11 +77,12 @@ class MainActivity : ComponentActivity() {
         val starter = AppStarter(this, launcherApps, userManager, loader::refresh)
         val actions = AppActions(state, starter, packageManager)
         val edits = ListEdits(state)
+        val files = SetupFiles(this, state, fileWorker)
         setContent {
             // Outside the list, so the list comes back from another screen with the same row selected and the same
             // rows on screen.
             val listState = rememberAppListState()
-            MinimalTheme { LauncherScreens(state, actions, edits, listState) }
+            MinimalTheme { LauncherScreens(state, actions, edits, listState, files) }
         }
     }
 
@@ -141,6 +146,7 @@ class MainActivity : ComponentActivity() {
     override fun onDestroy() {
         listChanges.unregister()
         worker.shutdown()
+        fileWorker.shutdown()
         super.onDestroy()
     }
 

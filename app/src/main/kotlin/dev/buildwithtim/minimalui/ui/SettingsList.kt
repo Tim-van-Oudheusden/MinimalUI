@@ -119,6 +119,8 @@ private val Setting.label: Int
 private val SettingsLink.label: Int
     get() =
         when (this) {
+            SettingsLink.ExportSetup -> R.string.settings_export_setup
+            SettingsLink.ImportSetup -> R.string.settings_import_setup
             SettingsLink.HiddenApps -> R.string.settings_hidden_apps
             SettingsLink.About -> R.string.settings_about
         }

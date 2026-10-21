@@ -85,8 +85,8 @@ internal class AppActions(
             MenuAction.RemoveFromCollection, MenuAction.MoveUp, MenuAction.MoveDown, MenuAction.RemoveFromGroup,
             -> changeList(menu, action)
 
-            // Only a group's menu lists these, and it has its own handler.
-            MenuAction.RenameGroup, MenuAction.DeleteGroup -> Unit
+            // Only a group's menu and an imported setup's question list these, and each has its own handler.
+            MenuAction.RenameGroup, MenuAction.DeleteGroup, MenuAction.ReplaceSetup, MenuAction.KeepSetup -> Unit
         }
     }
 
