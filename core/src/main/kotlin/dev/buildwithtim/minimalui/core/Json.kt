@@ -171,7 +171,7 @@ private class JsonParser(
         val char = input.next()
         if (char != 'u') return ESCAPES[char] ?: input.fail("unknown escape \\$char")
         val digits = input.take(UNICODE_ESCAPE_DIGITS)
-        if (!digits.all { it.isDigit() || it.lowercaseChar() in 'a'..'f' }) input.fail("bad unicode escape")
+        if (!digits.all { it in '0'..'9' || it.lowercaseChar() in 'a'..'f' }) input.fail("bad unicode escape")
         return digits.toInt(HEX).toChar()
     }
 

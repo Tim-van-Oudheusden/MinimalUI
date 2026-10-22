@@ -53,7 +53,10 @@ enum class MenuAction {
     /** In a group's menu: deletes the user group; its apps stay installed, and in any automatic group of its name. */
     DeleteGroup,
 
-    /** Confirming an imported setup (#208): it replaces every favourite, collection, rename, group and setting. */
+    /**
+     * Confirming an imported setup (#208): it replaces every favourite, collection, rename, hidden app, group, recently
+     * used app and setting.
+     */
     ReplaceSetup,
 
     /** Turning an imported setup down: the current one stays as it is. */

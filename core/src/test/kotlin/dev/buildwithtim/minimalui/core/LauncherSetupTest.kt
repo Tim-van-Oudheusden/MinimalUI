@@ -113,6 +113,23 @@ class LauncherSetupTest {
     }
 
     @Test
+    fun `an alias for an app with a line break, or that is not text, is skipped instead of naming another app`() {
+        val file =
+            """{"format": "minimalui-setup", "version": 1, "aliases": {"$BELL\n$ALARM": "Not Alarm", "$BELL": 5}}"""
+
+        assertEquals(SetupImport.Read(LauncherSetup()), LauncherSetup.imported(file))
+    }
+
+    @Test
+    fun `a file cut off anywhere is refused, not read in part`() {
+        val whole = """{"format": "minimalui-setup", "version": 1, "aliases": {"$ALARM": "\u00e9"}}"""
+
+        for (end in whole.indices) {
+            assertEquals(whole.take(end), SetupImport.NotASetup, LauncherSetup.imported(whole.take(end)))
+        }
+    }
+
+    @Test
     fun `JSON escapes are read, surrogate pairs included`() {
         val file =
             """{"format": "minimalui-setup", "version": 1, "aliases": {"$ALARM": "\u00e9\ud83d\ude00 \"\\\/"}}"""
@@ -144,6 +161,8 @@ class LauncherSetupTest {
                 break"}}""",
                 """{"format": "minimalui-setup", "version": 01}""",
                 """{"format": "minimalui-setup", "version": 1, "x": tru}""",
+                """{"format": "minimalui-setup", "version": 1, "aliases": {com.example.a/b": "Name"}}""",
+                """{"format": "minimalui-setup", "version": 1, "x": "\u${"\u0661\u0662\u0663\u0664"}"}""",
             )
 
         for (text in notSetups) assertEquals(text, SetupImport.NotASetup, LauncherSetup.imported(text))

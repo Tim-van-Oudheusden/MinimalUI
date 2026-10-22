@@ -1684,6 +1684,31 @@ class MainActivityTest {
     }
 
     @Test
+    fun `Import setup reads a file of up to 1 MiB, refuses a larger one, and leaving its picker changes nothing`() {
+        val activity = launch()
+        openSettings()
+        val setup = """{"format": "minimalui-setup", "version": 1}"""
+        val mebibyte = 1 shl 20
+
+        chooseRow("Import setup")
+        pick(activity, null)
+        rule.waitForIdle()
+        assertNull(ShadowToast.getTextOfLatestToast())
+        rule.onNodeWithText("Import setup").assertIsFocused()
+
+        pickedFileHolds(setup + " ".repeat(mebibyte + 1 - setup.length))
+        press(Key.Enter)
+        pick(activity, pickedFile)
+        awaitToast("Not a MinimalUI setup file")
+        rule.onNodeWithText("Replace current setup").assertDoesNotExist()
+
+        pickedFileHolds(setup + " ".repeat(mebibyte - setup.length))
+        press(Key.Enter)
+        pick(activity, pickedFile)
+        awaitListed("Replace current setup")
+    }
+
+    @Test
     fun `a file that cannot be written or read says so, and leaving the picker changes nothing`() {
         val activity = launch()
         openSettings()
