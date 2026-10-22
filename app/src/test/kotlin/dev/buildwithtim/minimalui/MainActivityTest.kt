@@ -16,6 +16,7 @@ import android.graphics.Paint
 import android.graphics.Rect
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
+import android.net.Uri
 import android.os.BatteryManager
 import android.os.Bundle
 import android.os.Looper
@@ -54,6 +55,11 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.test.core.app.ApplicationProvider
+import dev.buildwithtim.minimalui.core.Aliases
+import dev.buildwithtim.minimalui.core.Favourites
+import dev.buildwithtim.minimalui.core.LauncherSetup
+import dev.buildwithtim.minimalui.core.Setting
+import dev.buildwithtim.minimalui.core.SetupImport
 import dev.buildwithtim.minimalui.ui.DimText
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -77,9 +83,15 @@ import org.robolectric.shadows.ShadowLauncherApps
 import org.robolectric.shadows.ShadowNetwork
 import org.robolectric.shadows.ShadowNetworkCapabilities
 import org.robolectric.shadows.ShadowPaint
+import org.robolectric.shadows.ShadowToast
 import org.robolectric.shadows.ShadowUserManager
 import org.robolectric.util.ReflectionHelpers
 import org.robolectric.util.ReflectionHelpers.ClassParameter
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.io.IOException
+import java.io.InputStream
+import java.io.OutputStream
 
 @OptIn(ExperimentalTestApi::class)
 @RunWith(RobolectricTestRunner::class)
@@ -1539,6 +1551,192 @@ class MainActivityTest {
 
         awaitListed("Clock")
         rule.onNodeWithText("Hidden apps").assertIsFocused()
+    }
+
+    /** The document the user picks or creates in Android's file picker, as its provider hands it back. */
+    private val pickedFile = Uri.parse("content://com.example.documents/document/minimalui-setup.json")
+
+    private val alarmComponent = "com.example.alarm/com.example.alarm.Main"
+    private val bellComponent = "com.example.bell/com.example.bell.Main"
+
+    /** Answers the file picker the launcher started with [file], or leaves it without one when [file] is null. */
+    private fun pick(
+        activity: ActivityController<MainActivity>,
+        file: Uri?,
+    ): Intent {
+        val picker = shadowOf(activity.get()).nextStartedActivityForResult.intent
+        val result = if (file == null) Activity.RESULT_CANCELED else Activity.RESULT_OK
+        shadowOf(activity.get()).receiveResult(picker, result, file?.let { Intent().setData(it) })
+        return picker
+    }
+
+    /** The file picked for import holds [text]. */
+    private fun pickedFileHolds(text: String) =
+        shadowOf(application.contentResolver).registerInputStreamSupplier(pickedFile) {
+            ByteArrayInputStream(text.toByteArray())
+        }
+
+    /**
+     * Reading and writing the file run off the main thread; wait until the launcher reports the outcome. A toast is no
+     * change on screen for Compose to wait on, so this runs the main thread itself.
+     */
+    private fun awaitToast(text: String) =
+        rule.waitUntil(timeoutMillis = 5_000) {
+            shadowOf(Looper.getMainLooper()).idle()
+            ShadowToast.getTextOfLatestToast() == text
+        }
+
+    /** [value] stored under [key] in the preferences [file] before the launcher starts. */
+    private fun storeBeforeLaunch(
+        file: String,
+        key: String,
+        value: String,
+    ) = application
+        .getSharedPreferences(file, Context.MODE_PRIVATE)
+        .edit()
+        .putString(key, value)
+        .commit()
+
+    @Test
+    fun `Export setup writes the whole setup to a new file the user names in Android's file picker`() {
+        recentlyUsedOff()
+        storeBeforeLaunch("favourites", "favourites", alarmComponent)
+        storeBeforeLaunch("aliases", "aliases", "$bellComponent\tDing")
+        install("Alarm", "com.example.alarm")
+        install("Bell", "com.example.bell")
+        val activity = launch()
+        openSettings()
+        val exported = ByteArrayOutputStream()
+        shadowOf(application.contentResolver).registerOutputStream(pickedFile, exported)
+
+        chooseRow("Export setup")
+        val picker = pick(activity, pickedFile)
+
+        assertEquals(Intent.ACTION_CREATE_DOCUMENT, picker.action)
+        assertEquals("application/json", picker.type)
+        assertEquals("minimalui-setup.json", picker.getStringExtra(Intent.EXTRA_TITLE))
+        awaitToast("Setup exported")
+        val expected =
+            LauncherSetup(
+                settings = LauncherSetup().settings.cycled(Setting.RecentlyUsed, -1),
+                favourites = Favourites(setOf(alarmComponent)),
+                aliases = Aliases(mapOf(bellComponent to "Ding")),
+            )
+        assertEquals(SetupImport.Read(expected), LauncherSetup.imported(exported.toString(Charsets.UTF_8)))
+        rule.onNodeWithText("Export setup").assertIsFocused()
+    }
+
+    @Test
+    fun `Import setup replaces the setup only once the user confirms, and keeps it after a restart`() {
+        install("Alarm", "com.example.alarm")
+        install("Bell", "com.example.bell")
+        val activity = launch()
+        openSettings()
+        val imported =
+            LauncherSetup(
+                settings = LauncherSetup().settings.cycled(Setting.Clock, 1),
+                favourites = Favourites(setOf(bellComponent)),
+            )
+        pickedFileHolds(imported.exported())
+
+        chooseRow("Import setup")
+        val picker = pick(activity, pickedFile)
+
+        assertEquals(Intent.ACTION_OPEN_DOCUMENT, picker.action)
+        awaitListed("Replace current setup")
+        rule.onNodeWithText("Replace current setup").assertIsFocused()
+        press(Key.DirectionDown)
+        press(Key.Enter)
+        awaitListed("Clock")
+        rule.onNodeWithText("Import setup").assertIsFocused()
+        assertValue("Clock", "On")
+
+        press(Key.Enter)
+        pick(activity, pickedFile)
+        awaitListed("Replace current setup")
+        press(Key.Enter)
+
+        awaitToast("Setup imported")
+        awaitListed("Clock")
+        assertValue("Clock", "Off")
+        closeActivity()
+        launch()
+        awaitListed("★ Bell")
+    }
+
+    @Test
+    fun `Import setup refuses a file that is not a MinimalUI setup, and one from a newer MinimalUI`() {
+        val activity = launch()
+        openSettings()
+
+        pickedFileHolds("Just some notes")
+        chooseRow("Import setup")
+        pick(activity, pickedFile)
+        awaitToast("Not a MinimalUI setup file")
+
+        pickedFileHolds("""{"format": "minimalui-setup", "version": 2}""")
+        press(Key.Enter)
+        pick(activity, pickedFile)
+        awaitToast("Made by a newer MinimalUI: update this one first")
+
+        rule.onNodeWithText("Replace current setup").assertDoesNotExist()
+        rule.onNodeWithText("Import setup").assertIsFocused()
+    }
+
+    @Test
+    fun `Import setup reads a file of up to 1 MiB, refuses a larger one, and leaving its picker changes nothing`() {
+        val activity = launch()
+        openSettings()
+        val setup = """{"format": "minimalui-setup", "version": 1}"""
+        val mebibyte = 1 shl 20
+
+        chooseRow("Import setup")
+        pick(activity, null)
+        rule.waitForIdle()
+        assertNull(ShadowToast.getTextOfLatestToast())
+        rule.onNodeWithText("Import setup").assertIsFocused()
+
+        pickedFileHolds(setup + " ".repeat(mebibyte + 1 - setup.length))
+        press(Key.Enter)
+        pick(activity, pickedFile)
+        awaitToast("Not a MinimalUI setup file")
+        rule.onNodeWithText("Replace current setup").assertDoesNotExist()
+
+        pickedFileHolds(setup + " ".repeat(mebibyte - setup.length))
+        press(Key.Enter)
+        pick(activity, pickedFile)
+        awaitListed("Replace current setup")
+    }
+
+    @Test
+    fun `a file that cannot be written or read says so, and leaving the picker changes nothing`() {
+        val activity = launch()
+        openSettings()
+        val failing =
+            object : OutputStream() {
+                override fun write(b: Int) = throw IOException("disk full")
+            }
+        shadowOf(application.contentResolver).registerOutputStream(pickedFile, failing)
+        shadowOf(application.contentResolver).registerInputStreamSupplier(pickedFile) {
+            object : InputStream() {
+                override fun read(): Int = throw IOException("provider gone")
+            }
+        }
+
+        chooseRow("Export setup")
+        pick(activity, null)
+        rule.waitForIdle()
+        assertNull(ShadowToast.getTextOfLatestToast())
+
+        press(Key.Enter)
+        pick(activity, pickedFile)
+        awaitToast("Could not export the setup")
+
+        press(Key.DirectionDown)
+        press(Key.Enter)
+        pick(activity, pickedFile)
+        awaitToast("Could not read the file")
+        rule.onNodeWithText("Import setup").assertIsFocused()
     }
 
     @Test

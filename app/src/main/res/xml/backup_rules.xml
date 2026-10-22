@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Android 11 and lower: the launcher stores nothing worth restoring yet, so back up nothing. -->
+<!-- Android 11 and lower: back up nothing. The setup leaves the phone only in a file the user exports from MinimalUI
+     settings (#208), never through Android's backup. -->
 <full-backup-content>
     <exclude domain="root" path="." />
     <exclude domain="file" path="." />

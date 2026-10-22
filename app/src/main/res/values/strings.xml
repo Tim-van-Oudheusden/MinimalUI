@@ -49,6 +49,18 @@
     <string name="settings_about">About</string>
     <string name="about_version">Version %1$s</string>
     <string name="about_commit">Commit %1$s</string>
+    <!-- Export and import of the whole setup (#208): the settings rows, the question an imported setup asks, and the
+         short messages each outcome shows. -->
+    <string name="settings_export_setup">Export setup</string>
+    <string name="settings_import_setup">Import setup</string>
+    <string name="import_replace_setup">Replace current setup</string>
+    <string name="import_keep_setup">Keep current setup</string>
+    <string name="setup_exported">Setup exported</string>
+    <string name="setup_export_failed">Could not export the setup</string>
+    <string name="setup_imported">Setup imported</string>
+    <string name="setup_read_failed">Could not read the file</string>
+    <string name="setup_not_a_setup">Not a MinimalUI setup file</string>
+    <string name="setup_too_new">Made by a newer MinimalUI: update this one first</string>
     <!-- The button-hint row (#74): what each hinted key does, drawn in upper case after the key's glyph. -->
     <string name="hint_menu">Menu</string>
     <string name="hint_delete">Delete</string>

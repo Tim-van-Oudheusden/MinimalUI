@@ -35,10 +35,16 @@ enum class Setting(
 }
 
 /**
- * A row of the settings list that opens a list of its own instead of holding a value. Adding one is one entry here,
- * plus its label and its list in the app. About stays last.
+ * A row of the settings list that opens something instead of holding a value: a list of its own, or Android's file
+ * picker. Adding one is one entry here, plus its label and what it opens in the app. About stays last.
  */
 enum class SettingsLink {
+    /** Writes the whole setup to a new file the user names in Android's file picker (#208). */
+    ExportSetup,
+
+    /** Reads a setup from a file the user picks in Android's file picker, to replace the current one once confirmed. */
+    ImportSetup,
+
     /** The apps the user hid (#71), each shown again by choosing it. */
     HiddenApps,
 

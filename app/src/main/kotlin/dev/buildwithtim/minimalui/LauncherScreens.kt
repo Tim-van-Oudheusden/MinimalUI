@@ -2,8 +2,10 @@ package dev.buildwithtim.minimalui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
+import dev.buildwithtim.minimalui.core.MenuAction
 import dev.buildwithtim.minimalui.core.SettingsLink
 import dev.buildwithtim.minimalui.core.StatusPill
+import dev.buildwithtim.minimalui.core.importSetupMenu
 import dev.buildwithtim.minimalui.ui.AboutList
 import dev.buildwithtim.minimalui.ui.AppList
 import dev.buildwithtim.minimalui.ui.AppListState
@@ -16,9 +18,9 @@ import dev.buildwithtim.minimalui.ui.SettingsList
 import dev.buildwithtim.minimalui.ui.TextEntry
 
 /**
- * The list on top of the launcher's [state], which alone shows, doing what [actions] and [edits] do. [listState] keeps
- * the root list's selection and scroll while another list is up, so it comes back with the same row selected and the
- * same rows on screen.
+ * The list on top of the launcher's [state], which alone shows, doing what [actions] and [edits] do, and exporting and
+ * importing the setup through [files]. [listState] keeps the root list's selection and scroll while another list is
+ * up, so it comes back with the same row selected and the same rows on screen.
  */
 @Composable
 internal fun LauncherScreens(
@@ -26,6 +28,7 @@ internal fun LauncherScreens(
     actions: AppActions,
     edits: ListEdits,
     listState: AppListState,
+    files: SetupFiles,
 ) {
     val status = state.status?.shownWith(state.stores.settings)
     when (val screen = state.screens.top) {
@@ -33,7 +36,7 @@ internal fun LauncherScreens(
         is Screen.OfCollection -> CollectionScreen(screen, state, actions, edits, status)
         is Screen.OfGroup -> GroupScreen(screen, state, actions, edits, status)
         is Screen.OfGroupEdit -> GroupEditScreen(screen, state, edits, status)
-        is Screen.OfSettings -> SettingsScreen(screen, state, status)
+        is Screen.OfSettings -> SettingsScreen(screen, state, files, status)
     }
 }
 
@@ -252,6 +255,7 @@ private fun GroupEditScreen(
 private fun SettingsScreen(
     screen: Screen.OfSettings,
     state: LauncherState,
+    files: SetupFiles,
     status: StatusPill?,
 ) {
     val stores = state.stores
@@ -261,7 +265,13 @@ private fun SettingsScreen(
                 title = stringResource(R.string.settings_entry),
                 settings = stores.settings,
                 onCycle = { setting, step -> stores.save(stores.settings.cycled(setting, step)) },
-                onOpen = { state.push(Screen.Link(it)) },
+                onOpen = { link ->
+                    when (link) {
+                        SettingsLink.ExportSetup -> files.export()
+                        SettingsLink.ImportSetup -> files.import()
+                        SettingsLink.HiddenApps, SettingsLink.About -> state.push(Screen.Link(link))
+                    }
+                },
                 onClose = { state.back() },
                 state = screen.list,
                 status = status,
@@ -269,28 +279,55 @@ private fun SettingsScreen(
         }
 
         is Screen.Link -> {
-            when (screen.link) {
-                SettingsLink.HiddenApps -> {
-                    HiddenAppsList(
-                        title = stringResource(R.string.settings_hidden_apps),
-                        apps = stores.hidden.shownFrom(state.apps.orEmpty()),
-                        onUnhide = { stores.save(stores.hidden.unhidden(it)) },
-                        onClose = { state.back() },
-                        state = screen.list,
-                        status = status,
-                        suffix = state.suffixes::get,
-                    )
-                }
-
-                SettingsLink.About -> {
-                    AboutList(
-                        version = BuildConfig.VERSION_NAME,
-                        commit = BuildConfig.BUILD_COMMIT,
-                        onClose = { state.back() },
-                        status = status,
-                    )
-                }
-            }
+            LinkScreen(screen, state, status)
         }
+
+        is Screen.ImportSetup -> {
+            ContextMenu(
+                title = stringResource(R.string.settings_import_setup),
+                items = importSetupMenu,
+                onChoose = { action ->
+                    state.back()
+                    if (action == MenuAction.ReplaceSetup) files.replace(screen.setup)
+                },
+                onClose = { state.back() },
+                status = status,
+                state = screen.list,
+            )
+        }
+    }
+}
+
+@Composable
+private fun LinkScreen(
+    screen: Screen.Link,
+    state: LauncherState,
+    status: StatusPill?,
+) {
+    val stores = state.stores
+    when (screen.link) {
+        SettingsLink.HiddenApps -> {
+            HiddenAppsList(
+                title = stringResource(R.string.settings_hidden_apps),
+                apps = stores.hidden.shownFrom(state.apps.orEmpty()),
+                onUnhide = { stores.save(stores.hidden.unhidden(it)) },
+                onClose = { state.back() },
+                state = screen.list,
+                status = status,
+                suffix = state.suffixes::get,
+            )
+        }
+
+        SettingsLink.About -> {
+            AboutList(
+                version = BuildConfig.VERSION_NAME,
+                commit = BuildConfig.BUILD_COMMIT,
+                onClose = { state.back() },
+                status = status,
+            )
+        }
+
+        // These open Android's file picker from the settings list, never a list of their own.
+        SettingsLink.ExportSetup, SettingsLink.ImportSetup -> {}
     }
 }

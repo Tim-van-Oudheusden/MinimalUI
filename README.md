@@ -18,7 +18,7 @@
   <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/1_home.png" width="190" alt="The home screen: two favourites marked with a star, two recently used apps, then every app in alphabetical order, with the status pill at the top and MENU and OPEN hints at the bottom">
   <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/2_filter.png" width="190" alt="Typing ca filters the list to Calculator, Calendar and Camera">
   <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/3_app_menu.png" width="190" alt="The app menu for Calendar: App info, Uninstall, Add to favourites, Add to collection, Add to group, Rename, Hide and Clear recently used">
-  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/4_settings.png" width="190" alt="MinimalUI settings: Clock On, Battery percentage On, Recently used 3, Hidden apps and About">
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/4_settings.png" width="190" alt="MinimalUI settings: Clock On, Battery percentage On, Recently used 3, Export setup, Import setup, Hidden apps and About">
 </p>
 
 ## Status
@@ -61,7 +61,8 @@ Pick one:
   version with `minimalui-v<version>.apk` attached; no GitHub account is needed. Open the file on the phone and allow
   installs from that source, or run `adb install minimalui-v<version>.apk`. A release installs over an earlier one and
   keeps your settings. A debug build (the next two options) is signed with a different key, so uninstall it first;
-  that erases your favourites, collections, renames, hidden apps, groups and settings
+  that erases your favourites, collections, renames, hidden apps, groups and settings unless you first save them with
+  **Export setup** in MinimalUI settings, to bring them back with **Import setup**
   ([Where your setup is kept](docs/usage.md#where-your-setup-is-kept)).
 - **Download a CI build.** Every CI run on GitHub uploads a debug APK of the latest code as the `minimalui-debug-apk`
   artifact, kept for 14 days. Open a recent run of the `CI` workflow under the repository's **Actions** tab (you must
@@ -93,7 +94,7 @@ the keys also work by touch. Screens narrower than 320 dp show only the right-ha
 | Left / Right (arrows, D-pad) | Turn a page, stopping at the first or last app                                |
 | Left / Right in settings     | Change the highlighted setting to its previous / next value, wrapping around  |
 | Enter or D-pad centre        | Open the highlighted app, collection, group or list; in a menu, do the action |
-| Enter in settings            | Change the highlighted setting to its next value, or open the linked list     |
+| Enter in settings            | Change the highlighted setting to its next value; on a link row, open it      |
 | Enter in Hidden apps         | Unhide the highlighted app                                                    |
 | Menu, or hold Enter / centre | Open the highlighted app's or group's menu (touch: long-press it)             |
 | Letters, digits, Backspace   | Filter the home screen; in the text editor, type the name                     |
@@ -120,6 +121,7 @@ flowchart LR
   subgraph android["Android"]
     pm["PackageManager<br/>LauncherApps"]
     system["Battery, network,<br/>clock broadcasts"]
+    picker["File picker<br/>(setup export, import)"]
   end
 
   subgraph app["app: Android shell"]
@@ -129,7 +131,7 @@ flowchart LR
     ui["ui/<br/>Compose lists, menus,<br/>status pill, hint row"]
   end
 
-  core["core: plain Kotlin<br/>ordering, filtering, groups,<br/>navigation, menus, settings"]
+  core["core: plain Kotlin<br/>ordering, filtering, groups,<br/>navigation, menus, settings,<br/>setup file"]
 
   pm -->|"installed apps"| activity
   system --> watcher -->|"status pill"| activity
@@ -137,6 +139,7 @@ flowchart LR
   activity <-->|"state and keys in,<br/>rows, hints, next screen out"| core
   activity --> ui
   activity -->|"open, App info, Uninstall"| pm
+  activity <-->|"setup file"| picker
 ```
 
 Everything that can be decided without the Android framework lives in `core` and is tested with plain JUnit; `app` reads

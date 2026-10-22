@@ -64,4 +64,6 @@ private val MenuAction.label: Int
             MenuAction.ClearRecents -> R.string.menu_clear_recents
             MenuAction.RenameGroup -> R.string.menu_rename_group
             MenuAction.DeleteGroup -> R.string.menu_delete_group
+            MenuAction.ReplaceSetup -> R.string.import_replace_setup
+            MenuAction.KeepSetup -> R.string.import_keep_setup
         }

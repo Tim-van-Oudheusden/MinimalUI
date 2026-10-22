@@ -8,8 +8,10 @@ import dev.buildwithtim.minimalui.core.AppCollections
 import dev.buildwithtim.minimalui.core.Choice
 import dev.buildwithtim.minimalui.core.Favourites
 import dev.buildwithtim.minimalui.core.HiddenApps
+import dev.buildwithtim.minimalui.core.LauncherSetup
 import dev.buildwithtim.minimalui.core.RecentApps
 import dev.buildwithtim.minimalui.core.Setting
+import dev.buildwithtim.minimalui.core.Settings
 import dev.buildwithtim.minimalui.core.UserGroups
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -100,10 +102,32 @@ class LauncherStoresTest {
     }
 
     @Test
+    fun `an imported setup replaces every store, and is what the launcher reads when it starts again`() {
+        stored("favourites", "favourites", BELL)
+        stored("aliases", "aliases", "$BELL\tDing")
+        val stores = LauncherStores(context)
+        val imported =
+            LauncherSetup(
+                settings = Settings().cycled(Setting.Clock, 1),
+                recents = RecentApps(listOf(WORK_MAIL, ALARM)),
+                favourites = Favourites(setOf(ALARM)),
+                collections = AppCollections(mapOf("Morning" to listOf(ALARM, BELL))),
+                hidden = HiddenApps(setOf(BELL)),
+                aliases = Aliases(mapOf(ALARM to "Wake up")),
+                userGroups = UserGroups(mapOf("Work" to setOf(WORK_MAIL))),
+            )
+
+        stores.replaceWith(imported)
+
+        assertEquals(imported, stores.setup)
+        assertEquals(imported, LauncherStores(context).setup)
+    }
+
+    @Test
     fun `leaves every store out of Android's backup and its transfer to a new phone`() {
-        // docs/usage.md promises a new phone starts empty. Up to Android 11 allowBackup="false" turns off both backup
-        // and transfer; from Android 12 it no longer covers device-to-device transfer, which only the exclusions under
-        // <device-transfer> in the data extraction rules keep out.
+        // docs/usage.md promises the setup leaves the phone only in a file the user exports (#208). Up to Android 11
+        // allowBackup="false" turns off both backup and transfer; from Android 12 it no longer covers device-to-device
+        // transfer, which only the exclusions under <device-transfer> in the data extraction rules keep out.
         val app = context.applicationInfo
         assertEquals(0, app.flags and ApplicationInfo.FLAG_ALLOW_BACKUP)
         assertEquals(R.xml.data_extraction_rules, manifestApplicationAttribute("dataExtractionRules"))
