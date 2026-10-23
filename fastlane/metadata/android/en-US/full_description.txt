@@ -14,6 +14,7 @@ MinimalUI is a minimal Android launcher for keyboard-centric phones, such as tho
 <li>Collections: named lists of apps in your own order.</li>
 <li>Groups: apps sorted by the category their developer declared, plus groups of your own. Work profile apps get a Work group.</li>
 <li>Rename or hide any app; hidden apps stay findable by typing their name.</li>
+<li>Export your setup to a file and import it on another install or phone.</li>
 </ul>
 
 <b>Less on screen</b>
