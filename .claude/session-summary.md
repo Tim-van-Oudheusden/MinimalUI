@@ -9,23 +9,16 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 
 ## Latest session
 
-- **Date:** 2026-10-21
-- **Worked:** #208 → `feat/208-export-import-setup` (maintainer chose option A). Export setup and Import setup in
-  MinimalUI settings: a versioned JSON file through Android's file picker (no permission, no network); import replaces
-  every store only after a Replace current setup / Keep current setup question. Format and parser in `core`
-  (`LauncherSetup`, `Json.kt`); picker and file I/O in `app` (`SetupFiles`). Usage guide, README, rollback runbook and
-  the backup-rule comments now point at export before an uninstall; cloud backup and device transfer stay off.
-- **Outcome:** `./gradlew check assembleDebug` green for `core` and `app` (core 100/100, app 100/99.13 coverage).
-  The 12 `tooling` tests that run the `jq` scripts fail on this host, whose `jq` is jaq 3.1.1 (it rejects `$module`
-  and `$label` as names); the change touches no script.
-- **Open follow-ups:** none in this repo. The first release carrying #208 is the oldest one a setup can be imported
-  into; the rollback runbook says so.
+- **Date:** 2026-10-23
+- **Worked:** #214 → `chore/214-release-0.1.3`. Release 0.1.3 to ship Export setup / Import setup (#208, PR #213),
+  which the README and usage guide already tell release users to use: `versionCode` 4, `versionName` 0.1.3,
+  `changelogs/4.txt`, and an export/import bullet under **One list** in the store's full description.
+- **Outcome:** release PR open; merging it is the maintainer's call. On merge, `release.yml` tags `v0.1.3` and
+  publishes `minimalui-v0.1.3.apk`.
+- **Open follow-ups:** after merge, watch **Actions → Release** (`gh workflow run release.yml` retries it). 0.1.3 is
+  the oldest release a setup file can be imported into.
 - **Notes for next session:**
+  - A release PR is `app/build.gradle.kts` plus `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt`
+    (≤ 500 characters without the trailing newline; `FastlaneMetadataTest` enforces it).
   - Gradle here runs in a 4 GiB cgroup: `check` with parallel workers gets the daemon OOM-killed. Use
     `--max-workers=1 -Dkotlin.compiler.execution.strategy=in-process`.
-  - A toast or any `mainExecutor` post that changes nothing on screen never runs inside `rule.waitUntil` unless the
-    condition idles the main looper itself (`shadowOf(Looper.getMainLooper()).idle()`), as `awaitToast` does.
-  - `ShadowContentResolver.registerOutputStream` / `registerInputStreamSupplier` stand in for the file a picker
-    returns; `shadowOf(activity).receiveResult` answers an `ActivityResultContracts` launch.
-  - Store screenshots (`-PstoreScreenshots`) print the host's current time, so every regeneration changes all four
-    PNGs; commit only the one whose content changed.
