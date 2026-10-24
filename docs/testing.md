@@ -2,6 +2,13 @@
 
 How MinimalUI's tests and quality checks run, and where each one can run.
 
+## Test timeout
+
+Every `Test` task in every module fails after 10 minutes (the root `build.gradle.kts`, #216), so a test stuck in a loop
+fails the build instead of hanging it. A normal run is far below that: `:app:testDebugUnitTest` takes about 20 s
+locally. Test helpers that step towards a state, such as cycling a setting or pressing Down to a row, take at most as
+many steps as there are choices or rows, and then fail naming what they did not find.
+
 ## Nightly compliance
 
 `.github/workflows/nightly-compliance.yml` runs nightly (`23 3 * * *` UTC) and on manual dispatch, for checks that can

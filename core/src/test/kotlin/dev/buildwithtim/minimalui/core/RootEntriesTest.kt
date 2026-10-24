@@ -13,11 +13,12 @@ class RootEntriesTest {
     private fun opened(vararg labels: String) =
         labels.fold(RecentApps()) { recents, label -> recents.opened(app(label), apps) }
 
-    private fun recentlyUsed(choice: Choice): Settings {
-        var settings = Settings()
-        while (settings[Setting.RecentlyUsed] != choice) settings = settings.cycled(Setting.RecentlyUsed, 1)
-        return settings
-    }
+    /** Settings with [choice] for Recently used, reached by cycling as the user does; fails if it is not a choice. */
+    private fun recentlyUsed(choice: Choice): Settings =
+        generateSequence(Settings()) { it.cycled(Setting.RecentlyUsed, 1) }
+            .take(Setting.RecentlyUsed.choices.size)
+            .firstOrNull { it[Setting.RecentlyUsed] == choice }
+            ?: error("$choice is not a Recently used choice")
 
     private fun recent(label: String) = RootEntry.App(app(label), RootSection.Recent)
 
