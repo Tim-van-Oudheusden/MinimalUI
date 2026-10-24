@@ -45,6 +45,14 @@ subprojects {
     }
 }
 
+// No test can hang a build (#216): a test stuck in a loop fails its task at this limit instead of running until someone
+// kills it. Far above a normal run: :app:testDebugUnitTest takes about 20 s locally, CI's whole gate job about 3 min.
+subprojects {
+    tasks.withType<Test>().configureEach {
+        timeout.set(java.time.Duration.ofMinutes(10))
+    }
+}
+
 // Formatting for the whole repository: `./gradlew spotlessApply` fixes it, `spotlessCheck` (part of `check`) fails on
 // it. ktlint takes its style from .editorconfig; build output, tool state and local checkouts are not ours to format.
 val notOurs = listOf("**/build/**", ".gradle/**", ".kotlin/**", ".beads/**", ".tmp/**", "worktrees/**")

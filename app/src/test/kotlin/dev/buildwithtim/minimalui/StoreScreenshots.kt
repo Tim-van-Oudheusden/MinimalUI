@@ -137,13 +137,20 @@ class StoreScreenshots {
         rule.waitForIdle()
     }
 
-    /** Presses Down until the row [label] is selected; the selected row is the focused one. */
+    /**
+     * Presses Down until the row [label] is selected; the selected row is the focused one. The list wraps around, so a
+     * row that is not there fails after more presses than the demo phone has rows (#216) instead of cycling forever.
+     */
     private fun select(
         activity: ActivityController<MainActivity>,
         label: String,
     ) {
         val selected = hasText(label) and isFocused()
-        while (rule.onAllNodes(selected).fetchSemanticsNodes().isEmpty()) type(activity, KeyEvent.KEYCODE_DPAD_DOWN)
+        repeat(MAX_SELECT_PRESSES) {
+            if (rule.onAllNodes(selected).fetchSemanticsNodes().isNotEmpty()) return
+            type(activity, KeyEvent.KEYCODE_DPAD_DOWN)
+        }
+        error("No row $label to select within $MAX_SELECT_PRESSES presses of Down")
     }
 
     /** Makes [label] a favourite through its menu, as a user would. */
@@ -216,3 +223,6 @@ class StoreScreenshots {
         capture("4_settings.png")
     }
 }
+
+// More than every row of the demo phone's lists: 17 apps, the recent and favourite blocks and their extra rows.
+private const val MAX_SELECT_PRESSES = 50
