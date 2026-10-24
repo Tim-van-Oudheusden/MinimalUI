@@ -191,6 +191,10 @@ Run these before opening a PR (CI runs the same on every PR):
 
 `check` is the gate: every check added to the build hooks into it, so CI and the docs never list its tasks one by one.
 
+Every test task times out after 10 minutes (the root `build.gradle.kts`), so a test that never returns fails `check`
+instead of hanging it; the slowest, app's Robolectric suite, takes about 3. A test helper that loops until the state it
+needs shows up bounds its loop too and fails with a message naming what it never reached.
+
 The Kotlin compiler treats warnings as errors, extra warnings included (`allWarningsAsErrors` and `extraWarnings` in
 every module's build file), so an unused variable or a deprecated call fails the build. Fix the code; never
 `@Suppress` a warning.

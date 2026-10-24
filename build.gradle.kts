@@ -45,6 +45,15 @@ subprojects {
     }
 }
 
+// A test that never returns fails its task at this timeout instead of holding a core until someone kills it (#216).
+// The slowest test task, app's Robolectric suite, takes about 3 minutes; 10 leaves room for a slower machine or Kover's
+// instrumentation and still fails well inside CI's 30-minute job limit.
+subprojects {
+    tasks.withType<Test>().configureEach {
+        timeout.set(java.time.Duration.ofMinutes(10))
+    }
+}
+
 // Formatting for the whole repository: `./gradlew spotlessApply` fixes it, `spotlessCheck` (part of `check`) fails on
 // it. ktlint takes its style from .editorconfig; build output, tool state and local checkouts are not ours to format.
 val notOurs = listOf("**/build/**", ".gradle/**", ".kotlin/**", ".beads/**", ".tmp/**", "worktrees/**")

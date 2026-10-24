@@ -13,11 +13,13 @@ class RootEntriesTest {
     private fun opened(vararg labels: String) =
         labels.fold(RecentApps()) { recents, label -> recents.opened(app(label), apps) }
 
-    private fun recentlyUsed(choice: Choice): Settings {
-        var settings = Settings()
-        while (settings[Setting.RecentlyUsed] != choice) settings = settings.cycled(Setting.RecentlyUsed, 1)
-        return settings
-    }
+    // Cycles through the choices at most once: a choice the setting doesn't offer fails here instead of looping
+    // forever, since cycled() wraps around (#216).
+    private fun recentlyUsed(choice: Choice): Settings =
+        generateSequence(Settings()) { it.cycled(Setting.RecentlyUsed, 1) }
+            .take(Setting.RecentlyUsed.choices.size)
+            .firstOrNull { it[Setting.RecentlyUsed] == choice }
+            ?: throw AssertionError("RecentlyUsed never reaches $choice; it offers ${Setting.RecentlyUsed.choices}")
 
     private fun recent(label: String) = RootEntry.App(app(label), RootSection.Recent)
 

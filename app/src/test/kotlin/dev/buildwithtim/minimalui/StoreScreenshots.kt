@@ -137,13 +137,20 @@ class StoreScreenshots {
         rule.waitForIdle()
     }
 
-    /** Presses Down until the row [label] is selected; the selected row is the focused one. */
+    /**
+     * Presses Down until the row [label] is selected; the selected row is the focused one. Gives up after
+     * [MAX_DOWN_PRESSES], so a row that never shows fails the run instead of hanging it (#216).
+     */
     private fun select(
         activity: ActivityController<MainActivity>,
         label: String,
     ) {
         val selected = hasText(label) and isFocused()
-        while (rule.onAllNodes(selected).fetchSemanticsNodes().isEmpty()) type(activity, KeyEvent.KEYCODE_DPAD_DOWN)
+        var presses = 0
+        while (rule.onAllNodes(selected).fetchSemanticsNodes().isEmpty()) {
+            check(presses++ < MAX_DOWN_PRESSES) { "$label is not selected after $MAX_DOWN_PRESSES presses of Down" }
+            type(activity, KeyEvent.KEYCODE_DPAD_DOWN)
+        }
     }
 
     /** Makes [label] a favourite through its menu, as a user would. */
@@ -216,3 +223,7 @@ class StoreScreenshots {
         capture("4_settings.png")
     }
 }
+
+// More Downs than the home screen has rows (favourites, recents, every demo app), so one press past it has lapped the
+// list without reaching the row.
+private const val MAX_DOWN_PRESSES = 50
