@@ -297,6 +297,7 @@ settings.
 
 The maintainer creates the key once, outside the repository, and keeps a backup of it and its password. Android
 refuses an update signed with a different key, so losing it means every user has to uninstall to move to a new one.
+If it leaks or is lost, follow [`docs/runbooks/release-key.md`](docs/runbooks/release-key.md).
 
 ```bash
 keytool -genkeypair -keystore ~/minimalui-release.jks -alias minimalui \

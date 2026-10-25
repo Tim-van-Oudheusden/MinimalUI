@@ -25,3 +25,5 @@ here that touches a release should say explicitly whether this risk applies and 
 
 - [Bad release rollback](bad-release-rollback.md) — a published release crashes, misbehaves, or otherwise needs to be
   pulled back, including the HOME-app lockout case above.
+- [Release key leaked or lost](release-key.md) — the key that signs every release may be in someone else's hands, or
+  is gone: rotating it without an uninstall, or moving users to a new key when it can't be rotated.
