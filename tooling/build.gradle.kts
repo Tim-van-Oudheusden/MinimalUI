@@ -45,8 +45,10 @@ tasks.test {
             .withPropertyName("repo-$dir")
             .withPathSensitivity(PathSensitivity.RELATIVE)
     }
-    // FastlaneMetadataTest reads versionCode from app/build.gradle.kts; LintConfigTest reads every module's lint {}.
+    // FastlaneMetadataTest reads versionCode from app/build.gradle.kts; LintConfigTest reads every module's lint {};
+    // TestTimeoutConfigTest reads the root script's test timeout.
     inputs.file(repoRoot.file("settings.gradle.kts")).withPropertyName("repo-settings")
+    inputs.file(repoRoot.file("build.gradle.kts")).withPropertyName("repo-root-build")
     for (module in listOf("app", "core", "tooling")) {
         inputs.file(repoRoot.file("$module/build.gradle.kts")).withPropertyName("repo-$module-build")
     }
