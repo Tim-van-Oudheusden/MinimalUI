@@ -22,9 +22,9 @@ stays. Home instead clears the filter and returns to the top.
 The app menu replaces the list until it is closed: App info, Uninstall (dim and inactive for system apps, work apps, app
 clones and the Settings entry), Add to favourites or Remove from favourites, Add to collection, Add to group, Rename
 (dim and inactive for the MinimalUI settings row), Hide or Unhide (dim and inactive for Android's Settings and the
-MinimalUI settings row, so the way back to another home app always stays listed), and, when there are recently used
-apps, Remove from recently used and Clear recently used. After an action, Back or Esc, the list comes back with the same
-app highlighted.
+MinimalUI settings row, so the way back to another home app always stays listed), Remove from recently used when the
+app is one of the recently used apps, and Clear recently used whenever there are any. After an action, Back or Esc, the
+list comes back with the same app highlighted.
 
 ## Renaming apps
 
