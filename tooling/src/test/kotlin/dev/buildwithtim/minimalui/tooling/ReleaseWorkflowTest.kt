@@ -3,9 +3,23 @@ package dev.buildwithtim.minimalui.tooling
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.util.concurrent.TimeUnit
 
 class ReleaseWorkflowTest {
     private val release = Repo.workflows().getValue("release.yml")
+    private val releaseSteps = release.jobs().getValue("release").steps()
+    private val secretsCheck = releaseSteps.first()
+
+    /** Runs the release job's Check signing secrets step with [env], as GitHub's bash shell does. */
+    private fun checkSecrets(env: Map<String, String>): Pair<Int, String> {
+        val process =
+            ProcessBuilder("bash", "-eo", "pipefail", "-c", secretsCheck["run"].toString())
+                .redirectErrorStream(true)
+                .apply { environment().putAll(env) }
+                .start()
+        check(process.waitFor(60, TimeUnit.SECONDS)) { "Check signing secrets did not finish within 60 s" }
+        return process.exitValue() to process.inputStream.bufferedReader().readText()
+    }
 
     // The jobs hold the signing key and a write token; they must never run for a pull request. A version bump reaches
     // main only through the build file, so other pushes don't start a release.
@@ -44,5 +58,37 @@ class ReleaseWorkflowTest {
 
         assertTrue("./gradlew tasks: $tasks", "check" in tasks)
         assertTrue("./gradlew tasks: $tasks", tasks.indexOf("check") < tasks.indexOf("assembleRelease"))
+    }
+
+    // CONTRIBUTING.md#the-release-key and docs/runbooks/release-key.md rely on this: a missing secret is named and
+    // stops the job before it checks out or builds anything, so nothing is published. So the check comes first and
+    // looks at every secret the later steps use.
+    @Test
+    fun `checks every signing secret first`() {
+        val used =
+            releaseSteps
+                .drop(1)
+                .flatMap { Regex("""secrets\.(\w+)""").findAll(it.toString()).map { match -> match.groupValues[1] } }
+                .toSet()
+
+        assertEquals("Check signing secrets", secretsCheck["name"])
+        assertEquals(4, used.size)
+        assertEquals(used.associateWith { "\${{ secrets.$it }}" }, secretsCheck.getValue("env").asMap())
+    }
+
+    @Test
+    fun `names each missing signing secret and fails`() {
+        val names = secretsCheck.getValue("env").asMap().keys
+
+        assertEquals(0, checkSecrets(names.associateWith { "set" }).first)
+        for (name in names) {
+            val (exitCode, output) = checkSecrets(names.associateWith { if (it == name) "" else "set" })
+
+            assertEquals(output, 1, exitCode)
+            assertEquals("::error::Missing repository secrets: $name. See CONTRIBUTING.md#the-release-key.\n", output)
+        }
+        val (exitCode, output) = checkSecrets(names.associateWith { "" })
+        assertEquals(output, 1, exitCode)
+        assertTrue(output, names.all { it in output })
     }
 }
