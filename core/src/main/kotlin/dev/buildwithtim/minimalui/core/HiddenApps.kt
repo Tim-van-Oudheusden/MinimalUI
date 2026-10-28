@@ -1,10 +1,11 @@
 package dev.buildwithtim.minimalui.core
 
 /**
- * The apps the user hid (#71): they leave the root list (its favourites and recently used block too) and every
- * collection's list, yet still match type-to-filter and are listed under Hidden apps in the settings, the two ways
- * back. Kept by component, like [Favourites], so an app stays hidden when it is relabelled. Hiding stores nothing
- * else: an app's favourite, recent and collection places stay as they were, so unhiding brings it back where it was.
+ * The apps the user hid (#71): they leave the root list (its favourites and recently used block too), every
+ * collection's list and every group, yet still match type-to-filter and are listed under Hidden apps in the settings,
+ * the two ways back. Kept by component, like [Favourites], so an app stays hidden when it is relabelled. Hiding stores
+ * nothing else: an app's favourite, recent, collection and group places stay as they were, so unhiding brings it back
+ * where it was.
  *
  * An uninstalled app is never dropped from here, so reinstalling a hidden app keeps it hidden: the user hid it on
  * purpose, and an app update that reinstalls should not undo that.
