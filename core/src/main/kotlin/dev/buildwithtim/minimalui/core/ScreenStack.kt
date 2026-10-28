@@ -20,6 +20,15 @@ data class ScreenStack<S>(
     /** Back or Esc: the top screen closes and the one below shows again. The root has nothing below and stays. */
     fun popped(): ScreenStack<S> = copy(above = above.dropLast(1))
 
+    /**
+     * Back to where a screen was opened from: the nearest screen to the top that [closes] picks, and every screen
+     * opened from it, close. The stack stays as it is when no screen above the root is picked.
+     */
+    fun poppedPast(closes: (S) -> Boolean): ScreenStack<S> {
+        val index = above.indexOfLast(closes)
+        return if (index < 0) this else copy(above = above.take(index))
+    }
+
     /** Home: every screen above the root closes. */
     fun home(): ScreenStack<S> = ScreenStack(root)
 }

@@ -43,27 +43,25 @@ internal class ListEdits(
         to: String,
     ) {
         stores.save(stores.userGroups.renamed(from, to))
-        state.back(times = 2)
+        state.backPastMenu()
     }
 
-    /** [app] added to the user group called [name], then [closing] lists closed, back to where the menu was opened. */
+    /** [app] added to the user group called [name], then back on the list its menu was opened from. */
     fun addToGroup(
         name: String,
         app: LauncherApp,
-        closing: Int,
     ) {
         stores.save(stores.userGroups.added(name, app))
-        state.back(closing)
+        state.backPastMenu()
     }
 
-    /** [app] added to the collection called [name], then [closing] lists closed, back to where the menu was opened. */
+    /** [app] added to the collection called [name], then back on the list its menu was opened from. */
     fun addToCollection(
         name: String,
         app: LauncherApp,
-        closing: Int,
     ) {
         stores.save(stores.collections.added(name, app))
-        state.back(closing)
+        state.backPastMenu()
     }
 
     /**
@@ -80,6 +78,6 @@ internal class ListEdits(
                 .orEmpty()
                 .firstOrNull { it.component == app.component }
         if (installed != null) stores.save(stores.aliases.renamed(installed, name))
-        state.back(times = 2)
+        state.backPastMenu()
     }
 }
