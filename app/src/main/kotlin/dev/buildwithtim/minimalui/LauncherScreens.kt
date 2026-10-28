@@ -131,8 +131,7 @@ private fun CollectionScreen(
                 title = stringResource(R.string.menu_add_collection),
                 names = collections.namesWithout(screen.app, state.visibleApps),
                 newLabel = stringResource(R.string.new_collection),
-                // Back down past this list and the menu, to the list the menu was opened from.
-                onChoose = { edits.addToCollection(it, screen.app, closing = 2) },
+                onChoose = { edits.addToCollection(it, screen.app) },
                 onNew = { state.push(Screen.NewCollection(screen.app)) },
                 onClose = { state.back() },
                 state = screen.list,
@@ -144,8 +143,8 @@ private fun CollectionScreen(
             TextEntry(
                 title = stringResource(R.string.new_collection),
                 initial = "",
-                // Back down past the name, the list of collections and the menu. A blank name makes nothing.
-                onDone = { name -> if (name.isNotBlank()) edits.addToCollection(name, screen.app, closing = 3) },
+                // A blank name makes nothing.
+                onDone = { name -> if (name.isNotBlank()) edits.addToCollection(name, screen.app) },
                 onClose = { state.back() },
                 status = status,
             )
@@ -219,8 +218,7 @@ private fun GroupEditScreen(
                 title = stringResource(R.string.menu_add_group),
                 names = state.stores.userGroups.namesWithout(screen.app),
                 newLabel = stringResource(R.string.new_group),
-                // Back down past this list and the menu, to the list the menu was opened from.
-                onChoose = { edits.addToGroup(it, screen.app, closing = 2) },
+                onChoose = { edits.addToGroup(it, screen.app) },
                 onNew = { state.push(Screen.NewGroup(screen.app)) },
                 onClose = { state.back() },
                 state = screen.list,
@@ -232,8 +230,8 @@ private fun GroupEditScreen(
             TextEntry(
                 title = stringResource(R.string.new_group),
                 initial = "",
-                // Back down past the name, the list of groups and the menu. A blank name makes nothing.
-                onDone = { name -> if (name.isNotBlank()) edits.addToGroup(name, screen.app, closing = 3) },
+                // A blank name makes nothing.
+                onDone = { name -> if (name.isNotBlank()) edits.addToGroup(name, screen.app) },
                 onClose = { state.back() },
                 status = status,
             )

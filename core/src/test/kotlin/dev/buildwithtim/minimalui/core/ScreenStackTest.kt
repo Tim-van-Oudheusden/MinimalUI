@@ -52,6 +52,39 @@ class ScreenStackTest {
     }
 
     @Test
+    fun `closing past a screen closes it and every screen opened from it`() {
+        val list = Screen("list", selected = 2)
+        val stack =
+            ScreenStack(root)
+                .pushed(list)
+                .pushed(Screen("menu"))
+                .pushed(Screen("choice"))
+                .pushed(Screen("name"))
+
+        val back = stack.poppedPast { it.name == "menu" }
+
+        assertSame(list, back.top)
+        assertEquals(2, back.top.selected)
+        assertSame(root, back.popped().top)
+    }
+
+    @Test
+    fun `closing past a screen stops at the one nearest the top`() {
+        val lower = Screen("menu")
+        val stack = ScreenStack(root).pushed(lower).pushed(Screen("menu")).pushed(Screen("name"))
+
+        assertSame(lower, stack.poppedPast { it.name == "menu" }.top)
+    }
+
+    @Test
+    fun `closing past a screen that is not open closes nothing`() {
+        val stack = ScreenStack(root).pushed(Screen("settings")).pushed(Screen("about"))
+
+        assertEquals(stack, stack.poppedPast { it.name == "menu" })
+        assertEquals(ScreenStack(root), ScreenStack(root).poppedPast { it.name == "root" })
+    }
+
+    @Test
     fun `Home closes every screen above the root`() {
         val home = ScreenStack(root).pushed(Screen("settings")).pushed(Screen("about")).home()
 

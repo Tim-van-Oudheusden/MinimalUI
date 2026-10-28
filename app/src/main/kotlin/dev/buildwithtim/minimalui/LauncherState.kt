@@ -105,6 +105,14 @@ internal class LauncherState(
         repeat(times) { screens = screens.popped() }
     }
 
+    /**
+     * An edit opened from a menu is done: the app's or group's menu on top, and every screen opened from it, close,
+     * back on the list the menu was opened from.
+     */
+    fun backPastMenu() {
+        screens = screens.poppedPast { it is Screen.Menu || it is Screen.GroupMenu }
+    }
+
     /** Home: back on the root list, unfiltered. */
     fun home() {
         awayInApp = false
