@@ -35,7 +35,7 @@ enum class MenuAction {
     /** Opens the text editor to give the app a name of the user's own (#72). */
     Rename,
 
-    /** Hides the app from the root list and the collections; type-to-filter still finds it. */
+    /** Hides the app from the root list, the collections and the groups; type-to-filter still finds it. */
     Hide,
 
     /** Shows a hidden app again. */

@@ -53,7 +53,7 @@ internal class LauncherStores(
     var collections by mutableStateOf(collectionsStore.load())
         private set
 
-    /** The apps the user hid (#71): off the root list and the collections, still found by typing. */
+    /** The apps the user hid (#71): off the root list, the collections and the groups, still found by typing. */
     var hidden by mutableStateOf(hiddenStore.load())
         private set
 
