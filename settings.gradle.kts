@@ -24,3 +24,4 @@ rootProject.name = "MinimalUI"
 include(":app")
 include(":core")
 include(":tooling")
+include(":e2e")

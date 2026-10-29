@@ -112,6 +112,7 @@ app/                        Android application: manifest, activity, Compose UI,
 core/                       pure Kotlin/JVM logic (no Android dependencies), package dev.buildwithtim.minimalui.core
   src/test/kotlin/          JUnit tests, run on the JVM without an emulator
 docs/                       usage guide, testing notes, brand assets, research, metrics, reflections
+e2e/                        end-to-end tests over adb on a device or emulator (./gradlew :e2e:e2eTest)
 fastlane/metadata/android/  store listing: title, descriptions, changelogs, icon, feature graphic, screenshots
 gradle/libs.versions.toml   every dependency and plugin version
 gradle/wrapper/             Gradle wrapper (pinned version and checksum)
@@ -140,6 +141,11 @@ commit SHA, no `run:` interpolates event payload (pass it through `env:`), and n
 out code. Adding a workflow means adding its scopes there. A test for `scripts/foo.sh` goes in
 `tooling/src/test/kotlin/dev/buildwithtim/minimalui/tooling/` and runs it with `runScript`. `FastlaneMetadataTest`
 holds the store listing to the stores' limits and requires a changelog for the current `versionCode`.
+
+**End-to-end tests.** `e2e` runs the debug APK on a real device or emulator as the home app and drives it over `adb`
+with key presses, asserting on what the screen shows and which app comes to the front. Its tests need a device, so
+they run only with `./gradlew :e2e:e2eTest`, never under `test` or `check`; see
+[docs/testing.md](docs/testing.md#end-to-end-tests).
 
 ## Finding and claiming work
 

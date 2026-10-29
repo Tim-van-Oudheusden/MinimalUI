@@ -9,17 +9,19 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 
 ## Latest session
 
-- **Date:** 2026-10-28
-- **Worked:** #231 → `refactor/231-back-past-menu`. Edits opened from an app's or group's menu (add to a collection
-  or group, new collection/group, rename app, rename group) no longer pop a hard-coded number of screens:
-  `ScreenStack.poppedPast` (core) closes the nearest picked screen and everything above it, and
-  `LauncherState.backPastMenu()` uses it to close past the top `Screen.Menu` / `Screen.GroupMenu`. `ListEdits`
-  lost the `closing` parameter; the six "Back down past …" comments went.
-- **Outcome:** PR open; behaviour unchanged, so `MainActivityTest`'s collection, group and rename flows cover it.
+- **Date:** 2026-10-29
+- **Worked:** #236 → `test/236-e2e-tests`. New `e2e` Gradle module: `LauncherE2eTest` installs the debug APK on the
+  adb device, makes it the home app and drives it with `adb shell input` keys; it reads screens with
+  `uiautomator dump` and the app in front with `dumpsys activity`. `./gradlew :e2e:e2eTest` runs it; `test` is
+  disabled in the module so `./gradlew test`/`check` need no device. `.github/workflows/e2e.yml` runs it on an API 35
+  emulator (non-required check, path-filtered).
+- **Outcome:** PR open; the suite passed on the emulator in a trial run, and a deliberately wrong assertion failed it.
 - **Open follow-ups:** none.
 - **Notes for next session:**
-  - A new screen pushed between a menu and its editor now needs no pop-count change; one that should *not* close
-    with the menu must not sit above it.
+  - The host has no `/dev/kvm`, so no emulator runs here: try E2E changes on a scratch branch whose `e2e.yml` push
+    filter names it, then delete the branch.
+  - On the runner, `avdmanager` writes AVDs outside `~/.android/avd` unless `ANDROID_AVD_HOME` is set.
   - Gradle here runs in a 4 GiB cgroup: `check` with parallel workers gets the daemon OOM-killed. Use
     `--max-workers=1 -Dkotlin.compiler.execution.strategy=in-process`. JDK: `~/.jdks/jdk-21.0.12.1+1`; SDK:
-    `sdk.dir=/home/dev/tools/sdk` in the (gitignored) `local.properties`.
+    `sdk.dir=/home/dev/tools/sdk` in the (gitignored) `local.properties`. The host's jq rejects `$label` as a
+    variable name, so 12 script tests (pr-metrics, auto-qa-tuner, quality-report) fail here on untouched scripts.

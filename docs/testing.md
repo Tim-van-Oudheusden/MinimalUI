@@ -69,8 +69,8 @@ file instead, and `ALERTS_IGNORE="GHSA-… GHSA-…"` to replace the ignore list
 
 **Decision:** the agent sandbox (`Dockerfile.sandbox`, also built by `.devcontainer/devcontainer.json`) runs the
 JVM and build gates only: `./gradlew check assembleDebug`. Anything that needs an Android device or emulator
-(`./gradlew installDebug`, `connectedAndroidTest`, manual keyboard/D-pad checks on the launcher) runs on a host with a
-device attached over `adb`, or on an emulator on the host (see
+(`./gradlew installDebug`, `./gradlew :e2e:e2eTest`, manual keyboard/D-pad checks on the launcher) runs on a host
+with a device attached over `adb`, or on an emulator on the host (see
 [Running it in an emulator on Linux](../CONTRIBUTING.md#running-it-in-an-emulator-on-linux)).
 
 Why: the image ships the SDK pieces the build needs (`platform-tools`, the `compileSdk` platform, and the build-tools
@@ -130,6 +130,32 @@ For a shell in the sandbox instead, run the same `podman run` the script does wi
 
 In a git worktree, `.git` is a file pointing outside the mount, so git commands inside the container see no
 repository; the Gradle gates do not need one.
+
+## End-to-end tests
+
+`e2e/` (#236) tests MinimalUI the way a user meets it: the debug APK installed on a device or emulator, made the home
+app, and driven with key presses over `adb`, as on a keyboard phone. `LauncherE2eTest` types a filter, opens apps with
+Enter, opens the app menu and MinimalUI settings, and checks that a recently opened app survives the launcher's
+process being killed. It reads the screen with `uiautomator dump` and the app in front with `dumpsys activity`, so the
+module needs only JUnit and `adb`, no instrumentation library.
+
+```bash
+./gradlew :e2e:e2eTest                              # builds the debug APK, then runs the suite on the adb device
+ANDROID_SERIAL=emulator-5554 ./gradlew :e2e:e2eTest  # with more than one device attached
+```
+
+Before each test the suite **clears MinimalUI's storage** on the device (`pm clear`) and makes it the home app, so
+run it on an emulator, or export your setup first (MinimalUI settings → Export setup). It installs over the MinimalUI
+on the device, which fails for a release build (signed with another key). The checks assume Android's Settings app
+is labelled `Settings`, as in English. With no device, every test fails; that is why `./gradlew test` and `check`
+leave the module's tests out (`check` still compiles, lints and formats them).
+
+`.github/workflows/e2e.yml` (job **E2E on emulator**) runs the suite on an API 35 `google_apis` x86_64 emulator with a
+hardware keyboard, on pull requests and pushes to `main` that change `app/`, `core/`, `e2e/`, the build or the
+workflow, and on manual dispatch. The runner downloads the emulator and system image with the SDK's `sdkmanager`, so
+no third-party action is involved. It is not a required check. On a failure it uploads the test reports and the
+emulator log as the `e2e-reports` artifact; a failed wait names the screen MinimalUI last showed and includes its
+uiautomator dump.
 
 ## Store screenshots
 
