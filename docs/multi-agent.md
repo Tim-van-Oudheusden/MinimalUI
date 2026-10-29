@@ -13,7 +13,7 @@ agent works is set by [`AGENTS.md`](../AGENTS.md), which is authoritative. The s
 | --- | --- | --- |
 | Hive agents, through the `hive-forge-app` GitHub App | Hive, on its own schedule, or an operator in the Hive dashboard | Issues titled `[<agent>] …` and labelled `agent/<agent>`; pull requests authored by `hive-forge-app` and labelled `hold` |
 | Hive ACMM evaluation | An operator in the Hive dashboard | Issues titled `[ACMM L<n>] …` and labelled `acmm` and `origin/dashboard` |
-| Claude Code in CI ([`claude.yml`](../.github/workflows/claude.yml)) | A triager labelling an issue `ai-fix-requested`, or an `@claude` mention from an owner, member or collaborator | A `claude/*` branch and a pull request, or a review |
+| Claude Code in CI ([`claude.yml`](../.github/workflows/claude.yml)) | A triager labelling an issue `ai-fix-requested` (the label only counts when a person applies it), or an `@claude` mention from an owner, member or collaborator | A `claude/*` branch and a pull request, or a review |
 | Local agents (Claude Code, omp, Copilot, Cursor) | A maintainer, on one issue | A `<type>/<number>-<slug>` branch and a pull request under the maintainer's account |
 | Failures on `main` ([`auto-issues.yml`](../.github/workflows/auto-issues.yml)) | A failed or timed-out workflow run on `main` | A `ci` issue titled `<workflow> fails on main`, closed by the next successful run |
 | Review suggestions ([`auto-review.yml`](../.github/workflows/auto-review.yml)) | A maintainer commenting `/apply-suggestions` on a pull request | A commit of the reviewers' suggestion blocks on the PR branch |
@@ -141,7 +141,10 @@ and the label descriptions on GitHub give their exact meaning.
 ## Where a person decides
 
 - **What agents may work on:** only triagers can apply `ai-fix-requested`, and Claude Code in CI starts only when a
-  person applies it: when `hive-forge-app` adds the label, the run fails with `Workflow initiated by non-human actor`.
+  person applies it (`github.event.sender.type == 'User'`): when `hive-forge-app` adds the label, the run is
+  `skipped`. `claude-code-action` would refuse that sender anyway (`Workflow initiated by non-human actor`). To hand
+  such an issue to Claude Code, a maintainer first checks that no agent holds it (`hive/claimed-by-<agent>`,
+  `hive/in-progress` or `stage/020-claimed` and up), then removes the label and adds it again.
   `stage/015-triage-needed` waits for a maintainer's triage label.
 - **Sensitive changes:** Hive labels a pull request that touches workflows, policies, Hive config or security docs
   `sentinel-alert` and does not approve or auto-merge it while the label is present; neither does the merge queue. A

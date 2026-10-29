@@ -301,9 +301,10 @@ token start no CI run, so push again or re-run CI before merging.
 issue `ai-fix-requested`, or mention `@claude` in an issue comment, PR review, or review comment, and Claude works the
 request on a `claude/*` branch and opens a pull request; it never pushes to `main`. On a pull request, `@claude review
 this` asks for a review. Mentions only count from `OWNER`/`MEMBER`/`COLLABORATOR`, the label can only be applied by
-triagers, and fork pull requests are refused, so outside contributors cannot start or steer a run. Claude may run only
-the quality gates (`./gradlew test`, `lint`, `assembleDebug`, `check`, and the module test tasks) and
-`./gradlew spotlessApply`. Its PRs go through the same checks and human review as any other. The workflow needs the
+triagers and only counts when a person applies it (a bot's or GitHub App's label, such as the one `hive-forge-app` puts
+on `[ACMM L<n>]` issues, skips the job), and fork pull requests are refused, so outside contributors cannot start or
+steer a run. Claude may run only the quality gates (`./gradlew test`, `lint`, `assembleDebug`, `check`, and the module
+test tasks) and `./gradlew spotlessApply`. Its PRs go through the same checks and human review as any other. The workflow needs the
 `CLAUDE_CODE_OAUTH_TOKEN` repo secret and the Claude GitHub App.
 
 For reviews, point Claude at the shared rubric in [`prompts/code-review.md`](prompts/code-review.md), e.g.
