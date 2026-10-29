@@ -85,8 +85,9 @@ scripts/nightly-compliance.sh > nightly-compliance.md
 ## Risk tier
 
 Classifies each PR as low, medium, or high risk from its changed paths; the highest tier of any file wins.
-Informational only; it never fails the run. The path rules live in `.github/policies/risk-tiers.policy`; tiers and the
-review each expects are defined in [`docs/risk-tiers.md`](../risk-tiers.md).
+Informational only; it never fails the run. The path rules live in the risk assessment config,
+`.github/risk-assessment.yml`; tiers and the review each expects are defined in
+[`docs/risk-tiers.md`](../risk-tiers.md).
 
 ```bash
 git diff -z --name-only --no-renames origin/main...HEAD | scripts/tier-classify.sh -z

@@ -21,11 +21,18 @@ class TierClassifyScriptTest {
     private fun classifyNul(vararg paths: String) =
         runScript("scripts/tier-classify.sh", "-z", stdin = paths.joinToString("") { "$it\u0000" })
 
+    /** Classifies [paths] against a risk assessment whose `rules:` list holds [rules], one `- <rule>` item each. */
     private fun classifyWith(
-        policy: String,
+        vararg rules: String,
+        paths: List<String>,
+    ) = classifyWithFile("rules:\n" + rules.joinToString("") { "  - $it\n" }, *paths.toTypedArray())
+
+    /** Classifies [paths] against a risk assessment file holding exactly [assessment]. */
+    private fun classifyWithFile(
+        assessment: String,
         vararg paths: String,
     ): ScriptResult {
-        val file = temp.root.resolve("risk-tiers.policy").apply { writeText(policy) }
+        val file = temp.root.resolve("risk-assessment.yml").apply { writeText(assessment) }
         return classify(*paths, env = mapOf("RISK_TIER_POLICY" to file.path))
     }
 
@@ -43,21 +50,24 @@ class TierClassifyScriptTest {
                 it.startsWith("tier=")
             }?.removePrefix("tier=")
 
-    // Engine, against a policy written by the test.
+    // Engine, against a risk assessment written by the test.
 
     @Test
     fun `applies the first matching rule and ignores comments and blank lines`() {
-        val policy = "# secrets first\nhigh  vault/keys.md\n\nlow   vault/*\nlow   *.md\n"
+        val assessment =
+            "# secrets first\nrules:\n  - high  vault/keys.md\n\n  # then the rest\n  - low   vault/*\n  - low   *.md\n"
 
-        val result = classifyWith(policy, "vault/keys.md", "vault/readme.txt", "notes.md")
+        val result = classifyWithFile(assessment, "vault/keys.md", "vault/readme.txt", "notes.md")
 
         assertEquals(result.stderr, 0, result.exitCode)
         assertEquals(mapOf("vault/keys.md" to "high", "vault/readme.txt" to "low", "notes.md" to "low"), result.tiers())
     }
 
     @Test
-    fun `tolerates CRLF line endings in the policy`() {
-        val result = classifyWith("high  vault/keys.md\r\nlow   vault/*\r\n", "vault/keys.md", "vault/readme.txt")
+    fun `tolerates CRLF line endings in the risk assessment`() {
+        val assessment = "rules:\r\n  - high  vault/keys.md\r\n  - low   vault/*\r\n"
+
+        val result = classifyWithFile(assessment, "vault/keys.md", "vault/readme.txt")
 
         assertEquals(result.stderr, 0, result.exitCode)
         assertEquals(mapOf("vault/keys.md" to "high", "vault/readme.txt" to "low"), result.tiers())
@@ -65,20 +75,22 @@ class TierClassifyScriptTest {
 
     @Test
     fun `lets star match across directory separators`() {
-        assertEquals("high", classifyWith("high  src/*\n", "src/main/deep/File.kt").tiers()["src/main/deep/File.kt"])
+        val paths = listOf("src/main/deep/File.kt")
+
+        assertEquals("high", classifyWith("high  src/*", paths = paths).tiers()["src/main/deep/File.kt"])
     }
 
     @Test
     fun `reports the highest tier of any changed path`() {
-        val policy = "high  build/*\nmedium  src/*\nlow  docs/*\n"
+        val rules = arrayOf("high  build/*", "medium  src/*", "low  docs/*")
 
-        assertEquals("medium", classifyWith(policy, "docs/a.md", "src/b.kt").overall())
-        assertEquals("high", classifyWith(policy, "docs/a.md", "build/c", "src/b.kt").overall())
+        assertEquals("medium", classifyWith(*rules, paths = listOf("docs/a.md", "src/b.kt")).overall())
+        assertEquals("high", classifyWith(*rules, paths = listOf("docs/a.md", "build/c", "src/b.kt")).overall())
     }
 
     @Test
     fun `treats a path that matches no rule as medium`() {
-        val result = classifyWith("low  docs/*\n", "docs/a.md", "elsewhere/new.txt")
+        val result = classifyWith("low  docs/*", paths = listOf("docs/a.md", "elsewhere/new.txt"))
 
         assertEquals("medium", result.tiers()["elsewhere/new.txt"])
         assertEquals("medium", result.overall())
@@ -86,7 +98,7 @@ class TierClassifyScriptTest {
 
     @Test
     fun `reports low for an empty change set`() {
-        val result = classifyWith("high  *\n")
+        val result = classifyWith("high  *", paths = emptyList())
 
         assertEquals(0, result.exitCode)
         assertEquals("low", result.overall())
@@ -94,7 +106,7 @@ class TierClassifyScriptTest {
 
     @Test
     fun `fails without a tier on a rule naming an unknown tier`() {
-        val result = classifyWith("critical  deploy/*\n", "deploy/prod.yaml")
+        val result = classifyWith("critical  deploy/*", paths = listOf("deploy/prod.yaml"))
 
         assertNotEquals(0, result.exitCode)
         assertTrue(result.stderr, result.stderr.contains("critical"))
@@ -102,27 +114,48 @@ class TierClassifyScriptTest {
     }
 
     @Test
-    fun `names the policy line of a bad rule`() {
-        val result = classifyWith("low  docs/*\nhgih  scripts/*\n", "docs/a.md")
+    fun `names the line of a bad rule`() {
+        val result = classifyWith("low  docs/*", "hgih  scripts/*", paths = listOf("docs/a.md"))
 
         assertNotEquals(0, result.exitCode)
-        assertTrue(result.stderr, result.stderr.contains(":2:"))
+        assertTrue(result.stderr, result.stderr.contains(":3:"))
     }
 
     @Test
-    fun `fails without a tier on a rule that is not tier and glob`() {
-        for (policy in listOf("high\n", "high  src/*  extra\n")) {
-            val result = classifyWith(policy, "src/a.kt")
+    fun `fails without a tier on an item that is not tier and glob`() {
+        for (rule in listOf("high", "high  src/*  extra", "high  src/*  # trailing comment")) {
+            val result = classifyWith(rule, paths = listOf("src/a.kt"))
 
-            assertNotEquals(policy, 0, result.exitCode)
-            assertTrue(result.stderr, result.stderr.contains("expected '<tier> <glob>'"))
+            assertNotEquals(rule, 0, result.exitCode)
+            assertTrue(
+                result.stderr,
+                result.stderr.contains("expected one 'rules:' line, then '- <tier> <glob>' items"),
+            )
             assertFalse(result.stdout, result.stdout.contains("tier="))
         }
     }
 
     @Test
-    fun `fails without a tier when the policy file is missing`() {
-        val result = classify("docs/a.md", env = mapOf("RISK_TIER_POLICY" to temp.root.resolve("absent.policy").path))
+    fun `fails without a tier on a rule outside the rules list`() {
+        val badLine =
+            mapOf(
+                "high  scripts/*\nrules:\n  - low  docs/*\n" to ":1:",
+                "- high  scripts/*\nrules:\n" to ":1:",
+                "rules:\n  - high  scripts/*\nrules:\n" to ":3:",
+            )
+
+        for ((assessment, line) in badLine) {
+            val result = classifyWithFile(assessment, "scripts/a.sh")
+
+            assertNotEquals(assessment, 0, result.exitCode)
+            assertTrue(result.stderr, result.stderr.contains(line))
+            assertFalse(result.stdout, result.stdout.contains("tier="))
+        }
+    }
+
+    @Test
+    fun `fails without a tier when the risk assessment file is missing`() {
+        val result = classify("docs/a.md", env = mapOf("RISK_TIER_POLICY" to temp.root.resolve("absent.yml").path))
 
         assertNotEquals(0, result.exitCode)
         assertFalse(result.stdout, result.stdout.contains("tier="))
@@ -287,14 +320,27 @@ class TierClassifyScriptTest {
         assertFalse(result.stdout, result.stdout.contains("tier="))
     }
 
-    // The shipped policy, .github/policies/risk-tiers.policy.
+    // The shipped risk assessment, .github/risk-assessment.yml.
+
+    @Test
+    fun `ships a risk assessment that is YAML with one tier and glob per rules item`() {
+        val rules =
+            Yaml
+                .parse(Repo.read(".github/risk-assessment.yml"))
+                .asMap()
+                .getValue("rules")
+                .asList()
+
+        assertTrue("no rules", rules.isNotEmpty())
+        rules.forEach { assertTrue("$it", Regex("(low|medium|high)\\s+\\S+").matches(it.toString())) }
+    }
 
     @Test
     fun `classifies build, gate, manifest and agent-governance paths as high`() {
         val high =
             listOf(
                 ".github/workflows/ci.yml",
-                ".github/policies/risk-tiers.policy",
+                ".github/risk-assessment.yml",
                 "scripts/tier-classify.sh",
                 "tests/src/test/kotlin/dev/buildwithtim/minimalui/tooling/Repo.kt",
                 "gradle/libs.versions.toml",
@@ -415,19 +461,13 @@ class TierClassifyScriptTest {
     }
 
     @Test
-    fun `documents every policy rule under its tier in docs-risk-tiers-md`() {
+    fun `documents every risk assessment rule under its tier in docs-risk-tiers-md`() {
         val sections =
             Repo.read("docs/risk-tiers.md").split(Regex("(?m)^## ")).associate { section ->
                 section.substringBefore('\n').trim() to section
             }
         val undocumented =
-            Repo
-                .read(".github/policies/risk-tiers.policy")
-                .lines()
-                .map { it.trim() }
-                .filter { it.isNotEmpty() && !it.startsWith("#") }
-                .map { it.split(Regex("\\s+")).let { (tier, glob) -> tier to glob } }
-                .filterNot { (tier, glob) -> sections["Tier: $tier"]?.contains("`$glob`") == true }
+            Repo.riskRules().filterNot { (tier, glob) -> sections["Tier: $tier"]?.contains("`$glob`") == true }
 
         assertEquals(emptyList<Pair<String, String>>(), undocumented)
     }

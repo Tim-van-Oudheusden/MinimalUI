@@ -21,6 +21,12 @@ object Repo {
             .filter { it.extension == "yml" || it.extension == "yaml" }
             .sortedBy { it.name }
             .associate { it.name to Yaml.parse(it.readText()).asMap() }
+
+    /** The `<tier> <glob>` rules of `.github/risk-assessment.yml`, in order, as a YAML reader sees them. */
+    fun riskRules(): List<Pair<String, String>> =
+        Yaml.parse(read(".github/risk-assessment.yml")).asMap().getValue("rules").asList().map { rule ->
+            rule.toString().split(Regex("\\s+")).let { (tier, glob) -> tier to glob }
+        }
 }
 
 fun Any?.asMap(): Map<String, Any?> {

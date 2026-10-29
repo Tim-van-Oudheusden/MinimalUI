@@ -10,11 +10,13 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 ## Latest session
 
 - **Date:** 2026-10-29
-- **Worked:** #254 → `docs/254-agent-task-traceability` (ACMM L6 `aef:task-traceability`), first of a stack of six
-  ACMM L6 PRs (#254, #252, #255, #251, #256, #253), each branched off the previous one so their shared docs and this
-  file do not conflict. Added `docs/agent-tasks/README.md` (issue → claim → branch → commit → PR → merge → close, what
-  enforces each link, how to follow it either way), linked from `multi-agent.md` and the README docs table.
-- **Outcome:** PR open; docs only.
+- **Worked:** #252 → `ci/252-risk-assessment-config` (ACMM L6 `acmm:risk-assessment-config`), second of a stack of
+  six ACMM L6 PRs (#254, #252, #255, #251, #256, #253), each branched off the previous one so their shared docs and
+  this file do not conflict. Moved `.github/policies/risk-tiers.policy` to `.github/risk-assessment.yml`: the same
+  rules as a YAML `rules:` list, which `scripts/tier-classify.sh` reads as a strict line subset (a `- <tier> <glob>`
+  item outside the list, or with trailing text, fails with its line number).
+- **Outcome:** PR open. `TierClassifyScriptTest` and `PolicyLabelParityTest` use the new format; a new test parses
+  the shipped file with the tests' YAML reader (`Repo.riskRules()`).
 - **Open follow-ups:** the rest of the stack; merge it in order (oldest PR first).
 - **Notes for next session:**
   - `scripts/sandbox-gradlew.sh --project-cache-dir /tmp/pcache …` works on this host (podman present); actionlint
