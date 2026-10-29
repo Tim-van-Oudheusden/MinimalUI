@@ -10,10 +10,13 @@ import org.junit.Test
  * setting, or never applies lint, fails here instead.
  */
 class LintConfigTest {
+    // AGP gives a com.android.test module (e2e) no lint task at all, so a lint {} block there would only look like a
+    // gate; detekt, ktlint and the compiler's warnings-as-errors still cover its code.
     private val modules: List<String> =
         Regex("""include\(\s*"(:[^"]+)"\s*\)""")
             .findAll(Repo.read("settings.gradle.kts"))
             .map { it.groupValues[1].removePrefix(":").replace(':', '/') }
+            .filterNot { "libs.plugins.android.test" in Repo.read("$it/build.gradle.kts") }
             .toList()
 
     /** The settings in [module]'s `lint { ... }` block, as `name = value` text with whitespace collapsed. */

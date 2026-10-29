@@ -2,6 +2,9 @@
 agp = "9.4.1"
 kotlin = "2.4.21"
 activityCompose = "1.13.0"
+# AndroidJUnitRunner and UiAutomator for the end-to-end tests in e2e/, run on an emulator (#236).
+androidxTestRunner = "1.7.0"
+androidxTestUiautomator = "2.4.0"
 # bouncycastle, commonsLang3, freemarker, httpclient, jdom2, jose4j: floors for build-tool transitives with published
 # advisories (#147), applied from the build-tool-floors bundle in build.gradle.kts.
 bouncycastle = "1.85"
@@ -31,6 +34,8 @@ androidx-compose-material3 = { group = "androidx.compose.material3", name = "mat
 androidx-compose-ui = { group = "androidx.compose.ui", name = "ui" }
 androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
+androidx-test-runner = { group = "androidx.test", name = "runner", version.ref = "androidxTestRunner" }
+androidx-test-uiautomator = { group = "androidx.test.uiautomator", name = "uiautomator", version.ref = "androidxTestUiautomator" }
 compose-lint-checks = { group = "com.slack.lint.compose", name = "compose-lint-checks", version.ref = "composeLints" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 # Never a dependency: Spotless loads ktlint itself. Listed so Dependabot proposes ktlint updates.
@@ -61,6 +66,8 @@ build-tool-floors = [
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
+# The e2e module: instrumented tests in an APK of their own, run against the app's.
+android-test = { id = "com.android.test", version.ref = "agp" }
 # Standalone Android Lint for the pure Kotlin/JVM modules; AGP's version.
 android-lint = { id = "com.android.lint", version.ref = "agp" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

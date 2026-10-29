@@ -9,17 +9,20 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 
 ## Latest session
 
-- **Date:** 2026-10-28
-- **Worked:** #231 → `refactor/231-back-past-menu`. Edits opened from an app's or group's menu (add to a collection
-  or group, new collection/group, rename app, rename group) no longer pop a hard-coded number of screens:
-  `ScreenStack.poppedPast` (core) closes the nearest picked screen and everything above it, and
-  `LauncherState.backPastMenu()` uses it to close past the top `Screen.Menu` / `Screen.GroupMenu`. `ListEdits`
-  lost the `closing` parameter; the six "Back down past …" comments went.
-- **Outcome:** PR open; behaviour unchanged, so `MainActivityTest`'s collection, group and rename flows cover it.
-- **Open follow-ups:** none.
+- **Date:** 2026-10-29
+- **Worked:** the ACMM gaps #235 and #236. #235 → `refactor/235-tests-module` (PR #237): the `tooling` module moved
+  to `tests/` (`:tests`), because Hive's ACMM check only looks for exact root paths such as `tests/`. #236 →
+  `test/236-e2e-tests`, stacked on #235: the new `e2e/` module (`com.android.test`, self-instrumenting) with UiAutomator
+  tests on the `atdApi35` Gradle Managed Device, plus the `.github/workflows/e2e.yml` job **End-to-end tests**.
+- **Outcome:** both PRs open. The e2e tests pass on a local ATD emulator (4 runs) and through the managed device in
+  the `minimalui-emu` container.
+- **Open follow-ups:** make **End-to-end tests** a required check once it has run green on `main` (see the follow-up
+  issue).
 - **Notes for next session:**
-  - A new screen pushed between a menu and its editor now needs no pop-count change; one that should *not* close
-    with the menu must not sit above it.
-  - Gradle here runs in a 4 GiB cgroup: `check` with parallel workers gets the daemon OOM-killed. Use
-    `--max-workers=1 -Dkotlin.compiler.execution.strategy=in-process`. JDK: `~/.jdks/jdk-21.0.12.1+1`; SDK:
-    `sdk.dir=/home/dev/tools/sdk` in the (gitignored) `local.properties`.
+  - The emulator on this host segfaults with SwiftShader Vulkan; use `-gpu swangle_indirect`
+    (`docs/reflections/2026-10-29-emulator-on-this-host.md`).
+  - Sandbox Gradle in this checkout needs `--project-cache-dir /tmp/pcache`, otherwise Spotless trips over host paths
+    left in `.gradle/`.
+  - Managed-device runs locally: `podman run --rm --device /dev/kvm -v "$PWD":/workspace:z -w /workspace
+    -v minimalui-sandbox-gradle:/root/.gradle localhost/minimalui-emu:dev2 ./gradlew :e2e:atdApi35DebugAndroidTest
+    -Pandroid.testoptions.manageddevices.emulator.gpu=swangle_indirect`.

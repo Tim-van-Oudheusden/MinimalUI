@@ -55,7 +55,8 @@ permission.
 ## Tier: medium
 
 Application code and anything not otherwise classified: `app/*`, `core/*`
-(sources, resources and tests), plus root files such as `.editorconfig`.
+(sources, resources and tests), `e2e/*` (the end-to-end tests), plus root files
+such as `.editorconfig`.
 
 Review: the standard rubric in `.github/workflows/review.yml` — TDD evidence,
 behaviour-level tests, no weakened tests, keyboard and D-pad usability, quality
