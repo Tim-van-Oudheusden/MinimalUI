@@ -150,9 +150,10 @@ APKs, runs the tests and shuts it down:
 ```
 
 It needs a writable SDK and KVM, so it does not run in the agent sandbox. `.github/workflows/e2e.yml` (job **End-to-end
-tests**) runs it on every PR and push to `main`; it is not a required check yet. `./gradlew check` builds and checks
-the module's code but runs no emulator. AGP has no Android Lint for `com.android.test` modules, so `LintConfigTest`
-leaves `e2e` out; detekt, ktlint and warnings-as-errors still apply.
+tests**) runs it on every PR and push to `main`, and the `main` ruleset requires it (#241). The workflow therefore has no
+path filter: a required check must report on every PR, or the PR waits for it forever (`E2eWorkflowTest`). `./gradlew
+check` builds and checks the module's code but runs no emulator. AGP has no Android Lint for `com.android.test` modules,
+so `LintConfigTest` leaves `e2e` out; detekt, ktlint and warnings-as-errors still apply.
 
 If the emulator crashes as it starts (exit code 139, a SwiftShader Vulkan crash seen on some Linux hosts), use ANGLE
 instead: `-Pandroid.testoptions.manageddevices.emulator.gpu=swangle_indirect`. On a device or an emulator you started
