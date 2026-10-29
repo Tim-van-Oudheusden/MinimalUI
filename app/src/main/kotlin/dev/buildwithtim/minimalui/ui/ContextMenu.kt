@@ -12,10 +12,11 @@ import dev.buildwithtim.minimalui.core.MenuItem
 import dev.buildwithtim.minimalui.core.StatusPill
 
 /**
- * A menu, a second list in the app list's style that takes its place on screen (#67): one app's context menu, or a
- * group's (#69). The [title] (the app's or group's name) sits in a dark-grey pill in the row below the [status] pill,
- * not selectable; the [items] follow, the first one selected. Choosing an enabled item calls [onChoose]; Back or Esc
- * calls [onClose]. The selection lives in [state], so the menu comes back on its row from a list opened from it.
+ * A menu, a second list in the app list's style that takes its place on screen (#67): one app's context menu, a
+ * group's (#69), or the question an imported setup asks (#208). The [title] (the app's or group's name, or the
+ * question's) sits in a dark-grey pill in the row below the [status] pill, not selectable; the [items] follow, the
+ * first one selected. Choosing an enabled item calls [onChoose]; Back or Esc calls [onClose]. The selection lives in
+ * [state], so the menu comes back on its row from a list opened from it.
  */
 @Composable
 fun ContextMenu(
