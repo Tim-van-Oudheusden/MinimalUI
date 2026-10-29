@@ -411,12 +411,16 @@ AI agents working in this repo are bounded by several layers:
    history-rewriting commands, and denies reading secrets (`.env*`, keystores), force-pushes and `--no-verify` commits.
 3. **Personal overrides** — `.claude/settings.local.json` (gitignored). Deny rules from the project file still apply.
 4. **Structural gates** — the ruleset on `main` and CI must pass before merge, regardless of who wrote the change.
+   `.github/CODEOWNERS` makes the maintainer the owner of the high-risk paths
+   ([`docs/risk-tiers.md`](docs/risk-tiers.md)): a change to CI, scripts, the build, the manifest or agent instructions
+   requests his review, and the merge queue leaves it for him to merge.
 
 The security side of these layers (trust boundaries, secrets, supply chain, review focus, reporting) is set out in
 [`docs/security/SECURITY-AI.md`](docs/security/SECURITY-AI.md).
 
 How agent work fares is measured, not guessed: the weekly `PR metrics` workflow reports how many agent-authored PRs
-(`claude/*` branches and the `hive-forge-app` GitHub App) were merged vs. closed unmerged, and the weekly
-`AI audit trail` workflow lists every PR merged into `main` with the agent and model behind it and who merged it. Every
-metric, its cadence, where it is published and how to reproduce it locally is catalogued in
+(`claude/*` branches and the `hive-forge-app` GitHub App) were merged vs. closed unmerged, the weekly `Strategy report`
+whether the backlog is shrinking and which ACMM gaps are still open, and the weekly `AI audit trail` workflow lists
+every PR merged into `main` with the agent and model behind it and who merged it. Every metric, its
+cadence, where it is published and how to reproduce it locally is catalogued in
 [`docs/metrics/README.md`](docs/metrics/README.md).

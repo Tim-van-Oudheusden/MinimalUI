@@ -56,6 +56,17 @@ the rules in `AGENTS.md` (approved, exact version, only in
 add a workflow or widen a token scope. Manifest changes justify every new
 permission.
 
+`.github/CODEOWNERS` makes the maintainer the owner of exactly these paths, so
+a PR that touches one requests his review automatically (GitHub skips the
+request when he opened the PR himself, as local agents do under his account).
+`CodeownersTest` in `tests/` fails if a tracked file is rated high but has no
+owner, or has an owner but is not rated high, so a new high-risk rule needs a
+matching CODEOWNERS pattern in the same PR. The ruleset does not require the
+code owner's approval (`require_code_owner_review` is off in
+`.github/rulesets/main.json`), since an author cannot approve his own PR; what
+keeps a high-risk PR from merging unreviewed is that only a maintainer merges
+it.
+
 ## Tier: medium
 
 Application code and anything not otherwise classified: `app/*`, `core/*`

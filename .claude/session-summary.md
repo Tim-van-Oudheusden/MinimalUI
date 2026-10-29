@@ -10,14 +10,16 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 ## Latest session
 
 - **Date:** 2026-10-29
-- **Worked:** #252 → `ci/252-risk-assessment-config` (ACMM L6 `acmm:risk-assessment-config`), second of a stack of
-  five ACMM L6 PRs (#254, #252, #255, #251, #253), each branched off the previous one so their shared docs and this
-  file do not conflict. Moved `.github/policies/risk-tiers.policy` to `.github/risk-assessment.yml`: the same rules
-  as a YAML `rules:` list, which `scripts/tier-classify.sh` reads as a strict line subset (a `- <tier> <glob>` item
-  outside the list, or with trailing text, fails with its line number).
-- **Outcome:** PR open. `TierClassifyScriptTest` and `PolicyLabelParityTest` use the new format; a new test parses
-  the shipped file with the tests' YAML reader (`Repo.riskRules()`).
-- **Open follow-ups:** the rest of the stack; merge it in order (oldest PR first).
+- **Worked:** the ACMM L6 issues as a stack of PRs, each branched off the previous one so their shared docs and this
+  file do not conflict: #254 `docs/agent-tasks/` (task traceability), #252 `.github/risk-assessment.yml` (risk rules
+  as YAML), #255 `.github/CODEOWNERS` (structural gates), #251 `strategy-report.yml` (strategic dashboard), and last
+  #253 → `docs/253-ai-ops-runbook`: `docs/ai-ops-runbook.md` (where to look, routine checks, playbooks for stuck or
+  misbehaving agents, how to stop them), linked from the README, `multi-agent.md` and `runbooks/README.md`. All
+  ported from the website repo's equivalents (bash + jq here). #256 (audit trail) landed separately as #262 while
+  this stack was open; its duplicate PR was closed.
+- **Outcome:** five PRs open. Every one touches this file (`.claude/*`), so all are high risk and the maintainer
+  merges them; merge them in stack order (oldest first) so each PR's diff is its own commit.
+- **Open follow-ups:** none.
 - **Notes for next session:**
   - Podman may be missing on this host; then build on the host with `JAVA_HOME=~/tools/jdk` and
     `sdk.dir=/home/dev/tools/sdk` in `local.properties`. actionlint is not installed, and the host shellcheck is 0.9.0:
@@ -34,3 +36,8 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
     -Pandroid.testoptions.manageddevices.emulator.gpu=swangle_indirect`.
   - In the sandbox, Spotless can fail with `Could not read path '…/build/…'` when it runs alongside compilation in one
     `check`: run `spotlessCheck` on its own first, then `check assembleDebug -x spotlessCheck`.
+  - The edit tools resolve relative paths against the main checkout, not a `worktrees/` checkout: a session that
+    edits in a worktree must use its full path, or the edits land on whatever branch the main checkout has.
+  - Robolectric fetches its android-all jars from Maven Central at test time into `~/.m2`, which the sandbox does not
+    keep, so a docs change that reruns `:app:testDebugUnitTest` can fail every Robolectric class with HTTP 429. The
+    host's `~/.m2` has the jars: run the sandbox's `podman run` by hand with `-v "$HOME/.m2:/home/dev/.m2:ro,z"` added.

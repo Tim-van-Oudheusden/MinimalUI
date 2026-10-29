@@ -1,0 +1,45 @@
+# Code owners: the maintainer owns every path .github/risk-assessment.yml rates
+# high (docs/risk-tiers.md): CI and gates, gate tooling, build and
+# dependencies, the app manifest, agent instructions, and container
+# configuration. A pull request that touches one requests his review, and the
+# merge queue leaves it for him to merge. Low- and medium-risk paths have no
+# owner, so their PRs merge through the queue once the required checks pass.
+#
+# Keep this file and the high-risk rules in step: CodeownersTest in tests/
+# fails if a tracked file is high risk but unowned, or owned but not high risk.
+# Patterns use .gitignore syntax: a leading `/` anchors to the repository root,
+# and a pattern without a `/` matches at any depth.
+
+# CI gates, review rubric, rulesets, the risk rules, and this file itself.
+/.github/                           @Tim-van-Oudheusden
+
+# Gate tooling: CI scripts and the tests that pin the workflows.
+/scripts/                           @Tim-van-Oudheusden
+/tests/                             @Tim-van-Oudheusden
+
+# Build and dependencies (supply chain): version catalog, wrapper, build scripts.
+/gradle/                            @Tim-van-Oudheusden
+*.gradle.kts                        @Tim-van-Oudheusden
+/gradle.properties                  @Tim-van-Oudheusden
+/gradlew                            @Tim-van-Oudheusden
+/gradlew.bat                        @Tim-van-Oudheusden
+
+# App permissions and the HOME intent filter.
+/app/src/main/AndroidManifest.xml   @Tim-van-Oudheusden
+
+# Line endings, text/binary handling and diff/merge drivers for every file.
+/.gitattributes                     @Tim-van-Oudheusden
+
+# Agent instructions and governance.
+/AGENTS.md                          @Tim-van-Oudheusden
+/CLAUDE.md                          @Tim-van-Oudheusden
+/.claude/                           @Tim-van-Oudheusden
+/.cursor/                           @Tim-van-Oudheusden
+/.beads/                            @Tim-van-Oudheusden
+/prompts/                           @Tim-van-Oudheusden
+
+# Development container and image configuration.
+/.devcontainer/                     @Tim-van-Oudheusden
+/Dockerfile*                        @Tim-van-Oudheusden
+Dockerfile                          @Tim-van-Oudheusden
+/.dockerignore                      @Tim-van-Oudheusden

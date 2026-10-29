@@ -53,4 +53,15 @@ tasks.test {
     for (module in rootProject.childProjects.keys) {
         inputs.file(repoRoot.file("$module/build.gradle.kts")).withPropertyName("repo-$module-build")
     }
+    // CodeownersTest compares what CODEOWNERS and the risk rules select among the tracked files, so a file added or
+    // removed anywhere in the repository can change its result.
+    inputs
+        .property(
+            "repo-tracked-files",
+            providers
+                .exec {
+                    workingDir(repoRoot.asFile)
+                    commandLine("git", "ls-files")
+                }.standardOutput.asText,
+        )
 }
