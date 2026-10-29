@@ -52,7 +52,8 @@ flowchart LR
 
 1. **One queue.** All agent work starts from a GitHub issue. One issue gets one branch, one Conventional Commit and one
    pull request whose body says `Fixes #<number>`. Work that turns up along the way becomes a new issue
-   (`gh issue create`), not a second change in the same PR.
+   (`gh issue create`), not a second change in the same PR. How each change links back to its issue, and how to follow
+   that link either way, is in [`agent-tasks/`](agent-tasks/README.md).
 2. **Claim first.** An issue is taken when any of these holds; if one does, pick another issue:
    - it has an assignee (people and local agents claim with `gh issue edit <number> --add-assignee @me`);
    - a Hive agent's `<!-- hive:claim who=<agent> … until=<time> -->` comment is still before its `until` time (the
