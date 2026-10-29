@@ -10,14 +10,14 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 ## Latest session
 
 - **Date:** 2026-10-29
-- **Worked:** #255 → `ci/255-codeowners` (ACMM L6 `aef:structural-gates`), third of a stack of six ACMM L6 PRs
-  (#254, #252, #255, #251, #256, #253), each branched off the previous one so their shared docs and this file do not
-  conflict. Added `.github/CODEOWNERS`: the maintainer owns exactly the paths `.github/risk-assessment.yml` rates
-  high. Documented in `risk-tiers.md` and CONTRIBUTING's safety layers; `require_code_owner_review` stays off (an
-  author cannot approve his own PR).
-- **Outcome:** PR open. `CodeownersTest` compares the tracked files CODEOWNERS owns (`git ls-files --ignored
-  --exclude-from`) with those `tier-classify.sh` rates high; `tests/build.gradle.kts` declares `git ls-files` as a
-  test input so a new file reruns it instead of reusing a cached pass.
+- **Worked:** #251 → `ci/251-strategy-report` (ACMM L6 `acmm:strategic-dashboard`), fourth of a stack of six ACMM
+  L6 PRs (#254, #252, #255, #251, #256, #253), each branched off the previous one so their shared docs and this file
+  do not conflict. Ported the website repo's strategy report to bash + jq: `.github/workflows/strategy-report.yml`
+  (weekly, Mon 06:17 UTC) runs `scripts/strategy-report.sh` for issue/PR flow, open backlog per `stage/*` label and
+  ACMM gaps per level, into the job summary. Watched by `auto-issues.yml`; documented in `docs/metrics/`,
+  CONTRIBUTING and `multi-agent.md`.
+- **Outcome:** PR open. `StrategyReportScriptTest`, `WorkflowInvariantsTest` scopes. Smoke run on this repo's live
+  issues inside the sandbox image (real jq) printed all three tables.
 - **Open follow-ups:** the rest of the stack; merge it in order (oldest PR first).
 - **Notes for next session:**
   - `scripts/sandbox-gradlew.sh --project-cache-dir /tmp/pcache …` works on this host (podman present); actionlint

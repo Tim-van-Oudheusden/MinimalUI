@@ -155,3 +155,6 @@ and the label descriptions on GitHub give their exact meaning.
 The weekly `PR metrics` workflow reports how many agent-authored pull requests (`claude/*` branches and
 `hive-forge-app`) were merged and how many were closed unmerged; see [`metrics/README.md`](metrics/README.md). A falling
 rate means the instructions, prompts or skills need another look.
+
+The weekly `Strategy report` workflow shows whether the agents keep up: issues opened against issues closed, the open
+backlog per stage label, and the ACMM gaps still open per level. A stage where issues pile up is where work stalls.

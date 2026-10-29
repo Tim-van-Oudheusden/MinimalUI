@@ -29,6 +29,8 @@ class WorkflowInvariantsTest {
             "pr-metrics.yml" to mapOf("contents" to "read", "pull-requests" to "read"),
             "release.yml" to mapOf("contents" to "read"),
             "review.yml" to mapOf("contents" to "read"),
+            // Reads every issue and the PRs merged in the window for the strategy report.
+            "strategy-report.yml" to mapOf("contents" to "read", "issues" to "read", "pull-requests" to "read"),
             "tier-classifier.yml" to mapOf("contents" to "read"),
         )
 
