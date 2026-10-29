@@ -49,7 +49,7 @@ tasks.test {
     // TestTimeoutConfigTest reads the root script's test timeout.
     inputs.file(repoRoot.file("settings.gradle.kts")).withPropertyName("repo-settings")
     inputs.file(repoRoot.file("build.gradle.kts")).withPropertyName("repo-root-build")
-    for (module in listOf("app", "core", "tooling")) {
+    for (module in listOf("app", "core", "tests")) {
         inputs.file(repoRoot.file("$module/build.gradle.kts")).withPropertyName("repo-$module-build")
     }
 }

@@ -117,7 +117,7 @@ gradle/libs.versions.toml   every dependency and plugin version
 gradle/wrapper/             Gradle wrapper (pinned version and checksum)
 prompts/                    reusable agent prompts (code review, PR body)
 scripts/                    CI helper scripts
-tooling/                    JUnit tests over .github/, scripts/ and fastlane/ (workflow invariants, CI scripts, listing)
+tests/                      JUnit tests over .github/, scripts/ and fastlane/ (workflow invariants, CI scripts, listing)
 ```
 
 **Where code goes.** Anything that can be expressed without the Android framework (sorting, filtering, key-to-action
@@ -133,13 +133,15 @@ and `createComposeRule()` in `app/src/test`, inside `./gradlew test`. Drive the 
 what was started. Robolectric emulates SDK 35 (`app/src/test/resources/robolectric.properties`), because it cannot yet
 emulate the app's `targetSdk`. Mark a test `@Config(sdk = [28, 35])` when it covers a version branch.
 
-**Tests for CI and scripts.** `tooling` has no main sources: its tests read `.github/` and `fastlane/` and run
+**Tests for CI and scripts.** `tests` has no main sources: its tests read `.github/` and `fastlane/` and run
 `scripts/` the way CI does, so they run with `./gradlew test`. `WorkflowInvariantsTest` holds the reviewed
 `GITHUB_TOKEN` scopes of every workflow and checks that every job has `timeout-minutes`, every action is pinned to a
 commit SHA, no `run:` interpolates event payload (pass it through `env:`), and no `pull_request_target` workflow checks
 out code. Adding a workflow means adding its scopes there. A test for `scripts/foo.sh` goes in
-`tooling/src/test/kotlin/dev/buildwithtim/minimalui/tooling/` and runs it with `runScript`. `FastlaneMetadataTest`
-holds the store listing to the stores' limits and requires a changelog for the current `versionCode`.
+`tests/src/test/kotlin/dev/buildwithtim/minimalui/tooling/` and runs it with `runScript`. `FastlaneMetadataTest`
+holds the store listing to the stores' limits and requires a changelog for the current `versionCode`. The module sits
+at the root as `tests/` because the ACMM evaluation finds a test suite only by a root `tests/` directory (#235);
+module tests under `<module>/src/test/` are invisible to it.
 
 ## Finding and claiming work
 
@@ -235,10 +237,10 @@ The commit that first formatted the code base is listed in `.git-blame-ignore-re
 
 ### Android Lint
 
-Every module runs Android Lint as part of `check`: `app` through AGP, `core` and `tooling` through the standalone
+Every module runs Android Lint as part of `check`: `app` through AGP, `core` and `tests` through the standalone
 `com.android.lint` plugin. Each `lint {}` block turns on every check (`checkAllWarnings`) and fails on any warning;
 `app` adds [Slack's Compose rules](https://slackhq.github.io/compose-lints/rules/) through `lintChecks`, and
-`LintConfigTest` fails if a module stops treating warnings as errors. `core` and `tooling` lint their test sources
+`LintConfigTest` fails if a module stops treating warnings as errors. `core` and `tests` lint their test sources
 too; `app` keeps lint's default for its Robolectric tests, where device-runtime checks misfire.
 
 A check that is noise for this project is turned off by name in the module's `lint { disable += ... }`, with a comment

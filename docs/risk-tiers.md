@@ -38,7 +38,7 @@ behave. A mistake here can bypass every other check or ship to every device.
 | Paths                                                                                | Why                                                  |
 | ------------------------------------------------------------------------------------ | ---------------------------------------------------- |
 | `.github/*`                                                                          | CI gates, review rubric, rulesets, this policy       |
-| `scripts/*`, `tooling/*`                                                             | Gate tooling and the tests that pin the workflows    |
+| `scripts/*`, `tests/*`                                                               | Gate tooling and the tests that pin the workflows    |
 | `gradle/*`, `*.gradle.kts`, `gradle.properties`, `gradlew`, `gradlew.bat`            | Build, version catalog, wrapper (supply chain)       |
 | `app/src/main/AndroidManifest.xml`                                                   | App permissions and the HOME intent filter           |
 | `AGENTS.md`, `CLAUDE.md`, `.claude/*`, `.cursor/*`, `.beads/*`, `prompts/*`          | Agent instructions and governance                    |
@@ -79,8 +79,8 @@ tier if a rule is malformed or names an unknown tier; set `RISK_TIER_POLICY` to
 try a different policy file locally.
 
 The engine and the shipped rules are covered by
-`tooling/src/test/kotlin/dev/buildwithtim/minimalui/tooling/TierClassifyScriptTest.kt`,
+`tests/src/test/kotlin/dev/buildwithtim/minimalui/tooling/TierClassifyScriptTest.kt`,
 which also checks that every rule appears under its tier above. Update the
 policy, its tests, and this document in the same PR. The policy file
 (`high .github/*`), the script (`high scripts/*`) and the test
-(`high tooling/*`) are high risk; this doc is low.
+(`high tests/*`) are high risk; this doc is low.

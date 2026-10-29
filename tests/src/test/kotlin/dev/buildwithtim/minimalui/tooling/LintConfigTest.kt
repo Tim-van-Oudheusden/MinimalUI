@@ -46,7 +46,7 @@ class LintConfigTest {
 
     @Test
     fun `the module list is read from settings`() {
-        assertTrue("modules in settings.gradle.kts: $modules", "app" in modules && "tooling" in modules)
+        assertTrue("modules in settings.gradle.kts: $modules", "app" in modules && "tests" in modules)
     }
 
     @Test

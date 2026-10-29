@@ -4,7 +4,7 @@
 
 complexity:
   CyclomaticComplexMethod:
-    # Tests only: a hand-written test helper (the tooling module's YAML reader) branches as its input does.
+    # Tests only: a hand-written test helper (the tests module's YAML reader) branches as its input does.
     excludes: ['**/test/**']
   LargeClass:
     # Tests only: one test class per screen keeps its scenarios together (MainActivityTest).

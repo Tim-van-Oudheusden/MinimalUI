@@ -1,6 +1,6 @@
 # Path-based PR labels, applied by .github/workflows/labeler.yml (actions/labeler).
 # A path gets a label exactly when .github/policies/risk-tiers.policy has a rule for it;
-# tooling's PolicyLabelParityTest fails when the two files drift apart.
+# PolicyLabelParityTest in tests/ fails when the two files drift apart.
 
 app:
   - changed-files:
@@ -26,7 +26,7 @@ build:
 
 ci:
   - changed-files:
-      - any-glob-to-any-file: ['.github/**', 'scripts/**', 'tooling/**', '.beads/**']
+      - any-glob-to-any-file: ['.github/**', 'scripts/**', 'tests/**', '.beads/**']
 
 documentation:
   - changed-files:

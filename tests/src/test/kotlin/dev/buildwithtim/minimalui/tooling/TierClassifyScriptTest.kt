@@ -296,7 +296,7 @@ class TierClassifyScriptTest {
                 ".github/workflows/ci.yml",
                 ".github/policies/risk-tiers.policy",
                 "scripts/tier-classify.sh",
-                "tooling/src/test/kotlin/dev/buildwithtim/minimalui/tooling/Repo.kt",
+                "tests/src/test/kotlin/dev/buildwithtim/minimalui/tooling/Repo.kt",
                 "gradle/libs.versions.toml",
                 "gradle/wrapper/gradle-wrapper.properties",
                 "build.gradle.kts",
