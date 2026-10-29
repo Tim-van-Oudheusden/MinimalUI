@@ -1,0 +1,60 @@
+name: Auto issues
+
+# Automatic issue generation: when a workflow that runs on main fails, open an
+# issue for it (labelled ci, titled "<workflow> fails on main"); comment there on
+# each further failure, and close it once the workflow passes on main again. The
+# rules live in scripts/auto-issues.sh; see CONTRIBUTING.md "Failures on main".
+#
+# workflow_run matches workflows by name; AutoIssuesWorkflowTest fails when a
+# workflow that runs on main is missing from the list.
+#
+# Security: only runs of this repository's own pushes to main, schedules and
+# manual dispatches count, so a pull request (from a fork or not) never files
+# an issue. The checkout is the default branch, event fields reach the script
+# only through env, and the token can write issues, nothing else.
+
+on:
+  workflow_run:
+    workflows:
+      - CI
+      - Coverage gate
+      - E2E
+      - Nightly compliance
+      - PR metrics
+      - Quality report
+      - Release
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+
+# One run per watched workflow at a time, so two quick failures open one issue.
+concurrency:
+  group: auto-issues-${{ github.event.workflow_run.workflow_id }}
+  cancel-in-progress: false
+
+jobs:
+  issue:
+    name: Track failure on main
+    if: >-
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      contains(fromJSON('["push", "schedule", "workflow_dispatch"]'), github.event.workflow_run.event)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      # Open, comment on and close the tracking issue.
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Open, update or close the issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WORKFLOW_NAME: ${{ github.event.workflow_run.name }}
+          CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: scripts/auto-issues.sh | tee -a "$GITHUB_STEP_SUMMARY"

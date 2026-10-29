@@ -14,6 +14,7 @@ class WorkflowInvariantsTest {
      */
     private val topLevelPermissions =
         mapOf(
+            "auto-issues.yml" to mapOf("contents" to "read"),
             "auto-review.yml" to mapOf("contents" to "read"),
             "ci.yml" to mapOf("contents" to "read"),
             "claude.yml" to mapOf("contents" to "read"),
@@ -32,6 +33,11 @@ class WorkflowInvariantsTest {
 
     private val jobPermissions =
         mapOf(
+            // Opens, comments on and closes the issue tracking a workflow that fails on main.
+            "auto-issues.yml" to
+                mapOf(
+                    "issue" to mapOf("contents" to "read", "issues" to "write"),
+                ),
             // Pushes the suggestions commit and posts the report; only trusted comments on same-repo PRs reach it.
             "auto-review.yml" to
                 mapOf(
