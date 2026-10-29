@@ -10,16 +10,12 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 ## Latest session
 
 - **Date:** 2026-10-29
-- **Worked:** #249 → `ci/249-merge-queue` (ACMM L6 `acmm:merge-queue`). Ported the website repo's Actions-based merge
-  queue: `.github/workflows/merge-queue.yml` + `scripts/merge-queue.sh` pick the oldest same-repo, non-draft PR
-  without `hold`/`sentinel-alert`, merge state `CLEAN`, not high risk; re-run `./gradlew check assembleDebug` on it
-  merged onto latest main; merge it, then dispatch `ci.yml`, `coverage-gate.yml`, `e2e.yml`, `quality-report.yml`
-  (now `workflow_dispatch`-able) and the next queue run; on failure label `hold` and comment. Docs: `multi-agent.md`
-  (new "Merge queue" section), `risk-tiers.md`, CONTRIBUTING, SECURITY-AI, AGENTS/CLAUDE/copilot/cursor/skill.
-- **Outcome:** PR open. Tests: `MergeQueueScriptTest` (fake gh + local git origin), `MergeQueueWorkflowTest`,
-  `WorkflowInvariantsTest` scopes; `CoverageGateWorkflowTest`/`E2eWorkflowTest` now expect `workflow_dispatch`.
-  The PR is itself high risk, so the maintainer merges it.
-- **Open follow-ups:** none.
+- **Worked:** #254 → `docs/254-agent-task-traceability` (ACMM L6 `aef:task-traceability`), first of a stack of six
+  ACMM L6 PRs (#254, #252, #255, #251, #256, #253), each branched off the previous one so their shared docs and this
+  file do not conflict. Added `docs/agent-tasks/README.md` (issue → claim → branch → commit → PR → merge → close, what
+  enforces each link, how to follow it either way), linked from `multi-agent.md` and the README docs table.
+- **Outcome:** PR open; docs only.
+- **Open follow-ups:** the rest of the stack; merge it in order (oldest PR first).
 - **Notes for next session:**
   - `scripts/sandbox-gradlew.sh --project-cache-dir /tmp/pcache …` works on this host (podman present); actionlint
     is not installed, fetch the pinned release from `ci.yml` into `/tmp`.
