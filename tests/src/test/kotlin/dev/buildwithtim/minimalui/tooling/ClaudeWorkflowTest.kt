@@ -7,12 +7,8 @@ import org.junit.Test
 class ClaudeWorkflowTest {
     private val claudeAction = Regex("""uses: anthropics/claude-code-action@""")
     private val source = Repo.read(".github/workflows/claude.yml")
-    private val job =
-        Yaml
-            .parse(source)
-            .asMap()
-            .jobs()
-            .getValue("claude")
+    private val workflow = Yaml.parse(source).asMap()
+    private val job = workflow.jobs().getValue("claude")
 
     @Test
     fun `is the only workflow that runs Claude Code, so one mention starts one run`() {
@@ -35,6 +31,26 @@ class ClaudeWorkflowTest {
         assertEquals(3, mention.findAll(jobIf).count())
         assertEquals(3, trusted.findAll(jobIf).count())
         assertTrue(!source.contains("pull_request_target"))
+    }
+
+    // claude-code-action refuses a bot sender, and hive-forge-app files issues already labelled ai-fix-requested, so a
+    // bot's label would only add a failed run. The workflow-level group is resolved before the job's `if`, so it needs
+    // the same check, or a bot's label would replace a pending run a person asked for. Bots stay out: no allowed_bots.
+    @Test
+    fun `answers the ai-fix-requested label only when a person applies it`() {
+        val personLabel =
+            Regex("""github\.event\.label\.name == 'ai-fix-requested'\s*&& github\.event\.sender\.type == 'User'""")
+        val jobIf = job.getValue("if").toString()
+        val group =
+            workflow
+                .getValue("concurrency")
+                .asMap()
+                .getValue("group")
+                .toString()
+
+        assertTrue(jobIf, personLabel.containsMatchIn(jobIf))
+        assertTrue(group, personLabel.containsMatchIn(group))
+        assertTrue(!source.contains("allowed_bots"))
     }
 
     // claude-code-action checks out the PR head (fork PRs via refs/pull/N/head) and Claude may run the Gradle build

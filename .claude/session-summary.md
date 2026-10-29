@@ -10,15 +10,15 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 ## Latest session
 
 - **Date:** 2026-10-29
-- **Worked:** #256 → `ci/256-ai-audit` (ACMM L6 `aef:audit-trail`). Added `.github/workflows/ai-audit.yml` (weekly
-  Mon 06:17 UTC, past 7 days; manual with `days`) and `scripts/ai-audit-report.sh`: every PR merged into `main`,
-  attributed Hive (signature line or `hive-forge-app` author; agent/model from the signature), Claude Code (CI)
-  (`claude/*`), Dependabot (`dependabot/*`) or Other, with author and merger. Job summary + 90-day `ai-audit` artifact
-  with the raw PR JSON. Ported from the website repo's #978 as bash + `jq`, the convention here. Docs:
-  `docs/metrics/README.md` (row + section), CONTRIBUTING "Agent safety layers", `multi-agent.md` "Measuring it".
-- **Outcome:** PR open. Tests: `AiAuditReportScriptTest` (8), `WorkflowInvariantsTest` scopes,
-  `AutoIssuesWorkflowTest` (the new workflow is watched by `auto-issues.yml`). The PR changes `.github/workflows/`, so
-  it is high risk and the maintainer merges it.
+- **Worked:** #258 → `fix/258-claude-human-label`. `claude.yml` answers `ai-fix-requested` only when
+  `github.event.sender.type == 'User'`, in the job `if` and in the workflow-level concurrency group, so
+  `hive-forge-app`'s labels on `[ACMM L<n>]` issues give a skipped run instead of a red one and cannot replace a
+  pending run a person asked for. No `allowed_bots`: the trust boundary is unchanged. Ported from Dailies#280 and
+  website#993. Docs: CONTRIBUTING "Handing work to Claude Code", `multi-agent.md` (actor row, "Where a person
+  decides"), `SECURITY-AI.md`. No runbook covers a stuck hand-off, so none changed.
+- **Outcome:** PR open. `ClaudeWorkflowTest` `answers the ai-fix-requested label only when a person applies it`
+  fails on the old `claude.yml` and passes on the new one. The PR changes `.github/workflows/`, so it is high risk
+  and the maintainer merges it.
 - **Open follow-ups:** none.
 - **Notes for next session:**
   - Podman may be missing on this host; then build on the host with `JAVA_HOME=~/tools/jdk` and
