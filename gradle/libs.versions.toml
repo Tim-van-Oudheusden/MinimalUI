@@ -5,8 +5,8 @@ activityCompose = "1.13.0"
 # AndroidJUnitRunner and UiAutomator for the end-to-end tests in e2e/, run on an emulator (#236).
 androidxTestRunner = "1.7.0"
 androidxTestUiautomator = "2.4.0"
-# bouncycastle, commonsLang3, freemarker, httpclient, jdom2, jose4j: floors for build-tool transitives with published
-# advisories (#147), applied from the build-tool-floors bundle in build.gradle.kts.
+# bouncycastle, commonsLang3, freemarker, guava, httpclient, jdom2, jose4j: floors for build-tool transitives with
+# published advisories (#147, #257), applied from the build-tool-floors bundle in build.gradle.kts.
 bouncycastle = "1.85"
 commonsLang3 = "3.18.0"
 composeBom = "2026.09.00"
@@ -15,6 +15,7 @@ composeLints = "1.6.1"
 # The first detekt release built against Kotlin 2.4 (#135); pinned exactly, an alpha has no compatibility promise.
 detekt = "2.0.0-alpha.6"
 freemarker = "2.3.35"
+guava = "33.7.2-jre"
 httpclient = "4.5.14"
 jdom2 = "2.0.6.1"
 jose4j = "0.9.6"
@@ -47,6 +48,7 @@ bouncycastle-bcprov = { group = "org.bouncycastle", name = "bcprov-jdk18on", ver
 bouncycastle-bcutil = { group = "org.bouncycastle", name = "bcutil-jdk18on", version.ref = "bouncycastle" }
 commons-lang3 = { group = "org.apache.commons", name = "commons-lang3", version.ref = "commonsLang3" }
 freemarker = { group = "org.freemarker", name = "freemarker", version.ref = "freemarker" }
+guava = { group = "com.google.guava", name = "guava", version.ref = "guava" }
 httpclient = { group = "org.apache.httpcomponents", name = "httpclient", version.ref = "httpclient" }
 jdom2 = { group = "org.jdom", name = "jdom2", version.ref = "jdom2" }
 jose4j = { group = "org.bitbucket.b_c", name = "jose4j", version.ref = "jose4j" }
@@ -59,6 +61,7 @@ build-tool-floors = [
     "bouncycastle-bcutil",
     "commons-lang3",
     "freemarker",
+    "guava",
     "httpclient",
     "jdom2",
     "jose4j",
