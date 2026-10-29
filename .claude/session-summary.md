@@ -10,18 +10,20 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 ## Latest session
 
 - **Date:** 2026-10-29
-- **Worked:** #256 → `ci/256-ai-audit-trail` (ACMM L6 `aef:audit-trail`), fifth of a stack of six ACMM L6 PRs
-  (#254, #252, #255, #251, #256, #253), each branched off the previous one so their shared docs and this file do not
-  conflict. Ported the website repo's audit trail to bash + jq: `.github/workflows/ai-audit.yml` (weekly, past 7
-  days) runs `scripts/ai-audit-report.sh` over every PR merged into `main`, attributing each to Hive (signature line
-  or `hive-forge-app` author; agent and model from the signature), Claude Code (CI), Dependabot or Other, with author
-  and merger. Job summary plus a 90-day `ai-audit` artifact with the raw PR data; watched by `auto-issues.yml`.
-- **Outcome:** PR open. `AiAuditReportScriptTest`, `WorkflowInvariantsTest` scopes. Smoke run on the last 7 days of
-  this repo's merges inside the sandbox image (real jq) attributed 18 PRs.
-- **Open follow-ups:** the rest of the stack; merge it in order (oldest PR first).
+- **Worked:** the six ACMM L6 issues as a stack of PRs, each branched off the previous one so their shared docs and
+  this file do not conflict: #254 `docs/agent-tasks/` (task traceability), #252 `.github/risk-assessment.yml` (risk
+  rules as YAML), #255 `.github/CODEOWNERS` (structural gates), #251 `strategy-report.yml` (strategic dashboard),
+  #256 `ai-audit.yml` (audit trail), and last #253 → `docs/253-ai-ops-runbook`: `docs/ai-ops-runbook.md` (where to
+  look, routine checks, playbooks for stuck or misbehaving agents, how to stop them), linked from the README,
+  `multi-agent.md` and `runbooks/README.md`. All ported from the website repo's equivalents (bash + jq here).
+- **Outcome:** six PRs open. Every one touches this file (`.claude/*`), so all are high risk and the maintainer
+  merges them; merge them in stack order (oldest first) so each PR's diff is its own commit.
+- **Open follow-ups:** none.
 - **Notes for next session:**
   - `scripts/sandbox-gradlew.sh --project-cache-dir /tmp/pcache …` works on this host (podman present); actionlint
     is not installed, fetch the pinned release from `ci.yml` into `/tmp`.
+  - The edit tools resolve relative paths against the main checkout, not a `worktrees/` checkout: a session that
+    edits in a worktree must use its full path, or the edits land on whatever branch the main checkout has.
   - The host's `jq` is jaq 3.1.1, which rejects `$module`/`$label` as variable names, so 12 tests in
     `AutoQaTunerScriptTest`, `PrMetricsScriptTest` and `QualityReportScriptTest` fail locally on an unmodified `main`
     too; CI uses jq and passes.
@@ -34,3 +36,6 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
     -Pandroid.testoptions.manageddevices.emulator.gpu=swangle_indirect`.
   - In the sandbox, Spotless can fail with `Could not read path '…/build/…'` when it runs alongside compilation in one
     `check`: run `spotlessCheck` on its own first, then `check assembleDebug -x spotlessCheck`.
+  - Robolectric fetches its android-all jars from Maven Central at test time into `~/.m2`, which the sandbox does not
+    keep, so a docs change that reruns `:app:testDebugUnitTest` can fail every Robolectric class with HTTP 429. The
+    host's `~/.m2` has the jars: run the sandbox's `podman run` by hand with `-v "$HOME/.m2:/home/dev/.m2:ro,z"` added.

@@ -5,6 +5,9 @@ server: the app has no backend, collects no telemetry, and makes no network call
 state (see [`docs/metrics/README.md`](../metrics/README.md)). Every runbook here starts from a user-visible symptom
 and ends with the concrete commands or taps that resolve it.
 
+Agents misbehaving in the repository rather than the app in production — a stuck merge queue, Claude Code not picking
+up an issue, two agents on one issue — are covered by the [AI operations runbook](../ai-ops-runbook.md).
+
 ## Format
 
 One Markdown file per scenario, with:
