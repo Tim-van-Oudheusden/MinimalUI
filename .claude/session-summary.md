@@ -10,12 +10,13 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 ## Latest session
 
 - **Date:** 2026-10-29
-- **Worked:** #241 → `ci/241-require-e2e`. **End-to-end tests** (`.github/workflows/e2e.yml`, from #236) joins the
-  required checks in `.github/rulesets/main.json`, after it ran green on `main` at c1ff77f. `E2eWorkflowTest` pins
-  the job name to the ruleset and keeps the workflow free of a path filter. AGENTS.md, CONTRIBUTING and
-  `docs/testing.md` list it.
-- **Outcome:** PR open. The live ruleset is applied once it merges (`gh api -X PUT
-  repos/Tim-van-Oudheusden/MinimalUI/rulesets/24941495 --input .github/rulesets/main.json`).
+- **Worked:** #243 → `ci/243-auto-issues`. `.github/workflows/auto-issues.yml` (`workflow_run` on every workflow
+  that runs on `main`) runs `scripts/auto-issues.sh`: a failed or timed-out run on `main` opens a `ci` issue titled
+  `<workflow> fails on main` (or comments on the open one); the next success closes it. Only same-repo push,
+  schedule and dispatch runs count. `AutoIssuesScriptTest` drives the script against a fake `gh`;
+  `AutoIssuesWorkflowTest` fails when a workflow on `main` is missing from the watch list. CONTRIBUTING
+  "Failures on main" documents it.
+- **Outcome:** PR open. `workflow_run` only fires from the default branch's copy, so it acts after the merge.
 - **Open follow-ups:** none.
 - **Notes for next session:**
   - The emulator on this host segfaults with SwiftShader Vulkan; use `-gpu swangle_indirect`
