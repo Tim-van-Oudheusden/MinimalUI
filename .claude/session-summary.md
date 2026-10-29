@@ -10,22 +10,13 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 ## Latest session
 
 - **Date:** 2026-10-29
-- **Worked:** #254 → `docs/254-agent-task-traceability` (ACMM L6 `aef:task-traceability`), first of a stack of six
-  ACMM L6 PRs (#254, #252, #255, #251, #256, #253), each branched off the previous one so their shared docs and this
-  file do not conflict. Added `docs/agent-tasks/README.md` (issue → claim → branch → commit → PR → merge → close, what
-  enforces each link, how to follow it either way), linked from `multi-agent.md` and the README docs table.
+- **Worked:** #254 → `docs/254-agent-task-traceability` (ACMM L6 `aef:task-traceability`), first of a stack of five
+  ACMM L6 PRs (#254, #252, #255, #251, #253; #256 landed separately as #262), each branched off the previous one so
+  their shared docs and this file do not conflict. Added `docs/agent-tasks/README.md` (issue → claim → branch →
+  commit → PR → merge → close, what enforces each link, how to follow it either way), linked from `multi-agent.md`
+  and the README docs table.
 - **Outcome:** PR open; docs only.
 - **Open follow-ups:** the rest of the stack; merge it in order (oldest PR first).
-- **Worked:** #256 → `ci/256-ai-audit` (ACMM L6 `aef:audit-trail`). Added `.github/workflows/ai-audit.yml` (weekly
-  Mon 06:17 UTC, past 7 days; manual with `days`) and `scripts/ai-audit-report.sh`: every PR merged into `main`,
-  attributed Hive (signature line or `hive-forge-app` author; agent/model from the signature), Claude Code (CI)
-  (`claude/*`), Dependabot (`dependabot/*`) or Other, with author and merger. Job summary + 90-day `ai-audit` artifact
-  with the raw PR JSON. Ported from the website repo's #978 as bash + `jq`, the convention here. Docs:
-  `docs/metrics/README.md` (row + section), CONTRIBUTING "Agent safety layers", `multi-agent.md` "Measuring it".
-- **Outcome:** PR open. Tests: `AiAuditReportScriptTest` (8), `WorkflowInvariantsTest` scopes,
-  `AutoIssuesWorkflowTest` (the new workflow is watched by `auto-issues.yml`). The PR changes `.github/workflows/`, so
-  it is high risk and the maintainer merges it.
-- **Open follow-ups:** none.
 - **Notes for next session:**
   - Podman may be missing on this host; then build on the host with `JAVA_HOME=~/tools/jdk` and
     `sdk.dir=/home/dev/tools/sdk` in `local.properties`. actionlint is not installed, and the host shellcheck is 0.9.0:
