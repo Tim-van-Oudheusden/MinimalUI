@@ -19,6 +19,7 @@ locally as in CI.
 | [PR acceptance rate](#pr-acceptance-rate) | Merged vs. closed-unmerged PRs, agent vs. other | `scripts/pr-metrics.sh` via `pr-metrics.yml` | Weekly (Mon 06:17 UTC), manual | Job summary |
 | [Nightly compliance](#nightly-compliance) | Checks that can go stale without a code change | `scripts/nightly-compliance.sh` via `nightly-compliance.yml` | Nightly (03:23 UTC), manual | Job summary + `nightly-compliance` artifact |
 | [Risk tier](#risk-tier) | Review risk of each PR from the paths it changes | `scripts/tier-classify.sh` via `tier-classifier.yml` | Every PR | `Risk tier` job summary |
+| [AI audit trail](#ai-audit-trail) | Every PR merged into `main`: source (Hive agent and model, Claude Code in CI, Dependabot, other), author, merger | `scripts/ai-audit-report.sh` via `ai-audit.yml` | Weekly (Mon 06:17 UTC, past 7 days), manual | Job summary + `ai-audit` artifact (report and raw PR data, kept 90 days) |
 
 ## Quality gates
 
@@ -95,6 +96,32 @@ git diff -z --name-only --no-renames origin/main...HEAD | scripts/tier-classify.
 
 `--no-renames` lists a file moved out of a high-risk path under its old path too, as `tier-classifier.yml` does;
 without it, the move reads as a change to its new path only.
+
+## AI audit trail
+
+A record of what reached `main` and who was behind it. Each PR merged in the window (default 7 days) is attributed to
+one source, checked in this order:
+
+- **Hive**: the PR body has Hive's signature line (`— hive: agent=<name> … model=<model> …`), from which the agent and
+  model are taken (contributor runs sign without `agent=`, shown as `—`), or the PR is authored by the
+  `hive-forge-app` GitHub App.
+- **Claude Code (CI)**: head branch `claude/*`.
+- **Dependabot**: head branch `dependabot/*`.
+- **Other**: anything else, such as the maintainer or a local agent ([`multi-agent.md`](../multi-agent.md)).
+
+The report counts merges per source and per merging account (a merge with no recorded merger is listed last as
+unknown), then lists every merge oldest first with its source, agent, model, author, merger, branch and title. The
+weekly run covers the past 7 days, so consecutive runs leave no gap. The `ai-audit` artifact keeps the report and the
+raw `gh pr list` output for 90 days.
+
+Run it with a different window from the Actions tab (**AI audit trail → Run workflow → days**), or locally with an
+authenticated `gh`:
+
+```bash
+since="$(date -u -d '7 days ago' +%Y-%m-%d)"
+gh pr list -R Tim-van-Oudheusden/MinimalUI --state merged --limit 1000 --search "merged:>=${since}" \
+  --json number,title,author,headRefName,mergedAt,mergedBy,body | scripts/ai-audit-report.sh --since "$since"
+```
 
 ## Adding a metric
 
