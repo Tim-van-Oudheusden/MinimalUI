@@ -60,7 +60,7 @@ Work is NOT complete until the issue branch is pushed and its pull request is op
 3. **Update issue status** — comment progress on the GitHub issue; run `bd github sync --pull-only`
 4. **Push the branch and open a PR** — `main` is protected by `.github/rulesets/main.json`: it only changes through
    merged pull requests with passing checks (`PR review rubric`, `Build, lint, test`, `Unit-test coverage floors`,
-   `Static checks`):
+   `Static checks`, `End-to-end tests`):
    ```bash
    bd dolt push
    git push -u origin HEAD

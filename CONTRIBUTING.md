@@ -166,9 +166,9 @@ We favour small, focused changes tied to a tracked issue.
 
 `main` is protected by the ruleset in [`.github/rulesets/main.json`](.github/rulesets/main.json): no direct pushes,
 force-pushes or deletion; changes land only through pull requests whose `PR review rubric`, `Build, lint, test`,
-`Unit-test coverage floors` and `Static checks` checks pass. Pull requests merge with a merge commit only (no squash or
-rebase), so each issue's single commit lands on `main` unchanged, and the head branch is deleted on merge. The file is
-the source of truth: a change to it lands by PR, then a maintainer applies it with
+`Unit-test coverage floors`, `Static checks` and `End-to-end tests` checks pass. Pull requests merge with a merge commit
+only (no squash or rebase), so each issue's single commit lands on `main` unchanged, and the head branch is deleted on
+merge. The file is the source of truth: a change to it lands by PR, then a maintainer applies it with
 `gh api -X PUT repos/Tim-van-Oudheusden/MinimalUI/rulesets/<id> --input .github/rulesets/main.json`.
 
 [conventional-commits]: https://www.conventionalcommits.org/
@@ -208,6 +208,9 @@ runs `./gradlew :<module>:koverXmlReport` for every module in `.github/auto-qa-t
 module's function or line coverage drops below its floor there. Check locally with
 `./gradlew :core:koverXmlReport && scripts/coverage-check.sh core <functions> <lines>`; see
 [`docs/testing.md`](docs/testing.md#coverage-floors).
+
+It also requires the **End-to-end tests** check (`.github/workflows/e2e.yml`), which runs the `e2e/` tests on an
+emulator; see [`docs/testing.md`](docs/testing.md#end-to-end-tests).
 
 ### Shell scripts and workflows
 

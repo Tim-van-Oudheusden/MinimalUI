@@ -10,14 +10,13 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 ## Latest session
 
 - **Date:** 2026-10-29
-- **Worked:** the ACMM gaps #235 and #236. #235 → `refactor/235-tests-module` (PR #237): the `tooling` module moved
-  to `tests/` (`:tests`), because Hive's ACMM check only looks for exact root paths such as `tests/`. #236 →
-  `test/236-e2e-tests`, stacked on #235: the new `e2e/` module (`com.android.test`, self-instrumenting) with UiAutomator
-  tests on the `atdApi35` Gradle Managed Device, plus the `.github/workflows/e2e.yml` job **End-to-end tests**.
-- **Outcome:** both PRs open. The e2e tests pass on a local ATD emulator (4 runs) and through the managed device in
-  the `minimalui-emu` container.
-- **Open follow-ups:** make **End-to-end tests** a required check once it has run green on `main` (see the follow-up
-  issue).
+- **Worked:** #241 → `ci/241-require-e2e`. **End-to-end tests** (`.github/workflows/e2e.yml`, from #236) joins the
+  required checks in `.github/rulesets/main.json`, after it ran green on `main` at c1ff77f. `E2eWorkflowTest` pins
+  the job name to the ruleset and keeps the workflow free of a path filter. AGENTS.md, CONTRIBUTING and
+  `docs/testing.md` list it.
+- **Outcome:** PR open. The live ruleset is applied once it merges (`gh api -X PUT
+  repos/Tim-van-Oudheusden/MinimalUI/rulesets/24941495 --input .github/rulesets/main.json`).
+- **Open follow-ups:** none.
 - **Notes for next session:**
   - The emulator on this host segfaults with SwiftShader Vulkan; use `-gpu swangle_indirect`
     (`docs/reflections/2026-10-29-emulator-on-this-host.md`).
@@ -26,3 +25,5 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
   - Managed-device runs locally: `podman run --rm --device /dev/kvm -v "$PWD":/workspace:z -w /workspace
     -v minimalui-sandbox-gradle:/root/.gradle localhost/minimalui-emu:dev2 ./gradlew :e2e:atdApi35DebugAndroidTest
     -Pandroid.testoptions.manageddevices.emulator.gpu=swangle_indirect`.
+  - In the sandbox, Spotless can fail with `Could not read path '…/build/…'` when it runs alongside compilation in one
+    `check`: run `spotlessCheck` on its own first, then `check assembleDebug -x spotlessCheck`.
