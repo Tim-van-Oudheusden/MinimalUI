@@ -4,7 +4,8 @@ Several agents work on this repository at the same time: the Hive agents, Claude
 maintainer runs, and the workflows that file and update issues. This page covers how they share the repository: who
 does what, how work reaches them, how they keep out of each other's way, and where a person decides. How a single
 agent works is set by [`AGENTS.md`](../AGENTS.md), which is authoritative. The security side is in
-[`security/SECURITY-AI.md`](security/SECURITY-AI.md).
+[`security/SECURITY-AI.md`](security/SECURITY-AI.md), and how to monitor agent work and debug it when it gets stuck in
+[`ai-ops-runbook.md`](ai-ops-runbook.md).
 
 ## The agents
 
