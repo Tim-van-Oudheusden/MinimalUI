@@ -153,4 +153,6 @@ and the label descriptions on GitHub give their exact meaning.
 
 The weekly `PR metrics` workflow reports how many agent-authored pull requests (`claude/*` branches and
 `hive-forge-app`) were merged and how many were closed unmerged; see [`metrics/README.md`](metrics/README.md). A falling
-rate means the instructions, prompts or skills need another look.
+rate means the instructions, prompts or skills need another look. The weekly `AI audit trail` workflow records which
+agent and model are behind each pull request merged into `main`, and who merged it
+([`metrics/README.md`](metrics/README.md#ai-audit-trail)).
