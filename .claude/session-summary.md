@@ -10,22 +10,14 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 ## Latest session
 
 - **Date:** 2026-10-29
-- **Worked:** #254 → `docs/254-agent-task-traceability` (ACMM L6 `aef:task-traceability`), first of a stack of six
-  ACMM L6 PRs (#254, #252, #255, #251, #256, #253), each branched off the previous one so their shared docs and this
-  file do not conflict. Added `docs/agent-tasks/README.md` (issue → claim → branch → commit → PR → merge → close, what
-  enforces each link, how to follow it either way), linked from `multi-agent.md` and the README docs table.
-- **Outcome:** PR open; docs only.
+- **Worked:** #252 → `ci/252-risk-assessment-config` (ACMM L6 `acmm:risk-assessment-config`), second of a stack of
+  five ACMM L6 PRs (#254, #252, #255, #251, #253), each branched off the previous one so their shared docs and this
+  file do not conflict. Moved `.github/policies/risk-tiers.policy` to `.github/risk-assessment.yml`: the same rules
+  as a YAML `rules:` list, which `scripts/tier-classify.sh` reads as a strict line subset (a `- <tier> <glob>` item
+  outside the list, or with trailing text, fails with its line number).
+- **Outcome:** PR open. `TierClassifyScriptTest` and `PolicyLabelParityTest` use the new format; a new test parses
+  the shipped file with the tests' YAML reader (`Repo.riskRules()`).
 - **Open follow-ups:** the rest of the stack; merge it in order (oldest PR first).
-- **Worked:** #256 → `ci/256-ai-audit` (ACMM L6 `aef:audit-trail`). Added `.github/workflows/ai-audit.yml` (weekly
-  Mon 06:17 UTC, past 7 days; manual with `days`) and `scripts/ai-audit-report.sh`: every PR merged into `main`,
-  attributed Hive (signature line or `hive-forge-app` author; agent/model from the signature), Claude Code (CI)
-  (`claude/*`), Dependabot (`dependabot/*`) or Other, with author and merger. Job summary + 90-day `ai-audit` artifact
-  with the raw PR JSON. Ported from the website repo's #978 as bash + `jq`, the convention here. Docs:
-  `docs/metrics/README.md` (row + section), CONTRIBUTING "Agent safety layers", `multi-agent.md` "Measuring it".
-- **Outcome:** PR open. Tests: `AiAuditReportScriptTest` (8), `WorkflowInvariantsTest` scopes,
-  `AutoIssuesWorkflowTest` (the new workflow is watched by `auto-issues.yml`). The PR changes `.github/workflows/`, so
-  it is high risk and the maintainer merges it.
-- **Open follow-ups:** none.
 - **Notes for next session:**
   - Podman may be missing on this host; then build on the host with `JAVA_HOME=~/tools/jdk` and
     `sdk.dir=/home/dev/tools/sdk` in `local.properties`. actionlint is not installed, and the host shellcheck is 0.9.0:

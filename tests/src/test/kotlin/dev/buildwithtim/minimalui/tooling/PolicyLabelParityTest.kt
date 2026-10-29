@@ -6,8 +6,8 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 
 /**
- * `.github/policies/risk-tiers.policy` and `.github/labeler.yml` classify the same paths for different readers: the
- * review tier and the PR label. The policy must give a path a tier explicitly exactly when the labeler gives it a
+ * `.github/risk-assessment.yml` and `.github/labeler.yml` classify the same paths for different readers: the review
+ * tier and the PR label. The risk assessment must give a path a tier explicitly exactly when the labeler gives it a
  * label (#100), so neither file covers a path the other forgets. Each glob in one file is reduced to a sample path it
  * matches, and that sample must be covered by the other file.
  */
@@ -15,13 +15,7 @@ class PolicyLabelParityTest {
     @get:Rule
     val temp = TemporaryFolder()
 
-    private val policyGlobs: List<String> =
-        Repo
-            .read(".github/policies/risk-tiers.policy")
-            .lines()
-            .map { it.trim() }
-            .filter { it.isNotEmpty() && !it.startsWith("#") }
-            .map { it.split(Regex("\\s+"))[1] }
+    private val policyGlobs: List<String> = Repo.riskRules().map { (_, glob) -> glob }
 
     private val labelGlobs: Map<String, List<String>> =
         Yaml.parse(Repo.read(".github/labeler.yml")).asMap().mapValues { (label, rules) ->
@@ -84,12 +78,12 @@ class PolicyLabelParityTest {
 
     /**
      * The paths scripts/tier-classify.sh finds a rule for. The script reports unmatched paths as medium, the same as
-     * a `medium` rule, so it runs against a copy of the policy with every rule raised to high: a path that comes out
-     * high matched a rule.
+     * a `medium` rule, so it runs against a copy of the risk assessment with every rule raised to high: a path that
+     * comes out high matched a rule.
      */
     private fun pathsWithTierRule(paths: Collection<String>): Set<String> {
-        val raised = temp.root.resolve("risk-tiers.policy")
-        raised.writeText(policyGlobs.joinToString("\n", postfix = "\n") { "high $it" })
+        val raised = temp.root.resolve("risk-assessment.yml")
+        raised.writeText(policyGlobs.joinToString("", prefix = "rules:\n") { "  - high $it\n" })
         val result =
             runScript(
                 "scripts/tier-classify.sh",
@@ -105,10 +99,10 @@ class PolicyLabelParityTest {
     }
 
     @Test
-    fun `every path the risk-tier policy names gets a label`() {
+    fun `every path the risk assessment names gets a label`() {
         val unlabelled = policyGlobs.filter { labelsOf(sample(it)).isEmpty() }
 
-        assertEquals("risk-tiers.policy globs with no labeler.yml label", emptyList<String>(), unlabelled)
+        assertEquals("risk-assessment.yml globs with no labeler.yml label", emptyList<String>(), unlabelled)
     }
 
     @Test
@@ -118,6 +112,6 @@ class PolicyLabelParityTest {
 
         val unruled = samples.filterKeys { it !in ruled }.values.toList()
 
-        assertEquals("labeler.yml globs with no risk-tiers.policy rule", emptyList<String>(), unruled)
+        assertEquals("labeler.yml globs with no risk-assessment.yml rule", emptyList<String>(), unruled)
     }
 }
