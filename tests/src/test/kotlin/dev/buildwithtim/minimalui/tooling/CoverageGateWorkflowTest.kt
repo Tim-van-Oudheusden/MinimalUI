@@ -7,9 +7,10 @@ import org.junit.Test
 class CoverageGateWorkflowTest {
     private val gate = Repo.workflows().getValue("coverage-gate.yml")
 
+    // workflow_dispatch: the merge queue starts main's run, since its merges trigger no push run.
     @Test
-    fun `runs on every pull request and on pushes to main`() {
-        assertEquals(setOf("pull_request", "push"), gate.triggers())
+    fun `runs on every pull request, on pushes to main and when the merge queue starts it`() {
+        assertEquals(setOf("pull_request", "push", "workflow_dispatch"), gate.triggers())
         assertEquals(
             listOf("main"),
             gate

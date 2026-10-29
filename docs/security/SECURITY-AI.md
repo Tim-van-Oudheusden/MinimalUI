@@ -66,7 +66,7 @@ Enforced by `.claude/settings.json` (see the safety layers in `CONTRIBUTING.md`)
 | `git rebase`, `git reset`, `git clean`, `git branch -D` | Needs confirmation |
 | Editing `gradle/libs.versions.toml` or the wrapper, `./gradlew wrapper` | Needs confirmation |
 | `adb install` / `adb uninstall` on a device | Needs confirmation |
-| `gh pr merge` | Needs confirmation; agents never merge their own PRs |
+| `gh pr merge` | Needs confirmation; agents never merge their own PRs (the merge queue workflow merges, see `docs/multi-agent.md`) |
 
 Personal `.claude/settings.local.json` overrides may add permissions but cannot lift the project's deny rules.
 
@@ -77,7 +77,10 @@ Agent changes go through the same gates as human ones, with no shortcuts:
 - The `main` ruleset (`.github/rulesets/main.json`) requires a pull request and the required checks; CI
   (`.github/workflows/ci.yml`) runs `./gradlew check assembleDebug`, which includes the `tests` module's tests that
   pin the workflows' security invariants. The PR review rubric (`.github/workflows/review.yml`) runs as well.
-- A human reviews and merges every PR. Look harder at changes that touch:
+- The merge queue (`.github/workflows/merge-queue.yml`) merges low- and medium-risk PRs once their required checks
+  pass; review them before then or add `hold`. A human reviews and merges every high-risk PR
+  ([`docs/risk-tiers.md`](../risk-tiers.md)) and every PR labelled `hold` or `sentinel-alert`. Look harder at changes
+  that touch:
   - `.github/workflows/`: keep `permissions:` least-privilege (the reviewed scopes are listed in
     `tests/.../WorkflowInvariantsTest.kt`). Don't add `pull_request_target` to a job that checks out or runs PR code,
     and don't interpolate event fields into `run:` (pass them through `env:`). `labeler.yml` is the sanctioned

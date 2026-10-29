@@ -44,8 +44,10 @@ flowchart LR
     claim -- no --> work["Branch, test first,<br/>one commit"]
     work --> pr["PR: Fixes #N"]
     pr --> checks["Required checks, risk tier,<br/>sentinel, review"]
-    checks --> merge[Maintainer merges]
-    merge --> closed[Issue closes]
+    checks --> queue["Merge queue: re-checks<br/>on latest main, merges"]
+    checks --> manual["Maintainer merges:<br/>high risk, hold, sentinel-alert"]
+    queue --> closed[Issue closes]
+    manual --> closed
 ```
 
 1. **One queue.** All agent work starts from a GitHub issue. One issue gets one branch, one Conventional Commit and one
@@ -65,8 +67,34 @@ flowchart LR
 4. **Same gates for everyone.** Agent pull requests run the same required checks as any other (`PR review rubric`,
    `Build, lint, test`, `Unit-test coverage floors`, `Static checks`, `End-to-end tests`) and get a
    [risk tier](risk-tiers.md).
-5. **A person merges.** No agent merges its own work: Hive pull requests carry `hold` (hold-gated mode), and
-   `.claude/settings.json` asks before `gh pr merge`.
+5. **The merge queue or a person merges.** No agent merges its own work. The [merge queue](#merge-queue) merges a
+   low- or medium-risk pull request once its required checks pass; a maintainer merges high-risk ones and any labelled
+   `hold` (Hive's hold-gated mode puts it on every Hive pull request) or `sentinel-alert`. `.claude/settings.json` asks
+   before `gh pr merge`.
+
+## Merge queue
+
+GitHub's own merge queue needs an organization-owned repository, so
+[`merge-queue.yml`](../.github/workflows/merge-queue.yml) runs one on Actions. Whenever a workflow holding a required
+check (`CI`, `Coverage gate`, `E2E`, `PR review rubric`) succeeds, a draft is marked ready, or `hold` or
+`sentinel-alert` comes off a pull request, it takes the oldest open pull request that:
+
+- comes from this repository, not a fork, and is not a draft;
+- has neither a `hold` nor a `sentinel-alert` label;
+- passes every required check (merge state `CLEAN`, so review threads are resolved too);
+- is not high risk ([`risk-tiers.md`](risk-tiers.md)), rated by `main`'s `scripts/tier-classify.sh`.
+
+It merges that pull request onto the current `main` and runs `./gradlew check assembleDebug` on the result; the
+coverage floors and the emulator tests are not re-run there. If that passes and neither the pull request nor `main`
+moved, it merges the pull request (a merge commit) and starts `CI`, `Coverage gate`, `E2E` and `Quality report` on
+`main`: a merge made with `GITHUB_TOKEN` starts no push run, so without them a failure on `main` would go unnoticed.
+`Release` is not started: it runs only for a change to `app/build.gradle.kts`, which is high risk, so a maintainer
+merges it and the push starts the release. If the check fails, the pull request gets `hold` and a comment linking the
+run; fix it and remove `hold` to queue it again. Each run starts the next, so the queue merges one pull request at a
+time.
+
+To keep a pull request out of the queue, add `hold` or leave it a draft. To drain the queue by hand:
+`gh workflow run merge-queue.yml`. The logic lives in `scripts/merge-queue.sh`.
 
 ## Keeping parallel agents apart
 
@@ -114,11 +142,12 @@ and the label descriptions on GitHub give their exact meaning.
   person applies it: when `hive-forge-app` adds the label, the run fails with `Workflow initiated by non-human actor`.
   `stage/015-triage-needed` waits for a maintainer's triage label.
 - **Sensitive changes:** Hive labels a pull request that touches workflows, policies, Hive config or security docs
-  `sentinel-alert` and does not approve or auto-merge it while the label is present. A maintainer removes the label
-  after reviewing the change.
+  `sentinel-alert` and does not approve or auto-merge it while the label is present; neither does the merge queue. A
+  maintainer removes the label after reviewing the change.
 - **Dependencies:** any dependency or plugin change needs explicit approval (`AGENTS.md`, Dependency Management).
-- **Merges and the ruleset:** a maintainer merges every pull request, and applies `.github/rulesets/main.json` after a
-  change to it lands.
+- **Merges and the ruleset:** a maintainer merges every high-risk pull request and every one labelled `hold` or
+  `sentinel-alert`; the merge queue merges the rest. A maintainer applies `.github/rulesets/main.json` after a change to
+  it lands.
 
 ## Measuring it
 
