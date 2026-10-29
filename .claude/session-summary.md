@@ -10,13 +10,14 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 ## Latest session
 
 - **Date:** 2026-10-29
-- **Worked:** #252 → `ci/252-risk-assessment-config` (ACMM L6 `acmm:risk-assessment-config`), second of a stack of
-  six ACMM L6 PRs (#254, #252, #255, #251, #256, #253), each branched off the previous one so their shared docs and
-  this file do not conflict. Moved `.github/policies/risk-tiers.policy` to `.github/risk-assessment.yml`: the same
-  rules as a YAML `rules:` list, which `scripts/tier-classify.sh` reads as a strict line subset (a `- <tier> <glob>`
-  item outside the list, or with trailing text, fails with its line number).
-- **Outcome:** PR open. `TierClassifyScriptTest` and `PolicyLabelParityTest` use the new format; a new test parses
-  the shipped file with the tests' YAML reader (`Repo.riskRules()`).
+- **Worked:** #255 → `ci/255-codeowners` (ACMM L6 `aef:structural-gates`), third of a stack of six ACMM L6 PRs
+  (#254, #252, #255, #251, #256, #253), each branched off the previous one so their shared docs and this file do not
+  conflict. Added `.github/CODEOWNERS`: the maintainer owns exactly the paths `.github/risk-assessment.yml` rates
+  high. Documented in `risk-tiers.md` and CONTRIBUTING's safety layers; `require_code_owner_review` stays off (an
+  author cannot approve his own PR).
+- **Outcome:** PR open. `CodeownersTest` compares the tracked files CODEOWNERS owns (`git ls-files --ignored
+  --exclude-from`) with those `tier-classify.sh` rates high; `tests/build.gradle.kts` declares `git ls-files` as a
+  test input so a new file reruns it instead of reusing a cached pass.
 - **Open follow-ups:** the rest of the stack; merge it in order (oldest PR first).
 - **Notes for next session:**
   - `scripts/sandbox-gradlew.sh --project-cache-dir /tmp/pcache …` works on this host (podman present); actionlint
