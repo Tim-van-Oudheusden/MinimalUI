@@ -10,19 +10,21 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 ## Latest session
 
 - **Date:** 2026-10-29
-- **Worked:** #243 → `ci/243-auto-issues`. `.github/workflows/auto-issues.yml` (`workflow_run` on every workflow
-  that runs on `main`) runs `scripts/auto-issues.sh`: a failed or timed-out run on `main` opens a `ci` issue titled
-  `<workflow> fails on main` (or comments on the open one); the next success closes it. Only same-repo push,
-  schedule and dispatch runs count. `AutoIssuesScriptTest` drives the script against a fake `gh`;
-  `AutoIssuesWorkflowTest` fails when a workflow on `main` is missing from the watch list. CONTRIBUTING
-  "Failures on main" documents it.
-- **Outcome:** PR open. `workflow_run` only fires from the default branch's copy, so it acts after the merge.
+- **Worked:** #245 → `fix/245-tests-module-inputs`. `tests/build.gradle.kts` declared `app`, `core` and `tests`
+  build scripts as `:tests:test` inputs from a hard-coded list that missed `e2e`, so an edit to `e2e/build.gradle.kts`
+  left the task up to date (or from cache) and `LintConfigTest`/`TestTimeoutConfigTest` never reran on it. The list
+  is now `rootProject.childProjects.keys`.
+- **Outcome:** PR open. Checked by hand: an `e2e/build.gradle.kts` edit was UP-TO-DATE before, reruns after; an
+  unchanged rerun stays UP-TO-DATE and reuses the configuration cache.
 - **Open follow-ups:** none.
 - **Notes for next session:**
+  - This host has no podman; Gradle runs directly with `JAVA_HOME=~/tools/jdk ANDROID_HOME=~/tools/sdk` and
+    `--project-cache-dir /tmp/<dir>`.
+  - The host's `jq` is jaq 3.1.1, which rejects `$module`/`$label` as variable names, so 12 tests in
+    `AutoQaTunerScriptTest`, `PrMetricsScriptTest` and `QualityReportScriptTest` fail locally on an unmodified `main`
+    too; CI uses jq and passes.
   - The emulator on this host segfaults with SwiftShader Vulkan; use `-gpu swangle_indirect`
     (`docs/reflections/2026-10-29-emulator-on-this-host.md`).
-  - Sandbox Gradle in this checkout needs `--project-cache-dir /tmp/pcache`, otherwise Spotless trips over host paths
-    left in `.gradle/`.
   - Managed-device runs locally: `podman run --rm --device /dev/kvm -v "$PWD":/workspace:z -w /workspace
     -v minimalui-sandbox-gradle:/root/.gradle localhost/minimalui-emu:dev2 ./gradlew :e2e:atdApi35DebugAndroidTest
     -Pandroid.testoptions.manageddevices.emulator.gpu=swangle_indirect`.
