@@ -112,6 +112,8 @@ app/                        Android application: manifest, activity, Compose UI,
 core/                       pure Kotlin/JVM logic (no Android dependencies), package dev.buildwithtim.minimalui.core
   src/test/kotlin/          JUnit tests, run on the JVM without an emulator
 docs/                       usage guide, testing notes, brand assets, research, metrics, reflections
+e2e/                        end-to-end tests: UiAutomator drives the installed debug app on an emulator
+  src/main/kotlin/          the tests (a com.android.test module, so they are its main sources)
 fastlane/metadata/android/  store listing: title, descriptions, changelogs, icon, feature graphic, screenshots
 gradle/libs.versions.toml   every dependency and plugin version
 gradle/wrapper/             Gradle wrapper (pinned version and checksum)
@@ -132,6 +134,10 @@ and `createComposeRule()` in `app/src/test`, inside `./gradlew test`. Drive the 
 `performKeyInput`, or through the activity's `dispatchKeyEvent` for keys no row consumes, and assert on what shows or
 what was started. Robolectric emulates SDK 35 (`app/src/test/resources/robolectric.properties`), because it cannot yet
 emulate the app's `targetSdk`. Mark a test `@Config(sdk = [28, 35])` when it covers a version branch.
+
+**End-to-end tests.** What only shows on a real Android (the app as installed, opening other apps, Home as the default
+home app) is tested in `e2e/` with UiAutomator, from outside the app's process, by key presses. They run on an emulator
+that Gradle starts, not in `./gradlew test`; see [End-to-end tests](docs/testing.md#end-to-end-tests).
 
 **Tests for CI and scripts.** `tests` has no main sources: its tests read `.github/` and `fastlane/` and run
 `scripts/` the way CI does, so they run with `./gradlew test`. `WorkflowInvariantsTest` holds the reviewed

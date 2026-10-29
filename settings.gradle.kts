@@ -23,4 +23,5 @@ dependencyResolutionManagement {
 rootProject.name = "MinimalUI"
 include(":app")
 include(":core")
+include(":e2e")
 include(":tests")

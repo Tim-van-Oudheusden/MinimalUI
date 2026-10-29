@@ -27,3 +27,4 @@ One Markdown file per reflection, named `YYYY-MM-DD-short-slug.md`, with:
 ## Index
 
 - [2026-10-12 — Gradle without a host JDK](2026-10-12-gradle-without-host-jdk.md)
+- [2026-10-29 — Running the emulator and the sandbox on this host](2026-10-29-emulator-on-this-host.md)

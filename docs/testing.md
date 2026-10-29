@@ -131,6 +131,34 @@ For a shell in the sandbox instead, run the same `podman run` the script does wi
 In a git worktree, `.git` is a file pointing outside the mount, so git commands inside the container see no
 repository; the Gradle gates do not need one.
 
+## End-to-end tests
+
+`e2e/` holds the tests that drive the real app on an emulator (#236). It is a `com.android.test` module: its APK runs
+its tests in its own process (self-instrumenting) and drives the installed debug app with UiAutomator, by key presses
+and the system's Home key, the way a user with a keyboard does. That covers what the Robolectric tests in `app/src/test`
+cannot: the app as Android installs and starts it, opening another app, and coming back to MinimalUI as the default
+home app. `HomeScreenTest` types an app's name and opens it with Enter, then presses Home and expects MinimalUI back with
+the filter cleared.
+
+The tests run on a [Gradle Managed Device](https://developer.android.com/studio/test/gradle-managed-devices):
+`atdApi35`, a Pixel 5 on Android 15's Automated Test Device image (`aosp-atd`, x86_64), which leaves out the apps and
+services tests do not need. Gradle downloads the emulator and the image into the SDK, boots it headless, installs both
+APKs, runs the tests and shuts it down:
+
+```bash
+./gradlew :e2e:atdApi35DebugAndroidTest
+```
+
+It needs a writable SDK and KVM, so it does not run in the agent sandbox. `.github/workflows/e2e.yml` (job **End-to-end
+tests**) runs it on every PR and push to `main`; it is not a required check yet. `./gradlew check` builds and checks
+the module's code but runs no emulator. AGP has no Android Lint for `com.android.test` modules, so `LintConfigTest`
+leaves `e2e` out; detekt, ktlint and warnings-as-errors still apply.
+
+If the emulator crashes as it starts (exit code 139, a SwiftShader Vulkan crash seen on some Linux hosts), use ANGLE
+instead: `-Pandroid.testoptions.manageddevices.emulator.gpu=swangle_indirect`. On a device or an emulator you started
+yourself, `./gradlew :e2e:connectedDebugAndroidTest` runs the same tests. A test that opens another app needs a launcher
+entry the ATD image has: AOSP's Clock, Calendar, Camera, Contacts or Gallery, not Settings.
+
 ## Store screenshots
 
 `app/src/test/kotlin/dev/buildwithtim/minimalui/StoreScreenshots.kt` renders the README and store screenshots from the
