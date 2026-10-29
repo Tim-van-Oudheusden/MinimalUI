@@ -25,9 +25,13 @@
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-HOLD_LABEL=hold
-# jq test that a pull request carries neither label that keeps it out.
-UNHELD='all(.labels[]; .name != "hold" and .name != "sentinel-alert")'
+# Labels that keep a pull request out of the queue; reject adds the first.
+# merge-queue.yml restates them in its concurrency group and pick job, and
+# MergeQueueWorkflowTest fails when either list differs from this one.
+KEEP_OUT_LABELS=(hold sentinel-alert)
+HOLD_LABEL="${KEEP_OUT_LABELS[0]}"
+# jq test that a pull request carries no label that keeps it out.
+UNHELD="all(.labels[]; $(printf '.name != "%s" and ' "${KEEP_OUT_LABELS[@]}")true)"
 # Every workflow that runs on a push to main. Release is left out: it runs only
 # when app/build.gradle.kts changes, which is high risk, so the queue never
 # merges such a change.
