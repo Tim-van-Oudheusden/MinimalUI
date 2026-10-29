@@ -48,7 +48,7 @@ sealed interface HintedScreen {
         val isEmpty: Boolean,
     ) : HintedScreen
 
-    /** An app's or a group's menu. */
+    /** An app's or a group's menu, or the question an imported setup asks (#208). */
     data object Menu : HintedScreen
 
     /** Where to add an app: the collections or groups, and a new one. */

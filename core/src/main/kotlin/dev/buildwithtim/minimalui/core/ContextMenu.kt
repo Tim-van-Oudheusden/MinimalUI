@@ -1,6 +1,6 @@
 package dev.buildwithtim.minimalui.core
 
-/** What a row of the per-app context menu does. Later features add their own kinds. */
+/** What a menu row does: in an app's context menu, a group's menu (#69) or the import-setup question (#208). */
 enum class MenuAction {
     /** Android's App info screen for the app. */
     AppInfo,
