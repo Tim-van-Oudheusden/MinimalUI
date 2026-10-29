@@ -10,25 +10,19 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 ## Latest session
 
 - **Date:** 2026-10-29
-- **Worked:** #246 → `docs/246-multi-agent`. Added `docs/multi-agent.md` (ACMM L6 `acmm:multi-agent-orchestration`):
-  the agents that work the repo (Hive agents via `hive-forge-app`, ACMM evaluation, Claude Code in CI, local agents,
-  the auto-issues and apply-suggestions workflows), the issue → claim → PR → human merge flow, the claim signals to
-  check before starting (assignee, `hive:claim` comment lease, covering PR, running `Claude Code` job), worktree
-  isolation, hand-off files, the Hive `stage/*` labels and where a person decides. Linked from README's documentation
-  table and CONTRIBUTING "Finding and claiming work".
-- **Outcome:** PR open; docs only.
-- **Open follow-ups:** none. The `Claude Code` run for #246 (40934622464) failed because `hive-forge-app` applied
-  `ai-fix-requested` and claude-code-action refuses bot actors; by design, recorded in `docs/multi-agent.md`.
-- **Worked:** #245 → `fix/245-tests-module-inputs`. `tests/build.gradle.kts` declared `app`, `core` and `tests`
-  build scripts as `:tests:test` inputs from a hard-coded list that missed `e2e`, so an edit to `e2e/build.gradle.kts`
-  left the task up to date (or from cache) and `LintConfigTest`/`TestTimeoutConfigTest` never reran on it. The list
-  is now `rootProject.childProjects.keys`.
-- **Outcome:** PR open. Checked by hand: an `e2e/build.gradle.kts` edit was UP-TO-DATE before, reruns after; an
-  unchanged rerun stays UP-TO-DATE and reuses the configuration cache.
+- **Worked:** #249 → `ci/249-merge-queue` (ACMM L6 `acmm:merge-queue`). Ported the website repo's Actions-based merge
+  queue: `.github/workflows/merge-queue.yml` + `scripts/merge-queue.sh` pick the oldest same-repo, non-draft PR
+  without `hold`/`sentinel-alert`, merge state `CLEAN`, not high risk; re-run `./gradlew check assembleDebug` on it
+  merged onto latest main; merge it, then dispatch `ci.yml`, `coverage-gate.yml`, `e2e.yml`, `quality-report.yml`
+  (now `workflow_dispatch`-able) and the next queue run; on failure label `hold` and comment. Docs: `multi-agent.md`
+  (new "Merge queue" section), `risk-tiers.md`, CONTRIBUTING, SECURITY-AI, AGENTS/CLAUDE/copilot/cursor/skill.
+- **Outcome:** PR open. Tests: `MergeQueueScriptTest` (fake gh + local git origin), `MergeQueueWorkflowTest`,
+  `WorkflowInvariantsTest` scopes; `CoverageGateWorkflowTest`/`E2eWorkflowTest` now expect `workflow_dispatch`.
+  The PR is itself high risk, so the maintainer merges it.
 - **Open follow-ups:** none.
 - **Notes for next session:**
-  - This host has no podman; Gradle runs directly with `JAVA_HOME=~/tools/jdk ANDROID_HOME=~/tools/sdk` and
-    `--project-cache-dir /tmp/<dir>`.
+  - `scripts/sandbox-gradlew.sh --project-cache-dir /tmp/pcache …` works on this host (podman present); actionlint
+    is not installed, fetch the pinned release from `ci.yml` into `/tmp`.
   - The host's `jq` is jaq 3.1.1, which rejects `$module`/`$label` as variable names, so 12 tests in
     `AutoQaTunerScriptTest`, `PrMetricsScriptTest` and `QualityReportScriptTest` fail locally on an unmodified `main`
     too; CI uses jq and passes.

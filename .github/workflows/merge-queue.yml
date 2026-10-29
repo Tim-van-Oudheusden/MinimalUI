@@ -1,0 +1,159 @@
+name: Merge queue
+
+# Merges ready pull requests into main one at a time. GitHub's own merge queue
+# needs an organization-owned repository, so this one runs on Actions:
+#
+#   pick   - scripts/merge-queue.sh next: the oldest same-repo, non-draft PR
+#            without a `hold` or `sentinel-alert` label whose required checks
+#            all pass and whose risk tier is not high (docs/risk-tiers.md).
+#   verify - merges that PR onto the current main and runs CI's check gate on
+#            the result, with a read-only token and the PR's code.
+#   land   - merges the PR if neither it nor main moved, then starts main's
+#            push workflows (merges made with GITHUB_TOKEN start none).
+#   reject - a PR that failed verification gets `hold` and a comment.
+#
+# Land and reject start the next run, so the queue drains one PR at a time.
+# Runs whenever a workflow holding a required check succeeds, a draft is marked
+# ready, or `hold` or `sentinel-alert` comes off; workflow_dispatch drains it
+# on demand. See docs/multi-agent.md#merge-queue.
+#
+# Security: no step with write access runs code from a PR; pick, land and
+# reject run main's scripts. Fork PRs are never picked, and their events would
+# get a read-only token anyway. A `pull_request` event runs this file as the PR
+# has it, which gives a same-repo author nothing beyond the write access they
+# already have. PR fields reach shell steps only through env.
+
+on:
+  # workflow_run matches workflows by name; MergeQueueWorkflowTest fails when a
+  # workflow holding a required check is missing from the list.
+  workflow_run:
+    workflows: [CI, Coverage gate, E2E, PR review rubric]
+    types: [completed]
+  pull_request:
+    types: [ready_for_review, unlabeled]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One run drains the queue at a time; a newer pending run replaces an older
+# pending one, which is fine since every run looks at all open PRs. Events that
+# cannot make a PR ready (another label removed, a failed run) get their own
+# group, so they never replace a pending run that would merge.
+concurrency:
+  group: >-
+    ${{
+      (github.event_name == 'workflow_dispatch'
+        || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+        || (github.event_name == 'pull_request'
+            && (github.event.action == 'ready_for_review' || contains(fromJSON('["hold", "sentinel-alert"]'), github.event.label.name))))
+      && 'merge-queue' || format('merge-queue-ignored-{0}', github.run_id)
+    }}
+  cancel-in-progress: false
+
+jobs:
+  pick:
+    name: Pick next pull request
+    if: >-
+      github.event_name == 'workflow_dispatch'
+      || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+      || (github.event_name == 'pull_request'
+          && (github.event.action == 'ready_for_review' || contains(fromJSON('["hold", "sentinel-alert"]'), github.event.label.name)))
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      number: ${{ steps.next.outputs.number }}
+      head: ${{ steps.next.outputs.head }}
+      main: ${{ steps.next.outputs.main }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Pick the oldest ready pull request
+        id: next
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: scripts/merge-queue.sh next
+
+  verify:
+    name: Check gate on latest main
+    needs: pick
+    if: needs.pick.outputs.number != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.pick.outputs.main }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Merge the pull request onto main
+        env:
+          NUMBER: ${{ needs.pick.outputs.number }}
+          HEAD_SHA: ${{ needs.pick.outputs.head }}
+          REPO_URL: ${{ github.server_url }}/${{ github.repository }}
+        run: |
+          git fetch --no-tags "$REPO_URL" "$HEAD_SHA"
+          git -c user.name="merge-queue" -c user.email="merge-queue@users.noreply.github.com" \
+            merge --no-ff --no-edit -m "Merge #${NUMBER} onto main" "$HEAD_SHA"
+      - name: Setup JDK
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+      # The Build, lint, test gate; coverage floors and the emulator tests are not re-run here.
+      - name: Check, debug build
+        run: ./gradlew check assembleDebug
+
+  land:
+    name: Merge
+    needs: [pick, verify]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: write
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+      - name: Merge if nothing moved
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          NUMBER: ${{ needs.pick.outputs.number }}
+          HEAD_SHA: ${{ needs.pick.outputs.head }}
+          MAIN_SHA: ${{ needs.pick.outputs.main }}
+        run: scripts/merge-queue.sh land "$NUMBER" "$HEAD_SHA" "$MAIN_SHA"
+
+  reject:
+    name: Hold failed pull request
+    needs: [pick, verify]
+    if: always() && needs.verify.result == 'failure'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: write
+      contents: read
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Hold and comment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          NUMBER: ${{ needs.pick.outputs.number }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: scripts/merge-queue.sh reject "$NUMBER" "$RUN_URL"

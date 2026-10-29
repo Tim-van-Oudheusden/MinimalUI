@@ -182,6 +182,10 @@ only (no squash or rebase), so each issue's single commit lands on `main` unchan
 merge. The file is the source of truth: a change to it lands by PR, then a maintainer applies it with
 `gh api -X PUT repos/Tim-van-Oudheusden/MinimalUI/rulesets/<id> --input .github/rulesets/main.json`.
 
+Once its checks pass, the [merge queue](docs/multi-agent.md#merge-queue) re-runs `./gradlew check assembleDebug` on the
+pull request merged with the latest `main` and merges it. High-risk pull requests and those labelled `hold` or
+`sentinel-alert` wait for a maintainer; add `hold` or leave a pull request a draft to keep it out of the queue.
+
 [conventional-commits]: https://www.conventionalcommits.org/
 
 Every pull request is classified into a low, medium or high risk tier from the paths it changes (the informational

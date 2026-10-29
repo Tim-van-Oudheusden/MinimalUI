@@ -22,6 +22,7 @@ class WorkflowInvariantsTest {
             "e2e.yml" to mapOf("contents" to "read"),
             // Sanctioned pull_request_target exception: labels PRs, never checks out code.
             "labeler.yml" to mapOf("contents" to "read", "pull-requests" to "write"),
+            "merge-queue.yml" to mapOf("contents" to "read"),
             "nightly-compliance.yml" to mapOf("contents" to "read"),
             "quality-report.yml" to mapOf("contents" to "read"),
             // Reads closed PRs for the acceptance metric.
@@ -52,6 +53,21 @@ class WorkflowInvariantsTest {
                             "issues" to "write",
                             "id-token" to "write",
                             "actions" to "read",
+                        ),
+                ),
+            "merge-queue.yml" to
+                mapOf(
+                    // Lists open PRs and reads their merge state.
+                    "pick" to mapOf("contents" to "read", "pull-requests" to "read"),
+                    // Merges the verified PR, then starts main's push workflows and the next queue run.
+                    "land" to mapOf("actions" to "write", "contents" to "write", "pull-requests" to "write"),
+                    // Labels a PR that failed verification `hold`, comments the run, starts the next queue run.
+                    "reject" to
+                        mapOf(
+                            "actions" to "write",
+                            "contents" to "read",
+                            "issues" to "write",
+                            "pull-requests" to "write",
                         ),
                 ),
             "nightly-compliance.yml" to

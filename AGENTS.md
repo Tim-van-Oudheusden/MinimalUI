@@ -45,8 +45,9 @@ bd prime                     # Full beads workflow reference
 
 - Before working an issue: read it with `gh issue view <number>`, claim/assign it there, then branch off an up-to-date
   `main` as `<type>/<number>-<slug>` (e.g. `feat/12-app-search`)
-- When done: push the branch and open a pull request whose body says `Fixes #<number>`; the maintainer merges it once
-  the required checks pass, and the merge closes the issue
+- When done: push the branch and open a pull request whose body says `Fixes #<number>`. Once the required checks pass,
+  the merge queue (`docs/multi-agent.md#merge-queue`) merges it, or a maintainer does if it is high risk or labelled
+  `hold` or `sentinel-alert`; never merge it yourself. The merge closes the issue
 
 ## Session Completion
 

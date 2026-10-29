@@ -9,11 +9,12 @@ class E2eWorkflowTest {
     private val e2e = Repo.workflows().getValue("e2e.yml")
 
     // A required check must report on every pull request: a path filter that skips one leaves it waiting forever.
+    // workflow_dispatch: the merge queue starts main's run, since its merges trigger no push run.
     @Test
-    fun `runs on every pull request and on pushes to main`() {
+    fun `runs on every pull request, on pushes to main and when the merge queue starts it`() {
         val on = e2e.getValue("on").asMap()
 
-        assertEquals(setOf("pull_request", "push"), e2e.triggers())
+        assertEquals(setOf("pull_request", "push", "workflow_dispatch"), e2e.triggers())
         assertEquals(null, on["pull_request"])
         assertEquals(listOf("main"), on.getValue("push").asMap().getValue("branches"))
     }
