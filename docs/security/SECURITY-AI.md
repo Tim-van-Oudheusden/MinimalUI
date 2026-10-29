@@ -75,11 +75,11 @@ Personal `.claude/settings.local.json` overrides may add permissions but cannot 
 Agent changes go through the same gates as human ones, with no shortcuts:
 
 - The `main` ruleset (`.github/rulesets/main.json`) requires a pull request and the required checks; CI
-  (`.github/workflows/ci.yml`) runs `./gradlew check assembleDebug`, which includes the `tooling` tests that pin the
-  workflows' security invariants. The PR review rubric (`.github/workflows/review.yml`) runs as well.
+  (`.github/workflows/ci.yml`) runs `./gradlew check assembleDebug`, which includes the `tests` module's tests that
+  pin the workflows' security invariants. The PR review rubric (`.github/workflows/review.yml`) runs as well.
 - A human reviews and merges every PR. Look harder at changes that touch:
   - `.github/workflows/`: keep `permissions:` least-privilege (the reviewed scopes are listed in
-    `tooling/.../WorkflowInvariantsTest.kt`). Don't add `pull_request_target` to a job that checks out or runs PR code,
+    `tests/.../WorkflowInvariantsTest.kt`). Don't add `pull_request_target` to a job that checks out or runs PR code,
     and don't interpolate event fields into `run:` (pass them through `env:`). `labeler.yml` is the sanctioned
     `pull_request_target` exception: it checks out nothing and runs only `actions/labeler`.
   - `.claude/settings.json`, `AGENTS.md`, `CLAUDE.md`, `prompts/`, and this file: any change that loosens agent

@@ -4,11 +4,11 @@ import java.io.File
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 
-/** The repository under test; `tooling/build.gradle.kts` passes its root as the `repo.root` system property. */
+/** The repository under test; `tests/build.gradle.kts` passes its root as the `repo.root` system property. */
 object Repo {
     val root: File =
         File(
-            checkNotNull(System.getProperty("repo.root")) { "repo.root is set by tooling/build.gradle.kts" },
+            checkNotNull(System.getProperty("repo.root")) { "repo.root is set by tests/build.gradle.kts" },
         )
 
     fun file(path: String): File = root.resolve(path)

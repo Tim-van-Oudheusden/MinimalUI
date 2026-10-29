@@ -13,7 +13,7 @@ non-obvious about the repo, its tooling, or the environment agents run in.
 | `docs/reflections/` | The *why* behind a lesson, with context | One file per reflection, kept |
 
 If a lesson becomes a rule, encode it where agents already look (`AGENTS.md`, `CLAUDE.md`, a skill, or a test in
-`tooling`) and link that from the reflection.
+`tests`) and link that from the reflection.
 
 ## Format
 

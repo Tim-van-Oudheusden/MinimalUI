@@ -9,14 +9,14 @@
 # lines starting with `#` are ignored.
 #
 # A path has a rule here exactly when .github/labeler.yml gives it a label;
-# tooling's PolicyLabelParityTest fails when the two files drift apart.
+# PolicyLabelParityTest in tests/ fails when the two files drift apart.
 
 # CI gates, review rubric, rulesets, and this policy itself.
 high    .github/*
 
 # Gate tooling: CI scripts and the tests that pin the workflows.
 high    scripts/*
-high    tooling/*
+high    tests/*
 
 # Build and dependencies (supply chain): version catalog, wrapper, build scripts.
 high    gradle/*

@@ -63,7 +63,7 @@ DEPENDENCY_GRAPH_RESULT=success WRAPPER_VALIDATION_OUTCOME=success scripts/night
 
 This reads the alerts with your `gh` login (needs `jq`). Set `ALERTS_JSON=<file>` to read an alerts JSON array from a
 file instead, and `ALERTS_IGNORE="GHSA-… GHSA-…"` to replace the ignore list; the tests in
-`tooling/src/test/kotlin/dev/buildwithtim/minimalui/tooling/NightlyComplianceScriptTest.kt` use both.
+`tests/src/test/kotlin/dev/buildwithtim/minimalui/tooling/NightlyComplianceScriptTest.kt` use both.
 
 ## Agent sandbox: what runs where
 
@@ -147,13 +147,13 @@ The `storeScreenshots` property makes the unit-test task run only `StoreScreensh
 `fastlane/metadata/android/en-US/images/phoneScreenshots/`; without it, every test task leaves the class out, so
 `./gradlew test` and CI never run it. The status pill shows the time of the run, so regenerated files differ even
 when the UI has not changed: regenerate them when the look of a captured screen changes, and commit the result.
-`FastlaneMetadataTest` in `tooling` checks that the screenshots exist and fit the stores' size rules, and that the
+`FastlaneMetadataTest` in `tests` checks that the screenshots exist and fit the stores' size rules, and that the
 listing texts and the changelog for the current `versionCode` exist within the stores' length limits.
 
 ## Coverage floors
 
 Unit-test coverage is measured with [Kover](https://github.com/Kotlin/kotlinx-kover) (`org.jetbrains.kotlinx.kover`),
-applied to `core` and `app`. `tooling` holds only repository tests and is not measured.
+applied to `core` and `app`. `tests` holds only repository tests and is not measured.
 `./gradlew :<module>:koverXmlReport` runs the module's unit tests (`testDebugUnitTest` for `app`) and writes a
 JaCoCo-format XML report to `<module>/build/reports/kover/report.xml`.
 

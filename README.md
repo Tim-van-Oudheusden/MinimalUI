@@ -109,7 +109,7 @@ clones and MinimalUI's own settings) is described in [`docs/usage.md`](docs/usag
 
 - **App:** Kotlin, Jetpack Compose with Material 3, AndroidX Activity
 - **Modules:** `app` (the Android shell and Compose UI), `core` (plain Kotlin/JVM logic, no Android dependencies),
-  `tooling` (tests over the CI workflows and scripts)
+  `tests` (tests over the CI workflows and scripts)
 - **Build:** Gradle with the Kotlin DSL and a version catalog (`gradle/libs.versions.toml`), Android Gradle Plugin, JDK 21
 - **Testing:** JUnit, Robolectric with Compose UI tests on the JVM (no emulator), Kover coverage floors
 - **CI/CD:** GitHub Actions, GitHub Releases for signed APKs, Dependabot
@@ -172,7 +172,7 @@ cd MinimalUI
 | --- | --- |
 | `./gradlew assembleDebug` | Debug APK at `app/build/outputs/apk/debug/app-debug.apk` |
 | `./gradlew installDebug` | Builds the debug APK and installs it on the connected phone or emulator |
-| `./gradlew test` | Unit tests of every module: `core`, `app` (Robolectric) and `tooling` |
+| `./gradlew test` | Unit tests of every module: `core`, `app` (Robolectric) and `tests` |
 | `./gradlew lint` | Android lint, with warnings as errors |
 | `./gradlew :core:koverXmlReport` | Coverage report the coverage gate checks (also `:app:koverXmlReport`) |
 | `./gradlew :app:testDebugUnitTest -PstoreScreenshots` | Regenerates the screenshots above, without a phone or emulator |
