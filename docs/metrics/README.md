@@ -17,6 +17,7 @@ locally as in CI.
 | [Unit-test coverage](#unit-test-coverage) | Function and line coverage per module | `scripts/quality-report.sh` via `quality-report.yml` | Same as above | Job summary + `quality-report` artifact |
 | [Coverage floors](#coverage-floors) | Minimum coverage each module must keep | `.github/auto-qa-tuning.json`, enforced by `coverage-gate.yml` | Every PR and push to `main` | `Unit-test coverage floors` check; proposed floors as `auto-qa-tuning` artifact |
 | [PR acceptance rate](#pr-acceptance-rate) | Merged vs. closed-unmerged PRs, agent vs. other | `scripts/pr-metrics.sh` via `pr-metrics.yml` | Weekly (Mon 06:17 UTC), manual | Job summary |
+| [Strategy report](#strategy-report) | Issue and PR flow, open backlog per pipeline stage, ACMM gaps per level | `scripts/strategy-report.sh` via `strategy-report.yml` | Weekly (Mon 06:17 UTC), manual | Job summary |
 | [Nightly compliance](#nightly-compliance) | Checks that can go stale without a code change | `scripts/nightly-compliance.sh` via `nightly-compliance.yml` | Nightly (03:23 UTC), manual | Job summary + `nightly-compliance` artifact |
 | [Risk tier](#risk-tier) | Review risk of each PR from the paths it changes | `scripts/tier-classify.sh` via `tier-classifier.yml` | Every PR | `Risk tier` job summary |
 | [AI audit trail](#ai-audit-trail) | Every PR merged into `main`: source (Hive agent and model, Claude Code in CI, Dependabot, other), author, merger | `scripts/ai-audit-report.sh` via `ai-audit.yml` | Weekly (Mon 06:17 UTC, past 7 days), manual | Job summary + `ai-audit` artifact (report and raw PR data, kept 90 days) |
@@ -74,6 +75,31 @@ gh pr list -R Tim-van-Oudheusden/MinimalUI --state closed --limit 1000 --search 
   --json number,mergedAt,headRefName,author | scripts/pr-metrics.sh --since "$since" --days 28
 ```
 
+## Strategy report
+
+The strategic dashboard: where the project is heading rather than how one change fared. Three tables:
+
+- **Flow** — issues opened and closed and PRs merged in the reporting window (default 28 days), the net change in the
+  backlog, and how many issues are open now. A backlog that grows week on week is outrunning the agents working it.
+- **Backlog by stage** — open issues per `stage/*` label, the pipeline Hive moves issues through
+  ([`docs/multi-agent.md`](../multi-agent.md#stage-labels)), in pipeline order; open issues with no stage label are
+  counted last. Issues piling up in one stage show where work stalls.
+- **ACMM progress** — per maturity level, the `acmm` issues the Hive ACMM evaluation filed
+  (`[ACMM L<level>] Add <criterion>`), closed and still open, naming the open ones. It counts only the gaps the
+  evaluation filed, not every criterion of a level.
+
+Run it with a different window from the Actions tab (**Strategy report → Run workflow → days**), or locally with an
+authenticated `gh`:
+
+```bash
+since="$(date -u -d '28 days ago' +%Y-%m-%d)"
+gh issue list -R Tim-van-Oudheusden/MinimalUI --state all --limit 10000 \
+  --json number,title,state,labels,createdAt,closedAt > issues.json
+gh pr list -R Tim-van-Oudheusden/MinimalUI --state merged --limit 1000 --search "merged:>=${since}" \
+  --json mergedAt > prs.json
+scripts/strategy-report.sh --since "$since" --issues issues.json --prs prs.json
+```
+
 ## Nightly compliance
 
 Checks that can go stale without a code change (for example dependency advisories), run every night so drift shows up
@@ -86,8 +112,9 @@ scripts/nightly-compliance.sh > nightly-compliance.md
 ## Risk tier
 
 Classifies each PR as low, medium, or high risk from its changed paths; the highest tier of any file wins.
-Informational only; it never fails the run. The path rules live in `.github/policies/risk-tiers.policy`; tiers and the
-review each expects are defined in [`docs/risk-tiers.md`](../risk-tiers.md).
+Informational only; it never fails the run. The path rules live in the risk assessment config,
+`.github/risk-assessment.yml`; tiers and the review each expects are defined in
+[`docs/risk-tiers.md`](../risk-tiers.md).
 
 ```bash
 git diff -z --name-only --no-renames origin/main...HEAD | scripts/tier-classify.sh -z

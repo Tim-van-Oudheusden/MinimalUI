@@ -13,9 +13,10 @@ The **highest tier of any changed file wins**, so one workflow edit makes the
 whole PR high risk. A path that matches no rule is **medium** — new kinds of
 files get a real review until they are classified.
 
-The workflow runs the **base branch's** script and policy (a second checkout of
-the base commit) against the PR's diff, so a PR cannot lower its own tier by
-editing either. A change to the policy takes effect for the PRs after it merges.
+The workflow runs the **base branch's** script and risk assessment (a second
+checkout of the base commit) against the PR's diff, so a PR cannot lower its
+own tier by editing either. A change to the rules takes effect for the PRs
+after it merges.
 
 Run it locally against your branch:
 
@@ -40,7 +41,7 @@ behave. A mistake here can bypass every other check or ship to every device.
 
 | Paths                                                                                | Why                                                  |
 | ------------------------------------------------------------------------------------ | ---------------------------------------------------- |
-| `.github/*`                                                                          | CI gates, review rubric, rulesets, this policy       |
+| `.github/*`                                                                          | CI gates, review rubric, rulesets, the risk rules    |
 | `scripts/*`, `tests/*`                                                               | Gate tooling and the tests that pin the workflows    |
 | `gradle/*`, `*.gradle.kts`, `gradle.properties`, `gradlew`, `gradlew.bat`            | Build, version catalog, wrapper (supply chain)       |
 | `app/src/main/AndroidManifest.xml`                                                   | App permissions and the HOME intent filter           |
@@ -54,6 +55,17 @@ the rules in `AGENTS.md` (approved, exact version, only in
 `env:`, never inline in `run:`, and update `WorkflowInvariantsTest` when they
 add a workflow or widen a token scope. Manifest changes justify every new
 permission.
+
+`.github/CODEOWNERS` makes the maintainer the owner of exactly these paths, so
+a PR that touches one requests his review automatically (GitHub skips the
+request when he opened the PR himself, as local agents do under his account).
+`CodeownersTest` in `tests/` fails if a tracked file is rated high but has no
+owner, or has an owner but is not rated high, so a new high-risk rule needs a
+matching CODEOWNERS pattern in the same PR. The ruleset does not require the
+code owner's approval (`require_code_owner_review` is off in
+`.github/rulesets/main.json`), since an author cannot approve his own PR; what
+keeps a high-risk PR from merging unreviewed is that only a maintainer merges
+it.
 
 ## Tier: medium
 
@@ -75,16 +87,18 @@ describes.
 
 ## Changing the tiers
 
-The rules are policy as code in `.github/policies/risk-tiers.policy`: one
-`<tier> <glob>` rule per line, where the **first matching rule wins** — keep
-high-risk rules above broad globs such as `app/*` and `*.md`. `*` matches
-across `/`. `scripts/tier-classify.sh` evaluates the policy and fails without a
-tier if a rule is malformed or names an unknown tier; set `RISK_TIER_POLICY` to
-try a different policy file locally.
+The rules are policy as code in the risk assessment config,
+`.github/risk-assessment.yml`: an ordered `rules:` list of `- <tier> <glob>`
+items, one per line, where the **first matching rule wins** — keep high-risk
+rules above broad globs such as `app/*` and `*.md`. `*` matches across `/`.
+`scripts/tier-classify.sh` evaluates the rules and fails without a tier if a
+line is not a blank line, a whole-line `#` comment, the `rules:` line or such
+an item, or if an item names an unknown tier; set `RISK_TIER_POLICY` to try a
+different file locally.
 
 The engine and the shipped rules are covered by
 `tests/src/test/kotlin/dev/buildwithtim/minimalui/tooling/TierClassifyScriptTest.kt`,
-which also checks that every rule appears under its tier above. Update the
-policy, its tests, and this document in the same PR. The policy file
-(`high .github/*`), the script (`high scripts/*`) and the test
+which also checks that the file is YAML and that every rule appears under its
+tier above. Update the rules, their tests, and this document in the same PR.
+The config (`high .github/*`), the script (`high scripts/*`) and the test
 (`high tests/*`) are high risk; this doc is low.

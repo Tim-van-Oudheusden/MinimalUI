@@ -24,6 +24,7 @@ on:
       - PR metrics
       - Quality report
       - Release
+      - Strategy report
     types: [completed]
     branches: [main]
 

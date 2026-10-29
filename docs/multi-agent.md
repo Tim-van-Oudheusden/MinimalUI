@@ -4,7 +4,8 @@ Several agents work on this repository at the same time: the Hive agents, Claude
 maintainer runs, and the workflows that file and update issues. This page covers how they share the repository: who
 does what, how work reaches them, how they keep out of each other's way, and where a person decides. How a single
 agent works is set by [`AGENTS.md`](../AGENTS.md), which is authoritative. The security side is in
-[`security/SECURITY-AI.md`](security/SECURITY-AI.md).
+[`security/SECURITY-AI.md`](security/SECURITY-AI.md), and how to monitor agent work and debug it when it gets stuck in
+[`ai-ops-runbook.md`](ai-ops-runbook.md).
 
 ## The agents
 
@@ -52,7 +53,8 @@ flowchart LR
 
 1. **One queue.** All agent work starts from a GitHub issue. One issue gets one branch, one Conventional Commit and one
    pull request whose body says `Fixes #<number>`. Work that turns up along the way becomes a new issue
-   (`gh issue create`), not a second change in the same PR.
+   (`gh issue create`), not a second change in the same PR. How each change links back to its issue, and how to follow
+   that link either way, is in [`agent-tasks/`](agent-tasks/README.md).
 2. **Claim first.** An issue is taken when any of these holds; if one does, pick another issue:
    - it has an assignee (people and local agents claim with `gh issue edit <number> --add-assignee @me`);
    - a Hive agent's `<!-- hive:claim who=<agent> … until=<time> -->` comment is still before its `until` time (the
@@ -159,3 +161,6 @@ The weekly `PR metrics` workflow reports how many agent-authored pull requests (
 rate means the instructions, prompts or skills need another look. The weekly `AI audit trail` workflow records which
 agent and model are behind each pull request merged into `main`, and who merged it
 ([`metrics/README.md`](metrics/README.md#ai-audit-trail)).
+
+The weekly `Strategy report` workflow shows whether the agents keep up: issues opened against issues closed, the open
+backlog per stage label, and the ACMM gaps still open per level. A stage where issues pile up is where work stalls.

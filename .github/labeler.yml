@@ -1,5 +1,5 @@
 # Path-based PR labels, applied by .github/workflows/labeler.yml (actions/labeler).
-# A path gets a label exactly when .github/policies/risk-tiers.policy has a rule for it;
+# A path gets a label exactly when .github/risk-assessment.yml has a rule for it;
 # PolicyLabelParityTest in tests/ fails when the two files drift apart.
 
 app:
