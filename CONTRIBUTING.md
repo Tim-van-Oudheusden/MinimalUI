@@ -153,6 +153,8 @@ module tests under `<module>/src/test/` are invisible to it.
 
 - GitHub issues are the **primary source of truth**. Browse open issues and assign one to yourself before starting.
 - Issues are mirrored into the local `bd` (beads) tracker; run `bd ready` to see available work.
+- Several agents take issues from the same queue; [`docs/multi-agent.md`](docs/multi-agent.md) covers how they claim
+  work, keep out of each other's way, and hand over to a person.
 
 We favour small, focused changes tied to a tracked issue.
 
