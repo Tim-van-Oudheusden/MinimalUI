@@ -16,6 +16,7 @@ name: Auto issues
 on:
   workflow_run:
     workflows:
+      - AI audit trail
       - CI
       - Coverage gate
       - E2E

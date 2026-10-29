@@ -18,6 +18,7 @@ locally as in CI.
 | [Coverage floors](#coverage-floors) | Minimum coverage each module must keep | `.github/auto-qa-tuning.json`, enforced by `coverage-gate.yml` | Every PR and push to `main` | `Unit-test coverage floors` check; proposed floors as `auto-qa-tuning` artifact |
 | [PR acceptance rate](#pr-acceptance-rate) | Merged vs. closed-unmerged PRs, agent vs. other | `scripts/pr-metrics.sh` via `pr-metrics.yml` | Weekly (Mon 06:17 UTC), manual | Job summary |
 | [Strategy report](#strategy-report) | Issue and PR flow, open backlog per pipeline stage, ACMM gaps per level | `scripts/strategy-report.sh` via `strategy-report.yml` | Weekly (Mon 06:17 UTC), manual | Job summary |
+| [AI audit trail](#ai-audit-trail) | Every PR merged into `main`: source (Hive agent and model, Claude Code in CI, Dependabot, other), author, merger | `scripts/ai-audit-report.sh` via `ai-audit.yml` | Weekly (Mon 06:17 UTC, past 7 days), manual | Job summary + `ai-audit` artifact (report and raw PR data, kept 90 days) |
 | [Nightly compliance](#nightly-compliance) | Checks that can go stale without a code change | `scripts/nightly-compliance.sh` via `nightly-compliance.yml` | Nightly (03:23 UTC), manual | Job summary + `nightly-compliance` artifact |
 | [Risk tier](#risk-tier) | Review risk of each PR from the paths it changes | `scripts/tier-classify.sh` via `tier-classifier.yml` | Every PR | `Risk tier` job summary |
 
@@ -97,6 +98,32 @@ gh issue list -R Tim-van-Oudheusden/MinimalUI --state all --limit 10000 \
 gh pr list -R Tim-van-Oudheusden/MinimalUI --state merged --limit 1000 --search "merged:>=${since}" \
   --json mergedAt > prs.json
 scripts/strategy-report.sh --since "$since" --issues issues.json --prs prs.json
+```
+
+## AI audit trail
+
+A record of what reached `main` and who was behind it. Each PR merged into `main` in the window (default 7 days) is
+attributed to one source, checked in this order:
+
+- **Hive** — the PR body has Hive's signature line (`— hive: agent=<name> … model=<model> …`), or the author is the
+  `hive-forge-app` GitHub App. The agent and model come from the signature; runs started from a contributor's machine
+  sign without `agent=`, shown as `—`.
+- **Claude Code (CI)** — head branch `claude/*`.
+- **Dependabot** — head branch `dependabot/*`.
+- **Other** — anything else: the maintainer, or a local agent ([`docs/multi-agent.md`](../multi-agent.md)).
+
+The report counts merges per source and per merging account (a merge with no recorded merger is listed last, as
+unknown), then lists every merge oldest first with its source, agent, model, author, merger, branch and title. The
+weekly run covers the past 7 days, so consecutive runs leave no gap, and the `ai-audit` artifact keeps the report and
+the raw `gh pr list` output for 90 days.
+
+Run it with a different window from the Actions tab (**AI audit trail → Run workflow → days**), or locally with an
+authenticated `gh`:
+
+```bash
+since="$(date -u -d '7 days ago' +%Y-%m-%d)"
+gh pr list -R Tim-van-Oudheusden/MinimalUI --state merged --base main --limit 1000 --search "merged:>=${since}" \
+  --json number,title,author,headRefName,mergedAt,mergedBy,body | scripts/ai-audit-report.sh --since "$since"
 ```
 
 ## Nightly compliance

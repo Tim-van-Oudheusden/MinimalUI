@@ -10,14 +10,14 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 ## Latest session
 
 - **Date:** 2026-10-29
-- **Worked:** #251 → `ci/251-strategy-report` (ACMM L6 `acmm:strategic-dashboard`), fourth of a stack of six ACMM
-  L6 PRs (#254, #252, #255, #251, #256, #253), each branched off the previous one so their shared docs and this file
-  do not conflict. Ported the website repo's strategy report to bash + jq: `.github/workflows/strategy-report.yml`
-  (weekly, Mon 06:17 UTC) runs `scripts/strategy-report.sh` for issue/PR flow, open backlog per `stage/*` label and
-  ACMM gaps per level, into the job summary. Watched by `auto-issues.yml`; documented in `docs/metrics/`,
-  CONTRIBUTING and `multi-agent.md`.
-- **Outcome:** PR open. `StrategyReportScriptTest`, `WorkflowInvariantsTest` scopes. Smoke run on this repo's live
-  issues inside the sandbox image (real jq) printed all three tables.
+- **Worked:** #256 → `ci/256-ai-audit-trail` (ACMM L6 `aef:audit-trail`), fifth of a stack of six ACMM L6 PRs
+  (#254, #252, #255, #251, #256, #253), each branched off the previous one so their shared docs and this file do not
+  conflict. Ported the website repo's audit trail to bash + jq: `.github/workflows/ai-audit.yml` (weekly, past 7
+  days) runs `scripts/ai-audit-report.sh` over every PR merged into `main`, attributing each to Hive (signature line
+  or `hive-forge-app` author; agent and model from the signature), Claude Code (CI), Dependabot or Other, with author
+  and merger. Job summary plus a 90-day `ai-audit` artifact with the raw PR data; watched by `auto-issues.yml`.
+- **Outcome:** PR open. `AiAuditReportScriptTest`, `WorkflowInvariantsTest` scopes. Smoke run on the last 7 days of
+  this repo's merges inside the sandbox image (real jq) attributed 18 PRs.
 - **Open follow-ups:** the rest of the stack; merge it in order (oldest PR first).
 - **Notes for next session:**
   - `scripts/sandbox-gradlew.sh --project-cache-dir /tmp/pcache …` works on this host (podman present); actionlint

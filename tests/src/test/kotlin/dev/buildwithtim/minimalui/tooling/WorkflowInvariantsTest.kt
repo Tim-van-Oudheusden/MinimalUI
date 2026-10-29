@@ -14,6 +14,8 @@ class WorkflowInvariantsTest {
      */
     private val topLevelPermissions =
         mapOf(
+            // Reads the PRs merged in the window for the audit trail.
+            "ai-audit.yml" to mapOf("contents" to "read", "pull-requests" to "read"),
             "auto-issues.yml" to mapOf("contents" to "read"),
             "auto-review.yml" to mapOf("contents" to "read"),
             "ci.yml" to mapOf("contents" to "read"),

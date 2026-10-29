@@ -420,5 +420,7 @@ The security side of these layers (trust boundaries, secrets, supply chain, revi
 
 How agent work fares is measured, not guessed: the weekly `PR metrics` workflow reports how many agent-authored PRs
 (`claude/*` branches and the `hive-forge-app` GitHub App) were merged vs. closed unmerged, and the weekly
-`Strategy report` whether the backlog is shrinking and which ACMM gaps are still open. Every metric, its cadence, where
-it is published and how to reproduce it locally is catalogued in [`docs/metrics/README.md`](docs/metrics/README.md).
+`Strategy report` whether the backlog is shrinking and which ACMM gaps are still open. The weekly `AI audit trail`
+records every PR merged into `main` with its source (Hive agent and model, Claude Code in CI, Dependabot, other),
+author and merger. Every metric, its cadence, where it is published and how to reproduce it locally is catalogued in
+[`docs/metrics/README.md`](docs/metrics/README.md).
