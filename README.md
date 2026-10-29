@@ -193,6 +193,7 @@ Linux](CONTRIBUTING.md#running-it-in-an-emulator-on-linux) sets one up.
 | [`docs/testing.md`](docs/testing.md) | Where each test runs, coverage floors, quality reports, store screenshots |
 | [`docs/risk-tiers.md`](docs/risk-tiers.md) | How pull requests are classified by risk |
 | [`docs/metrics/README.md`](docs/metrics/README.md) | Quality, coverage and agent-work metrics |
+| [`docs/multi-agent.md`](docs/multi-agent.md) | How the Hive agents, Claude Code and local agents share issues, branches and reviews |
 | [`SECURITY.md`](SECURITY.md) | Supported versions and how to report a vulnerability privately |
 | [`docs/security/SECURITY-AI.md`](docs/security/SECURITY-AI.md) | Security model for AI agents in this repository |
 | [`docs/research/minui-cannoli-ui.md`](docs/research/minui-cannoli-ui.md) | Research on the MinUI and Cannoli interfaces |
