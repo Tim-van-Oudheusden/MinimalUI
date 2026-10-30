@@ -10,13 +10,14 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 ## Latest session
 
 - **Date:** 2026-10-30
-- **Worked:** #261 → `docs/261-runbook-bot-label-skipped`. #261 duplicated #258, whose fix (#270, `80b3c6c`) is on
-  `main`: `hive-forge-app`'s label events since then end `skipped`. `docs/ai-ops-runbook.md` (merged in #269, before
-  #270) still said a bot's label ends `failure` with "Workflow initiated by non-human actor"; its "Claude Code did not
-  pick up an `ai-fix-requested` issue" playbook now says the run is `skipped` and keeps the remove-and-re-add hand-over.
-- **Outcome:** docs-only PR open, `Closes #261`. It touches this file (`.claude/*`), so it is high risk and the
-  maintainer merges it.
-- **Open follow-ups:** none.
+- **Worked:** #274 → `build/274-guava-test-classpath`. Nightly compliance failed on GHSA-xxph-c9ww-hj94 (Guava
+  <= 33.7.1) although #257 had put a Guava 33.7.2 floor on the build classpath: the submitted dependency graph showed
+  Robolectric 4.17 (latest release) bringing Guava 33.6.0-jre onto the app's unit-test classpaths, which the
+  build-tool floors never reach. `app/build.gradle.kts` now adds `libs.guava` as a `testImplementation` constraint;
+  `docs/testing.md` says how to handle a test library's vulnerable transitive.
+- **Outcome:** PR open, `Fixes #274`. It touches this file (`.claude/*`), so it is high risk and the maintainer merges
+  it. The alert closes after the next dependency-graph submission from `main`.
+- **Open follow-ups:** drop the constraint once a Robolectric release brings Guava >= 33.7.2 itself.
 - **Notes for next session:**
   - Podman may be missing on this host; then build on the host with `JAVA_HOME=~/tools/jdk` and
     `sdk.dir=/home/dev/tools/sdk` in `local.properties`. actionlint is not installed, and the host shellcheck is 0.9.0:

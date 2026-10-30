@@ -49,6 +49,11 @@ tool brings a newer one (#147). Check the result with `./gradlew buildEnvironmen
 `./gradlew :<module>:dependencies --configuration androidLintTool`. Drop a floor once every tool that pulled the library
 in ships the patched version itself.
 
+A test library that pins a vulnerable transitive with no patched release of its own gets the same treatment, as a
+`constraints { testImplementation(...) }` entry next to it: Robolectric 4.17 brings Guava 33.6.0, so
+`app/build.gradle.kts` raises it to the `guava` floor (#274). Check it with
+`./gradlew :app:dependencyInsight --configuration debugUnitTestRuntimeClasspath --dependency <group>:<name>`.
+
 ### Accepting an advisory
 
 Add its GHSA id to `DEFAULT_ALERTS_IGNORE` in `scripts/nightly-compliance.sh`, with a comment on the line above that gives
