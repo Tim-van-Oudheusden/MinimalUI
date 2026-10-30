@@ -9,11 +9,13 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 
 ## Latest session
 
-- **Date:** 2026-10-29
-- **Worked:** #260 → `refactor/260-keep-out-labels`. `scripts/merge-queue.sh` builds `HOLD_LABEL` and the `UNHELD`
-  jq filter from one `KEEP_OUT_LABELS` array, and a new `MergeQueueWorkflowTest` case fails when the `fromJSON` label
-  list in `merge-queue.yml`'s concurrency group or `pick` job `if` differs from it. Behaviour unchanged.
-- **Outcome:** one PR open. It touches workflows and scripts, so it is high risk and the maintainer merges it.
+- **Date:** 2026-10-30
+- **Worked:** #261 → `docs/261-runbook-bot-label-skipped`. #261 duplicated #258, whose fix (#270, `80b3c6c`) is on
+  `main`: `hive-forge-app`'s label events since then end `skipped`. `docs/ai-ops-runbook.md` (merged in #269, before
+  #270) still said a bot's label ends `failure` with "Workflow initiated by non-human actor"; its "Claude Code did not
+  pick up an `ai-fix-requested` issue" playbook now says the run is `skipped` and keeps the remove-and-re-add hand-over.
+- **Outcome:** docs-only PR open, `Closes #261`. It touches this file (`.claude/*`), so it is high risk and the
+  maintainer merges it.
 - **Open follow-ups:** none.
 - **Notes for next session:**
   - Podman may be missing on this host; then build on the host with `JAVA_HOME=~/tools/jdk` and
