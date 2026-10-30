@@ -6,7 +6,8 @@ activityCompose = "1.13.0"
 androidxTestRunner = "1.7.0"
 androidxTestUiautomator = "2.4.0"
 # bouncycastle, commonsLang3, freemarker, guava, httpclient, jdom2, jose4j: floors for build-tool transitives with
-# published advisories (#147, #257), applied from the build-tool-floors bundle in build.gradle.kts.
+# published advisories (#147, #257), applied from the build-tool-floors bundle in build.gradle.kts. guava is also the
+# floor for Robolectric's copy on the app's test classpath (#274), applied in app/build.gradle.kts.
 bouncycastle = "1.85"
 commonsLang3 = "3.18.0"
 composeBom = "2026.09.00"
@@ -42,7 +43,8 @@ junit = { group = "junit", name = "junit", version.ref = "junit" }
 # Never a dependency: Spotless loads ktlint itself. Listed so Dependabot proposes ktlint updates.
 ktlint-cli = { group = "com.pinterest.ktlint", name = "ktlint-cli", version.ref = "ktlint" }
 robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
-# Never dependencies: constraints raising what AGP, Kover and Android Lint pull onto the build classpath (#147).
+# Never dependencies: constraints raising what AGP, Kover and Android Lint pull onto the build classpath (#147), and
+# (guava) what Robolectric pulls onto the app's test classpath (#274).
 bouncycastle-bcpkix = { group = "org.bouncycastle", name = "bcpkix-jdk18on", version.ref = "bouncycastle" }
 bouncycastle-bcprov = { group = "org.bouncycastle", name = "bcprov-jdk18on", version.ref = "bouncycastle" }
 bouncycastle-bcutil = { group = "org.bouncycastle", name = "bcutil-jdk18on", version.ref = "bouncycastle" }
