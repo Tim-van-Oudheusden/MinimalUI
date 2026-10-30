@@ -15,9 +15,6 @@ java {
 kotlin {
     compilerOptions {
         jvmTarget.set(JvmTarget.fromTarget(libs.versions.jvmTarget.get()))
-        // Compiler warnings fail the build like Android Lint warnings do (#133).
-        allWarningsAsErrors.set(true)
-        extraWarnings.set(true)
     }
 }
 
@@ -45,9 +42,10 @@ tasks.test {
             .withPropertyName("repo-$dir")
             .withPathSensitivity(PathSensitivity.RELATIVE)
     }
-    // FastlaneMetadataTest reads versionCode from app/build.gradle.kts; LintConfigTest and TestTimeoutConfigTest read
-    // the build script of every module in settings.gradle.kts, and TestTimeoutConfigTest the root script's test
-    // timeout. The modules come from the build itself, so a module added to settings.gradle.kts is an input too (#245).
+    // FastlaneMetadataTest reads versionCode from app/build.gradle.kts; LintConfigTest, TestTimeoutConfigTest and
+    // CompilerWarningsConfigTest read the build script of every module in settings.gradle.kts, and the last two the
+    // root script's test timeout and compiler flags. The modules come from the build itself, so a module added to
+    // settings.gradle.kts is an input too (#245).
     inputs.file(repoRoot.file("settings.gradle.kts")).withPropertyName("repo-settings")
     inputs.file(repoRoot.file("build.gradle.kts")).withPropertyName("repo-root-build")
     for (module in rootProject.childProjects.keys) {

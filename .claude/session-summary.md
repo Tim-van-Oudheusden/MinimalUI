@@ -10,12 +10,13 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 ## Latest session
 
 - **Date:** 2026-10-30
-- **Worked:** #261 → `docs/261-runbook-bot-label-skipped`. #261 duplicated #258, whose fix (#270, `80b3c6c`) is on
-  `main`: `hive-forge-app`'s label events since then end `skipped`. `docs/ai-ops-runbook.md` (merged in #269, before
-  #270) still said a bot's label ends `failure` with "Workflow initiated by non-human actor"; its "Claude Code did not
-  pick up an `ai-fix-requested` issue" playbook now says the run is `skipped` and keeps the remove-and-re-add hand-over.
-- **Outcome:** docs-only PR open, `Closes #261`. It touches this file (`.claude/*`), so it is high risk and the
-  maintainer merges it.
+- **Worked:** #276 → `refactor/276-compiler-policy-root`. The compiler policy from #133 (`allWarningsAsErrors`,
+  `extraWarnings`) moved from the four module build scripts into one root `subprojects {}` block over
+  `KotlinCompilationTask<*>`; `CompilerWarningsConfigTest` (in `:tests`) fails if the root block drops a flag or a
+  module sets its own. `Repo.modules()` and `Repo.subprojectsBlocks()` now hold the settings/root-script parsing that
+  `TestTimeoutConfigTest` and `LintConfigTest` had copied. Effective flags per compile task are identical to `main`.
+- **Outcome:** PR open, `Closes #276`. It touches build scripts and this file, so it is high risk and the maintainer
+  merges it.
 - **Open follow-ups:** none.
 - **Notes for next session:**
   - Podman may be missing on this host; then build on the host with `JAVA_HOME=~/tools/jdk` and

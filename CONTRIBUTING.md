@@ -214,9 +214,9 @@ Run these before opening a PR (CI runs the same on every PR):
 
 `check` is the gate: every check added to the build hooks into it, so CI and the docs never list its tasks one by one.
 
-The Kotlin compiler treats warnings as errors, extra warnings included (`allWarningsAsErrors` and `extraWarnings` in
-every module's build file), so an unused variable or a deprecated call fails the build. Fix the code; never
-`@Suppress` a warning.
+The Kotlin compiler treats warnings as errors, extra warnings included (`allWarningsAsErrors` and `extraWarnings`, set
+once for every module in the root `build.gradle.kts`; `CompilerWarningsConfigTest` fails a module that sets its own),
+so an unused variable or a deprecated call fails the build. Fix the code; never `@Suppress` a warning.
 
 The `main` ruleset also requires the **Unit-test coverage floors** check (`.github/workflows/coverage-gate.yml`): it
 runs `./gradlew :<module>:koverXmlReport` for every module in `.github/auto-qa-tuning.json` and fails the PR if a

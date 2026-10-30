@@ -43,15 +43,6 @@ android {
     }
 }
 
-// AGP runs no Android Lint on a com.android.test module, so compiler warnings, detekt and ktlint are its static checks;
-// warnings fail the build as in the other modules (#133).
-kotlin {
-    compilerOptions {
-        allWarningsAsErrors.set(true)
-        extraWarnings.set(true)
-    }
-}
-
 dependencies {
     implementation(libs.junit)
     implementation(libs.androidx.test.runner)
