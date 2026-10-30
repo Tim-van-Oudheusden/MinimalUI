@@ -39,7 +39,9 @@ permissions:
 # One run drains the queue at a time; a newer pending run replaces an older
 # pending one, which is fine since every run looks at all open PRs. Events that
 # cannot make a PR ready (another label removed, a failed run) get their own
-# group, so they never replace a pending run that would merge.
+# group, so they never replace a pending run that would merge. The label list
+# here and in pick's `if` is KEEP_OUT_LABELS in scripts/merge-queue.sh;
+# MergeQueueWorkflowTest fails when either copy differs from it.
 concurrency:
   group: >-
     ${{
