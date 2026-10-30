@@ -9,25 +9,13 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 
 ## Latest session
 
-- **Date:** 2026-10-29
-- **Worked:** #258 → `fix/258-claude-human-label`. `claude.yml` answers `ai-fix-requested` only when
-  `github.event.sender.type == 'User'`, in the job `if` and in the workflow-level concurrency group, so
-  `hive-forge-app`'s labels on `[ACMM L<n>]` issues give a skipped run instead of a red one and cannot replace a
-  pending run a person asked for. No `allowed_bots`: the trust boundary is unchanged. Ported from Dailies#280 and
-  website#993. Docs: CONTRIBUTING "Handing work to Claude Code", `multi-agent.md` (actor row, "Where a person
-  decides"), `SECURITY-AI.md`. No runbook covers a stuck hand-off, so none changed.
-- **Outcome:** PR open. `ClaudeWorkflowTest` `answers the ai-fix-requested label only when a person applies it`
-  fails on the old `claude.yml` and passes on the new one. The PR changes `.github/workflows/`, so it is high risk
-  and the maintainer merges it.
-- **Worked:** the ACMM L6 issues as a stack of PRs, each branched off the previous one so their shared docs and this
-  file do not conflict: #254 `docs/agent-tasks/` (task traceability), #252 `.github/risk-assessment.yml` (risk rules
-  as YAML), #255 `.github/CODEOWNERS` (structural gates), #251 `strategy-report.yml` (strategic dashboard), and last
-  #253 → `docs/253-ai-ops-runbook`: `docs/ai-ops-runbook.md` (where to look, routine checks, playbooks for stuck or
-  misbehaving agents, how to stop them), linked from the README, `multi-agent.md` and `runbooks/README.md`. All
-  ported from the website repo's equivalents (bash + jq here). #256 (audit trail) landed separately as #262 while
-  this stack was open; its duplicate PR was closed.
-- **Outcome:** five PRs open. Every one touches this file (`.claude/*`), so all are high risk and the maintainer
-  merges them; merge them in stack order (oldest first) so each PR's diff is its own commit.
+- **Date:** 2026-10-30
+- **Worked:** #261 → `docs/261-runbook-bot-label-skipped`. #261 duplicated #258, whose fix (#270, `80b3c6c`) is on
+  `main`: `hive-forge-app`'s label events since then end `skipped`. `docs/ai-ops-runbook.md` (merged in #269, before
+  #270) still said a bot's label ends `failure` with "Workflow initiated by non-human actor"; its "Claude Code did not
+  pick up an `ai-fix-requested` issue" playbook now says the run is `skipped` and keeps the remove-and-re-add hand-over.
+- **Outcome:** docs-only PR open, `Closes #261`. It touches this file (`.claude/*`), so it is high risk and the
+  maintainer merges it.
 - **Open follow-ups:** none.
 - **Notes for next session:**
   - Podman may be missing on this host; then build on the host with `JAVA_HOME=~/tools/jdk` and

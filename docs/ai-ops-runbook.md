@@ -46,11 +46,13 @@ The launcher itself runs no AI and sends nothing anywhere. For a bad release see
 
 `gh run list --workflow claude.yml` lists one run per label, comment or review event:
 
-- **`skipped`** is expected for every other event. Only an `ai-fix-requested` label passes the job's `if`; a comment
-  or review passes only when it mentions `@claude` and its author is an `OWNER`, `MEMBER` or `COLLABORATOR`.
-- **`failure` with "Workflow initiated by non-human actor"** means a bot added the label (the Hive ACMM evaluation
-  files its issues already labelled). Claude Code's action refuses runs started by bots. To hand the issue over, a
-  maintainer removes the label and adds it again:
+- **`skipped`** is expected for every other event. Only an `ai-fix-requested` label that a person applies passes the
+  job's `if`; a comment or review passes only when it mentions `@claude` and its author is an `OWNER`, `MEMBER` or
+  `COLLABORATOR`.
+- **`skipped` on the `issues` event that labelled the issue** means a bot added the label (the Hive ACMM evaluation
+  files its issues already labelled, as `hive-forge-app`). The job answers only a person's label; Claude Code's action
+  would refuse a bot sender anyway ("Workflow initiated by non-human actor"). To hand the issue over, a maintainer
+  removes the label and adds it again:
   `gh issue edit <N> --remove-label ai-fix-requested && gh issue edit <N> --add-label ai-fix-requested`.
 - **`failure` at "Refuse fork pull requests"**: the PR comes from a fork. Review it locally; the workflow never runs
   fork code.
