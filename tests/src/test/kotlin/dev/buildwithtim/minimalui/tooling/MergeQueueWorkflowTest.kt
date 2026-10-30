@@ -41,6 +41,38 @@ class MergeQueueWorkflowTest {
         )
     }
 
+    // GitHub expressions cannot read the script's KEEP_OUT_LABELS, so the workflow restates them twice. Removing a
+    // label the script keeps out but `pick` does not know starts no run; a concurrency group that disagrees with `pick`
+    // lets a run that picks nothing replace a pending one that would merge, or lets two picking runs overlap.
+    @Test
+    fun `runs and joins the queue's group when a label the script keeps out comes off`() {
+        val keepOut =
+            Regex("""(?m)^KEEP_OUT_LABELS=\(([^)]*)\)$""")
+                .find(Repo.read("scripts/merge-queue.sh"))
+                ?.groupValues
+                ?.get(1)
+                ?.trim()
+                ?.split(Regex("""\s+"""))
+                ?.toSet()
+        val fromJson = Regex("""fromJSON\('\[([^\]]*)\]'\)""")
+        val label = Regex(""""([^"]+)"""")
+        val sites =
+            mapOf(
+                "concurrency group" to queue.getValue("concurrency").asMap().getValue("group"),
+                "pick job if" to queue.jobs().getValue("pick").getValue("if"),
+            )
+
+        assertTrue("KEEP_OUT_LABELS=(...) in scripts/merge-queue.sh", !keepOut.isNullOrEmpty())
+        sites.forEach { (site, expression) ->
+            val lists =
+                fromJson
+                    .findAll(expression.toString())
+                    .map { list -> label.findAll(list.groupValues[1]).map { it.groupValues[1] }.toSet() }
+                    .toList()
+            assertEquals(site, listOf(keepOut), lists)
+        }
+    }
+
     // Verification runs the pull request's code merged onto main: the same gate CI runs, with no token left behind.
     @Test
     fun `verifies with CI's check gate from a checkout that keeps no token`() {
