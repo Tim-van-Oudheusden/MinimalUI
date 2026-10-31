@@ -24,3 +24,7 @@ updates:
     groups:
       minor-and-patch:
         update-types: [minor, patch]
+    ignore:
+      # The android-all jars must be the builds the Robolectric release names for each SDK (#279); a newer one alone
+      # only fails the app tests. They change with Robolectric, by hand.
+      - dependency-name: org.robolectric:android-all-instrumented
