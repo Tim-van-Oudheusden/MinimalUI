@@ -133,7 +133,10 @@ reads from Android APIs and renders with Compose.
 and `createComposeRule()` in `app/src/test`, inside `./gradlew test`. Drive the UI the way a user does: keys through
 `performKeyInput`, or through the activity's `dispatchKeyEvent` for keys no row consumes, and assert on what shows or
 what was started. Robolectric emulates SDK 35 (`app/src/test/resources/robolectric.properties`), because it cannot yet
-emulate the app's `targetSdk`. Mark a test `@Config(sdk = [28, 35])` when it covers a version branch.
+emulate the app's `targetSdk`. Mark a test `@Config(sdk = [28, 35])` when it covers a version branch. Robolectric runs
+offline: Gradle resolves its android-all jar for each of those SDKs from the `robolectric-android-all` bundle in
+`gradle/libs.versions.toml` (#279). A test on another SDK needs that SDK's jar added there, and a Robolectric upgrade
+needs the jar versions its `DefaultSdkProvider` names; otherwise the tests fail to find them.
 
 **End-to-end tests.** What only shows on a real Android (the app as installed, opening other apps, Home as the default
 home app) is tested in `e2e/` with UiAutomator, from outside the app's process, by key presses. They run on an emulator

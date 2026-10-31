@@ -105,6 +105,37 @@ kover {
     }
 }
 
+// Robolectric would download its android-all jars from Maven Central while the tests run, outside Gradle and its cache,
+// with no retry: one failed download failed every Robolectric class on main (#279). Gradle resolves them instead, so CI's
+// Gradle cache keeps them, and the tests run Robolectric offline from a copy. A new SDK in robolectric.properties or a
+// @Config needs its jar in the robolectric-android-all bundle, or its tests fail to find it. Each jar resolves on its own:
+// in one configuration, Gradle would keep only the highest version of the artifact.
+val robolectricJarsDir = layout.buildDirectory.dir("robolectric-jars")
+val robolectricJars =
+    tasks.register<Sync>("robolectricJars") {
+        libs.bundles.robolectric.android.all.get().forEach { jar ->
+            from(configurations.detachedConfiguration(dependencies.create(jar)).apply { isTransitive = false })
+        }
+        into(robolectricJarsDir)
+    }
+
+tasks.withType<Test>().configureEach {
+    inputs
+        .files(robolectricJars)
+        .withPropertyName("robolectricJars")
+        .withPathSensitivity(PathSensitivity.NAME_ONLY)
+    systemProperty("robolectric.offline", "true")
+    // Relative to the test JVM's working directory, the app module, so the build cache key holds no absolute path.
+    systemProperty(
+        "robolectric.dependency.dir",
+        robolectricJarsDir
+            .get()
+            .asFile
+            .relativeTo(workingDir)
+            .path,
+    )
+}
+
 dependencies {
     implementation(project(":core"))
     implementation(libs.androidx.activity.compose)

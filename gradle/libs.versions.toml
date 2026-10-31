@@ -26,6 +26,10 @@ kover = "0.9.11"
 # The ktlint release Spotless formats Kotlin with (spotless {} in build.gradle.kts).
 ktlint = "1.8.0"
 robolectric = "4.17"
+# The android-all jars Robolectric runs the app tests on, one per SDK they use (robolectric.properties and @Config).
+# Each is the build Robolectric's DefaultSdkProvider names for that SDK: change them together with robolectric (#279).
+robolectricAndroidAll28 = "9-robolectric-4913185-2-i7"
+robolectricAndroidAll35 = "15-robolectric-13954326-i7"
 spotless = "8.10.1"
 
 [libraries]
@@ -43,6 +47,9 @@ junit = { group = "junit", name = "junit", version.ref = "junit" }
 # Never a dependency: Spotless loads ktlint itself. Listed so Dependabot proposes ktlint updates.
 ktlint-cli = { group = "com.pinterest.ktlint", name = "ktlint-cli", version.ref = "ktlint" }
 robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
+# Never on a classpath: app/build.gradle.kts copies them into the directory Robolectric reads offline (#279).
+robolectric-android-all-28 = { group = "org.robolectric", name = "android-all-instrumented", version.ref = "robolectricAndroidAll28" }
+robolectric-android-all-35 = { group = "org.robolectric", name = "android-all-instrumented", version.ref = "robolectricAndroidAll35" }
 # Never dependencies: constraints raising what AGP, Kover and Android Lint pull onto the build classpath (#147), and
 # (guava) what Robolectric pulls onto the app's test classpath (#274).
 bouncycastle-bcpkix = { group = "org.bouncycastle", name = "bcpkix-jdk18on", version.ref = "bouncycastle" }
@@ -67,6 +74,12 @@ build-tool-floors = [
     "httpclient",
     "jdom2",
     "jose4j",
+]
+
+# The android-all jars app/build.gradle.kts hands Robolectric (#279).
+robolectric-android-all = [
+    "robolectric-android-all-28",
+    "robolectric-android-all-35",
 ]
 
 [plugins]
