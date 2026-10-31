@@ -36,6 +36,18 @@ class CompilerWarningsConfigTest {
         }
     }
 
+    // suppressWarnings is -nowarn: no warning is reported, so allWarningsAsErrors has nothing to fail on and the policy
+    // is off for every module, though both flags above are still set.
+    @Test
+    fun `the root build script does not suppress compiler warnings`() {
+        val suppressing =
+            Repo.subprojectsBlocks().filter { block ->
+                block.lines().any { Regex("""\bsuppressWarnings\b""").containsMatchIn(it.substringBefore("//")) }
+            }
+
+        assertEquals(emptyList<String>(), suppressing)
+    }
+
     // A module's own setting wins over the root's convention, so it could turn the policy off for that module; and a
     // module that only repeats it is a second copy to keep in step.
     @Test
