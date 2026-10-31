@@ -1,5 +1,5 @@
 [versions]
-agp = "9.4.1"
+agp = "9.5.0"
 kotlin = "2.4.21"
 activityCompose = "1.13.0"
 # AndroidJUnitRunner and UiAutomator for the end-to-end tests in e2e/, run on an emulator (#236).
@@ -8,8 +8,8 @@ androidxTestUiautomator = "2.4.0"
 # bouncycastle, commonsLang3, freemarker, guava, httpclient, jdom2, jose4j: floors for build-tool transitives with
 # published advisories (#147, #257), applied from the build-tool-floors bundle in build.gradle.kts. guava is also the
 # floor for Robolectric's copy on the app's test classpath (#274), applied in app/build.gradle.kts.
-bouncycastle = "1.85"
-commonsLang3 = "3.18.0"
+bouncycastle = "1.86"
+commonsLang3 = "3.21.0"
 composeBom = "2026.09.00"
 # Slack's Compose lint checks, loaded into the app's Android Lint through lintChecks.
 composeLints = "1.6.1"
@@ -19,7 +19,7 @@ freemarker = "2.3.35"
 guava = "33.7.2-jre"
 httpclient = "4.5.14"
 jdom2 = "2.0.6.1"
-jose4j = "0.9.6"
+jose4j = "0.9.7"
 junit = "4.13.2"
 jvmTarget = "17"
 kover = "0.9.11"
@@ -30,7 +30,7 @@ robolectric = "4.17"
 # Each is the build Robolectric's DefaultSdkProvider names for that SDK: change them together with robolectric (#279).
 robolectricAndroidAll28 = "9-robolectric-4913185-2-i7"
 robolectricAndroidAll35 = "15-robolectric-13954326-i7"
-spotless = "8.10.1"
+spotless = "8.10.4"
 
 [libraries]
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
