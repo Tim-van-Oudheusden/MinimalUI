@@ -9,13 +9,15 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 
 ## Latest session
 
-- **Date:** 2026-10-30
-- **Worked:** #276 → `refactor/276-compiler-policy-root`. The compiler policy from #133 (`allWarningsAsErrors`,
-  `extraWarnings`) moved from the four module build scripts into one root `subprojects {}` block over
-  `KotlinCompilationTask<*>`; `CompilerWarningsConfigTest` (in `:tests`) fails if the root block drops a flag or a
-  module sets its own. `Repo.modules()` and `Repo.subprojectsBlocks()` now hold the settings/root-script parsing that
-  `TestTimeoutConfigTest` and `LintConfigTest` had copied. Effective flags per compile task are identical to `main`.
-- **Outcome:** PR open, `Closes #276`. It touches build scripts and this file, so it is high risk and the maintainer
+- **Date:** 2026-10-31
+- **Worked:** #279 → `fix/279-robolectric-offline`. CI on `main` (run 41196461082, d1873d2) failed every Robolectric
+  class: Robolectric's own `MavenArtifactFetcher` got a 404 (`FileNotFoundException`) for an android-all jar from Maven
+  Central at test time. The same tree had passed on the PR, and the jar is on Maven Central, so the download was
+  transient. Gradle now resolves the android-all jars (`robolectric-android-all` bundle in `libs.versions.toml`, one
+  per SDK the tests use: 28 and 35), `:app:robolectricJars` copies them into `app/build/robolectric-jars`, and every
+  app `Test` task runs Robolectric with `robolectric.offline=true` from there. Dependabot ignores
+  `android-all-instrumented`: the versions follow the Robolectric release.
+- **Outcome:** PR open, `Fixes #279`. It touches build scripts and this file, so it is high risk and the maintainer
   merges it.
 - **Open follow-ups:** none.
 - **Notes for next session:**
@@ -36,6 +38,7 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
     `check`: run `spotlessCheck` on its own first, then `check assembleDebug -x spotlessCheck`.
   - The edit tools resolve relative paths against the main checkout, not a `worktrees/` checkout: a session that
     edits in a worktree must use its full path, or the edits land on whatever branch the main checkout has.
-  - Robolectric fetches its android-all jars from Maven Central at test time into `~/.m2`, which the sandbox does not
-    keep, so a docs change that reruns `:app:testDebugUnitTest` can fail every Robolectric class with HTTP 429. The
-    host's `~/.m2` has the jars: run the sandbox's `podman run` by hand with `-v "$HOME/.m2:/home/dev/.m2:ro,z"` added.
+  - Robolectric runs offline from jars Gradle resolves (#279), so the sandbox no longer needs the host's `~/.m2`
+    mounted for `:app:testDebugUnitTest`. A Robolectric upgrade needs the android-all versions it names: the build
+    ids are string constants in `org/robolectric/plugins/DefaultSdkProvider.class` of the robolectric jar, the `iN`
+    suffix in `DefaultSdkProvider$DefaultSdk.class`.
