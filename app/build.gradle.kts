@@ -115,6 +115,11 @@ dependencies {
 
     testImplementation(libs.junit)
     testImplementation(libs.robolectric)
+    constraints {
+        // Robolectric 4.17 brings Guava 33.6.0, which has GHSA-xxph-c9ww-hj94 (#274); raised to the guava floor until a
+        // Robolectric release brings the patched version itself.
+        testImplementation(libs.guava)
+    }
     testImplementation(platform(libs.androidx.compose.bom))
     testImplementation(libs.androidx.compose.ui.test.junit4)
     // Declares the empty activity that createComposeRule() hosts content in; debug builds only.
