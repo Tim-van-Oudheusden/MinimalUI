@@ -90,10 +90,10 @@ jobs:
       # The runner image ships the Android SDK; setup-gradle caches Gradle state
       # and validates the wrapper jar, so Claude's gate runs start warm.
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
       - name: Run Claude Code
         # Third-party action pinned to a commit SHA (v1.0.248).
-        uses: anthropics/claude-code-action@16f9f71ab9c490faf367f94dd294897edc25be33
+        uses: anthropics/claude-code-action@d70510b174a1244958df0b03166a54912811f3e6
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           label_trigger: ai-fix-requested
