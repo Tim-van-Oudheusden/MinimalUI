@@ -15,6 +15,42 @@ object Repo {
 
     fun read(path: String): String = file(path).readText()
 
+    /** Every module `settings.gradle.kts` includes, as its directory relative to the root (`app`, `core`, ...). */
+    fun modules(): List<String> =
+        Regex("""include\(\s*"(:[^"]+)"\s*\)""")
+            .findAll(read("settings.gradle.kts"))
+            .map { it.groupValues[1].removePrefix(":").replace(':', '/') }
+            .toList()
+
+    /** The bodies of the root `build.gradle.kts`'s `subprojects { ... }` blocks, with `//` comments dropped. */
+    fun subprojectsBlocks(): List<String> {
+        val script =
+            read("build.gradle.kts")
+                .lines()
+                .joinToString("\n") { it.substringBefore("//") }
+        return Regex("""(?m)^subprojects\s*\{""")
+            .findAll(script)
+            .map { start ->
+                var depth = 0
+                var end = script.length
+                for (i in start.range.last until script.length) {
+                    when (script[i]) {
+                        '{' -> {
+                            depth++
+                        }
+
+                        '}' -> {
+                            if (--depth == 0) {
+                                end = i
+                                break
+                            }
+                        }
+                    }
+                }
+                script.substring(start.range.last + 1, end)
+            }.toList()
+    }
+
     /** Every workflow under `.github/workflows`, parsed, by file name. */
     fun workflows(): Map<String, Map<String, Any?>> =
         checkNotNull(file(".github/workflows").listFiles())

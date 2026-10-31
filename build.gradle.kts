@@ -54,6 +54,17 @@ subprojects {
     }
 }
 
+// Compiler warnings fail the build like Android Lint warnings do (#133), extra warnings included, in every module
+// (#276). The task type covers the kotlin.jvm modules and AGP's built-in Kotlin alike.
+subprojects {
+    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask<*>>().configureEach {
+        compilerOptions {
+            allWarningsAsErrors.set(true)
+            extraWarnings.set(true)
+        }
+    }
+}
+
 // Formatting for the whole repository: `./gradlew spotlessApply` fixes it, `spotlessCheck` (part of `check`) fails on
 // it. ktlint takes its style from .editorconfig; build output, tool state and local checkouts are not ours to format.
 val notOurs = listOf("**/build/**", ".gradle/**", ".kotlin/**", ".beads/**", ".tmp/**", "worktrees/**")

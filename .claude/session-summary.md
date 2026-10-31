@@ -10,14 +10,14 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 ## Latest session
 
 - **Date:** 2026-10-30
-- **Worked:** #274 → `build/274-guava-test-classpath`. Nightly compliance failed on GHSA-xxph-c9ww-hj94 (Guava
-  <= 33.7.1) although #257 had put a Guava 33.7.2 floor on the build classpath: the submitted dependency graph showed
-  Robolectric 4.17 (latest release) bringing Guava 33.6.0-jre onto the app's unit-test classpaths, which the
-  build-tool floors never reach. `app/build.gradle.kts` now adds `libs.guava` as a `testImplementation` constraint;
-  `docs/testing.md` says how to handle a test library's vulnerable transitive.
-- **Outcome:** PR open, `Fixes #274`. It touches this file (`.claude/*`), so it is high risk and the maintainer merges
-  it. The alert closes after the next dependency-graph submission from `main`.
-- **Open follow-ups:** drop the constraint once a Robolectric release brings Guava >= 33.7.2 itself.
+- **Worked:** #276 → `refactor/276-compiler-policy-root`. The compiler policy from #133 (`allWarningsAsErrors`,
+  `extraWarnings`) moved from the four module build scripts into one root `subprojects {}` block over
+  `KotlinCompilationTask<*>`; `CompilerWarningsConfigTest` (in `:tests`) fails if the root block drops a flag or a
+  module sets its own. `Repo.modules()` and `Repo.subprojectsBlocks()` now hold the settings/root-script parsing that
+  `TestTimeoutConfigTest` and `LintConfigTest` had copied. Effective flags per compile task are identical to `main`.
+- **Outcome:** PR open, `Closes #276`. It touches build scripts and this file, so it is high risk and the maintainer
+  merges it.
+- **Open follow-ups:** none.
 - **Notes for next session:**
   - Podman may be missing on this host; then build on the host with `JAVA_HOME=~/tools/jdk` and
     `sdk.dir=/home/dev/tools/sdk` in `local.properties`. actionlint is not installed, and the host shellcheck is 0.9.0:

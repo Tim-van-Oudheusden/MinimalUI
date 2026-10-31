@@ -11,45 +11,12 @@ import org.junit.Test
  * grows past CI's job timeout, so this does.
  */
 class TestTimeoutConfigTest {
-    private val modules: List<String> =
-        Regex("""include\(\s*"(:[^"]+)"\s*\)""")
-            .findAll(Repo.read("settings.gradle.kts"))
-            .map { it.groupValues[1].removePrefix(":").replace(':', '/') }
-            .toList()
-
-    /** The bodies of the root script's `subprojects { ... }` blocks, with `//` comments dropped. */
-    private fun subprojectsBlocks(): List<String> {
-        val script =
-            Repo
-                .read("build.gradle.kts")
-                .lines()
-                .joinToString("\n") { it.substringBefore("//") }
-        return Regex("""(?m)^subprojects\s*\{""")
-            .findAll(script)
-            .map { start ->
-                var depth = 0
-                var end = script.length
-                for (i in start.range.last until script.length) {
-                    when (script[i]) {
-                        '{' -> {
-                            depth++
-                        }
-
-                        '}' -> {
-                            if (--depth == 0) {
-                                end = i
-                                break
-                            }
-                        }
-                    }
-                }
-                script.substring(start.range.last + 1, end)
-            }.toList()
-    }
+    private val modules: List<String> = Repo.modules()
 
     /** The minutes every module's `Test` tasks get from a root `subprojects {}` block, or null if none sets them. */
     private fun timeoutMinutes(): Int? =
-        subprojectsBlocks()
+        Repo
+            .subprojectsBlocks()
             .filter { Regex("""tasks\s*\.\s*withType<Test>\(\)""").containsMatchIn(it) }
             .firstNotNullOfOrNull {
                 Regex("""timeout\s*\.\s*set\(\s*(?:java\.time\.)?Duration\.ofMinutes\(\s*(\d+)\s*\)\s*\)""")
