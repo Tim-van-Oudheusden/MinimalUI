@@ -143,10 +143,11 @@ home app) is tested in `e2e/` with UiAutomator, from outside the app's process, 
 that Gradle starts, not in `./gradlew test`; see [End-to-end tests](docs/testing.md#end-to-end-tests).
 
 **Tests for CI and scripts.** `tests` has no main sources: its tests read `.github/` and `fastlane/` and run
-`scripts/` the way CI does, so they run with `./gradlew test`. `WorkflowInvariantsTest` holds the reviewed
-`GITHUB_TOKEN` scopes of every workflow and checks that every job has `timeout-minutes`, every action is pinned to a
-commit SHA, no `run:` interpolates event payload (pass it through `env:`), and no `pull_request_target` workflow checks
-out code. Adding a workflow means adding its scopes there. A test for `scripts/foo.sh` goes in
+`scripts/` the way CI does, so they run with `./gradlew test`. `WorkflowPermissionsPolicyTest` holds every workflow's
+`GITHUB_TOKEN` scopes to the policy in `.github/policies/workflow-permissions.yml`; adding a workflow means adding its
+rule there. `WorkflowInvariantsTest` checks that every job has `timeout-minutes`, every action is pinned to a commit
+SHA, no `run:` interpolates event payload (pass it through `env:`), and no `pull_request_target` workflow checks out
+code. A test for `scripts/foo.sh` goes in
 `tests/src/test/kotlin/dev/buildwithtim/minimalui/tooling/` and runs it with `runScript`. `FastlaneMetadataTest`
 holds the store listing to the stores' limits and requires a changelog for the current `versionCode`. The module sits
 at the root as `tests/` because the ACMM evaluation finds a test suite only by a root `tests/` directory (#235);
@@ -417,7 +418,8 @@ AI agents working in this repo are bounded by several layers:
 4. **Structural gates** — the ruleset on `main` and CI must pass before merge, regardless of who wrote the change.
    `.github/CODEOWNERS` makes the maintainer the owner of the high-risk paths
    ([`docs/risk-tiers.md`](docs/risk-tiers.md)): a change to CI, scripts, the build, the manifest or agent instructions
-   requests his review, and the merge queue leaves it for him to merge.
+   requests his review, and the merge queue leaves it for him to merge. What `GITHUB_TOKEN` may do in each workflow is
+   policy as code in `.github/policies/workflow-permissions.yml`, which `WorkflowPermissionsPolicyTest` enforces.
 
 The security side of these layers (trust boundaries, secrets, supply chain, review focus, reporting) is set out in
 [`docs/security/SECURITY-AI.md`](docs/security/SECURITY-AI.md).

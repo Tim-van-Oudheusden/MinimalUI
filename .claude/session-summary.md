@@ -10,12 +10,12 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 ## Latest session
 
 - **Date:** 2026-11-01
-- **Worked:** #272 → `docs/272-stale-case-lists`. Approved gate (option A): a Quality gates checklist item in
-  `.github/pull_request_template.md` and one line in AGENTS.md ask a PR that extends something to update the comments
-  and KDocs listing its cases, screens or callers. Fixed the three stale lists the issue named: `ui/TextEntry.kt`
-  (now names Rename group and New group too), `ui/Collections.kt` (last row is `newLabel`, New collection or New
-  group) and `core/ScreenStack.kt` (collections and groups shipped; dropped "later").
-- **Outcome:** PR open, `Closes #272`. It changes the PR template and agent rules, so the maintainer merges it.
+- **Worked:** #287 → `ci/287-workflow-permissions-policy`. The ACMM `acmm:policy-as-code` check looks for
+  `.github/policies/` (among other paths); #252 removed that directory when the risk tiers moved to
+  `.github/risk-assessment.yml`. As in website#992, the reviewed `GITHUB_TOKEN` scopes moved out of
+  `WorkflowInvariantsTest`'s inline maps into `.github/policies/workflow-permissions.yml`, which the new
+  `WorkflowPermissionsPolicyTest` evaluates.
+- **Outcome:** PR open, `Closes #287`. It touches `.github/` and `tests/`, so the maintainer merges it.
 - **Open follow-ups:** none.
 - **Notes for next session:**
   - Podman may be missing on this host; then build on the host with `JAVA_HOME=~/tools/jdk` and

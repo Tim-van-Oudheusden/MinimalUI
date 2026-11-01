@@ -4,105 +4,12 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Security and reliability rules every workflow under `.github/workflows` must keep. */
+/**
+ * Security and reliability rules every workflow under `.github/workflows` must keep. Their `GITHUB_TOKEN` scopes are
+ * held to `.github/policies/workflow-permissions.yml` by [WorkflowPermissionsPolicyTest].
+ */
 class WorkflowInvariantsTest {
     private val workflows = Repo.workflows()
-
-    /**
-     * Reviewed GITHUB_TOKEN scopes. A workflow starts read-only and a job asks for more in its own block; adding a
-     * workflow or widening a scope means editing these maps, so the change is reviewed rather than slipped in.
-     */
-    private val topLevelPermissions =
-        mapOf(
-            // Reads merged PRs for the audit trail.
-            "ai-audit.yml" to mapOf("contents" to "read", "pull-requests" to "read"),
-            "auto-issues.yml" to mapOf("contents" to "read"),
-            "auto-review.yml" to mapOf("contents" to "read"),
-            "ci.yml" to mapOf("contents" to "read"),
-            "claude.yml" to mapOf("contents" to "read"),
-            "coverage-gate.yml" to mapOf("contents" to "read"),
-            "e2e.yml" to mapOf("contents" to "read"),
-            // Sanctioned pull_request_target exception: labels PRs, never checks out code.
-            "labeler.yml" to mapOf("contents" to "read", "pull-requests" to "write"),
-            "merge-queue.yml" to mapOf("contents" to "read"),
-            "nightly-compliance.yml" to mapOf("contents" to "read"),
-            "quality-report.yml" to mapOf("contents" to "read"),
-            // Reads closed PRs for the acceptance metric.
-            "pr-metrics.yml" to mapOf("contents" to "read", "pull-requests" to "read"),
-            "release.yml" to mapOf("contents" to "read"),
-            "review.yml" to mapOf("contents" to "read"),
-            // Reads every issue and the PRs merged in the window for the strategy report.
-            "strategy-report.yml" to mapOf("contents" to "read", "issues" to "read", "pull-requests" to "read"),
-            "tier-classifier.yml" to mapOf("contents" to "read"),
-        )
-
-    private val jobPermissions =
-        mapOf(
-            // Opens, comments on and closes the issue tracking a workflow that fails on main.
-            "auto-issues.yml" to
-                mapOf(
-                    "issue" to mapOf("contents" to "read", "issues" to "write"),
-                ),
-            // Pushes the suggestions commit and posts the report; only trusted comments on same-repo PRs reach it.
-            "auto-review.yml" to
-                mapOf(
-                    "apply" to mapOf("contents" to "write", "pull-requests" to "write"),
-                ),
-            "claude.yml" to
-                mapOf(
-                    "claude" to
-                        mapOf(
-                            "contents" to "write",
-                            "pull-requests" to "write",
-                            "issues" to "write",
-                            "id-token" to "write",
-                            "actions" to "read",
-                        ),
-                ),
-            "merge-queue.yml" to
-                mapOf(
-                    // Lists open PRs and reads their merge state.
-                    "pick" to mapOf("contents" to "read", "pull-requests" to "read"),
-                    // Merges the verified PR, then starts main's push workflows and the next queue run.
-                    "land" to mapOf("actions" to "write", "contents" to "write", "pull-requests" to "write"),
-                    // Labels a PR that failed verification `hold`, comments the run, starts the next queue run.
-                    "reject" to
-                        mapOf(
-                            "actions" to "write",
-                            "contents" to "read",
-                            "issues" to "write",
-                            "pull-requests" to "write",
-                        ),
-                ),
-            "nightly-compliance.yml" to
-                mapOf(
-                    // The dependency submission API writes the graph through contents: write.
-                    "dependency-graph" to mapOf("contents" to "write"),
-                    // vulnerability-alerts: read lists Dependabot alerts.
-                    "compliance" to mapOf("contents" to "read", "vulnerability-alerts" to "read"),
-                ),
-            // Tags the commit with a new versionName, creates its GitHub release and uploads the APK to it.
-            "release.yml" to
-                mapOf(
-                    "release" to mapOf("contents" to "write"),
-                ),
-        )
-
-    @Test
-    fun `every workflow declares its reviewed top-level token scopes`() {
-        assertEquals(topLevelPermissions, workflows.mapValues { (_, workflow) -> workflow["permissions"] })
-    }
-
-    @Test
-    fun `only reviewed jobs widen the token`() {
-        val widened =
-            workflows
-                .mapValues { (_, workflow) ->
-                    workflow.jobs().filterValues { it.containsKey("permissions") }.mapValues { it.value["permissions"] }
-                }.filterValues { it.isNotEmpty() }
-
-        assertEquals(jobPermissions, widened)
-    }
 
     // A job without timeout-minutes runs for GitHub's six-hour default when a step hangs.
     @Test
