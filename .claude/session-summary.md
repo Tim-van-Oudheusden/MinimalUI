@@ -9,16 +9,13 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 
 ## Latest session
 
-- **Date:** 2026-10-31
-- **Worked:** #279 → `fix/279-robolectric-offline`. CI on `main` (run 41196461082, d1873d2) failed every Robolectric
-  class: Robolectric's own `MavenArtifactFetcher` got a 404 (`FileNotFoundException`) for an android-all jar from Maven
-  Central at test time. The same tree had passed on the PR, and the jar is on Maven Central, so the download was
-  transient. Gradle now resolves the android-all jars (`robolectric-android-all` bundle in `libs.versions.toml`, one
-  per SDK the tests use: 28 and 35), `:app:robolectricJars` copies them into `app/build/robolectric-jars`, and every
-  app `Test` task runs Robolectric with `robolectric.offline=true` from there. Dependabot ignores
-  `android-all-instrumented`: the versions follow the Robolectric release.
-- **Outcome:** PR open, `Fixes #279`. It touches build scripts and this file, so it is high risk and the maintainer
-  merges it.
+- **Date:** 2026-11-01
+- **Worked:** #285 → `ci/285-merge-queue-cache-read-only`. The merge queue's `verify` job runs PR code on a
+  `workflow_run`/`workflow_dispatch` event, so its ref is `main` and setup-gradle saved the Gradle home to `main`'s
+  cache scope, which `release.yml` (signing secrets) and `claude.yml` restore. `verify`'s setup-gradle now sets
+  `cache-read-only: true`; `MergeQueueWorkflowTest` asserts it and that its setup-java has no `cache:`. The workflow
+  header and `docs/multi-agent.md#merge-queue` say so.
+- **Outcome:** PR open, `Fixes #285`. It touches `.github/workflows/`, so it is high risk and the maintainer merges it.
 - **Open follow-ups:** none.
 - **Notes for next session:**
   - Podman may be missing on this host; then build on the host with `JAVA_HOME=~/tools/jdk` and
