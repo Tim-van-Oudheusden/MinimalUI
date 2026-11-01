@@ -144,8 +144,8 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.ui)
     constraints {
-        // The Compose BOM's lifecycle-runtime 2.9.4 ships lint checks that AGP 9.5's Lint cannot load; raised to the
-        // lifecycleRuntime floor, whose checks it can.
+        // The Compose BOM's lifecycle-runtime 2.9.4 ships lint checks that AGP 9.5's Lint cannot load (#291); raised to
+        // the lifecycleRuntime floor, whose checks it can, until a Compose BOM brings that version itself.
         implementation(libs.androidx.lifecycle.runtime)
     }
 
