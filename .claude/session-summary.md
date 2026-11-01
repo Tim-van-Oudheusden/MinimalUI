@@ -9,16 +9,12 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 
 ## Latest session
 
-- **Date:** 2026-10-31
-- **Worked:** #279 → `fix/279-robolectric-offline`. CI on `main` (run 41196461082, d1873d2) failed every Robolectric
-  class: Robolectric's own `MavenArtifactFetcher` got a 404 (`FileNotFoundException`) for an android-all jar from Maven
-  Central at test time. The same tree had passed on the PR, and the jar is on Maven Central, so the download was
-  transient. Gradle now resolves the android-all jars (`robolectric-android-all` bundle in `libs.versions.toml`, one
-  per SDK the tests use: 28 and 35), `:app:robolectricJars` copies them into `app/build/robolectric-jars`, and every
-  app `Test` task runs Robolectric with `robolectric.offline=true` from there. Dependabot ignores
-  `android-all-instrumented`: the versions follow the Robolectric release.
-- **Outcome:** PR open, `Fixes #279`. It touches build scripts and this file, so it is high risk and the maintainer
-  merges it.
+- **Date:** 2026-11-01
+- **Worked:** #283 → `ci/283-claude-action-pin-comment`. The `Run Claude Code` step in `.github/workflows/claude.yml`
+  named v1.0.248 in a comment on the line above `uses:`, but the pinned SHA `d70510b…` is the commit behind the
+  annotated tag `v1.0.264`. Dependabot only rewrites a `# vX` comment at the end of the `uses:` line, so the
+  comment line went and the pin now ends with `# v1.0.264`, like every other pinned action.
+- **Outcome:** PR open, `Fixes #283`. It touches a workflow, so the maintainer merges it.
 - **Open follow-ups:** none.
 - **Notes for next session:**
   - Podman may be missing on this host; then build on the host with `JAVA_HOME=~/tools/jdk` and
