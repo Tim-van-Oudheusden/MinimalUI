@@ -10,11 +10,12 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 ## Latest session
 
 - **Date:** 2026-11-01
-- **Worked:** #283 → `ci/283-claude-action-pin-comment`. The `Run Claude Code` step in `.github/workflows/claude.yml`
-  named v1.0.248 in a comment on the line above `uses:`, but the pinned SHA `d70510b…` is the commit behind the
-  annotated tag `v1.0.264`. Dependabot only rewrites a `# vX` comment at the end of the `uses:` line, so the
-  comment line went and the pin now ends with `# v1.0.264`, like every other pinned action.
-- **Outcome:** PR open, `Fixes #283`. It touches a workflow, so the maintainer merges it.
+- **Worked:** #287 → `ci/287-workflow-permissions-policy`. The ACMM `acmm:policy-as-code` check looks for
+  `.github/policies/` (among other paths); #252 removed that directory when the risk tiers moved to
+  `.github/risk-assessment.yml`. As in website#992, the reviewed `GITHUB_TOKEN` scopes moved out of
+  `WorkflowInvariantsTest`'s inline maps into `.github/policies/workflow-permissions.yml`, which the new
+  `WorkflowPermissionsPolicyTest` evaluates.
+- **Outcome:** PR open, `Closes #287`. It touches `.github/` and `tests/`, so the maintainer merges it.
 - **Open follow-ups:** none.
 - **Notes for next session:**
   - Podman may be missing on this host; then build on the host with `JAVA_HOME=~/tools/jdk` and

@@ -154,5 +154,5 @@ gh pr list -R Tim-van-Oudheusden/MinimalUI --state merged --limit 1000 --search 
 1. Compute it in a script under `scripts/` (bash + `jq`; Markdown to stdout, diagnostics to stderr) so it runs the
    same locally and in CI, and cover it with a test in the `tests` module (`./gradlew :tests:test`).
 2. Publish it from a workflow to the job summary, plus an artifact if it is worth downloading. Give the workflow a
-   reviewed token scope in `WorkflowInvariantsTest`.
+   rule in the token policy, `.github/policies/workflow-permissions.yml`.
 3. Add a row to the catalog above and a section describing what it measures and how to reproduce it.
