@@ -1,8 +1,8 @@
 package dev.buildwithtim.minimalui.core
 
 /**
- * The one-list screens on screen, MinUI-style (#70): the [root] list at the bottom, and each list opened from it (a
- * context menu, the settings, a link's list from those, later a collection or a group) on top of the one it was
+ * The one-list screens on screen, MinUI-style (#70): the [root] list at the bottom, and each list opened from it (such
+ * as a context menu, the settings, a collection or a group, or a link's list from those) on top of the one it was
  * opened from. Only the [top] one shows. Each screen keeps its own selection, so going back shows the parent as it
  * was left.
  */
