@@ -10,12 +10,11 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 ## Latest session
 
 - **Date:** 2026-11-01
-- **Worked:** #285 → `ci/285-merge-queue-cache-read-only`. The merge queue's `verify` job runs PR code on a
-  `workflow_run`/`workflow_dispatch` event, so its ref is `main` and setup-gradle saved the Gradle home to `main`'s
-  cache scope, which `release.yml` (signing secrets) and `claude.yml` restore. `verify`'s setup-gradle now sets
-  `cache-read-only: true`; `MergeQueueWorkflowTest` asserts it and that its setup-java has no `cache:`. The workflow
-  header and `docs/multi-agent.md#merge-queue` say so.
-- **Outcome:** PR open, `Fixes #285`. It touches `.github/workflows/`, so it is high risk and the maintainer merges it.
+- **Worked:** #283 → `ci/283-claude-action-pin-comment`. The `Run Claude Code` step in `.github/workflows/claude.yml`
+  named v1.0.248 in a comment on the line above `uses:`, but the pinned SHA `d70510b…` is the commit behind the
+  annotated tag `v1.0.264`. Dependabot only rewrites a `# vX` comment at the end of the `uses:` line, so the
+  comment line went and the pin now ends with `# v1.0.264`, like every other pinned action.
+- **Outcome:** PR open, `Fixes #283`. It touches a workflow, so the maintainer merges it.
 - **Open follow-ups:** none.
 - **Notes for next session:**
   - Podman may be missing on this host; then build on the host with `JAVA_HOME=~/tools/jdk` and
