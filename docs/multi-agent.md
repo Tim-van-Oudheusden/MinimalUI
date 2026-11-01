@@ -88,8 +88,9 @@ check (`CI`, `Coverage gate`, `E2E`, `PR review rubric`) succeeds, a draft is ma
 
 It merges that pull request onto the current `main` and runs `./gradlew check assembleDebug` on the result; the
 coverage floors and the emulator tests are not re-run there. That run executes the pull request's code with a read-only
-token and restores `main`'s Gradle cache without saving to it, so a pull request that fails the check leaves nothing in
-the cache that `Release` and `Claude Code` restore. If the check passes and neither the pull request nor `main` moved,
+token, and setup-gradle restores `main`'s Gradle cache without saving to it, so a pull request's build output does not
+become the cache that `Release` and `Claude Code` restore. Only same-repo pull requests are picked, so this guards
+against accidents, not against a hostile author. If the check passes and neither the pull request nor `main` moved,
 it merges the pull request (a merge commit) and starts `CI`, `Coverage gate`, `E2E` and `Quality report` on `main`: a
 merge made with `GITHUB_TOKEN` starts no push run, so without them a failure on `main` would go unnoticed.
 `Release` is not started: it runs only for a change to `app/build.gradle.kts`, which is high risk, so a maintainer

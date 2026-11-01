@@ -18,9 +18,12 @@ name: Merge queue
 # on demand. See docs/multi-agent.md#merge-queue.
 #
 # Security: no step with write access runs code from a PR; pick, land and
-# reject run main's scripts. verify runs the PR's code with a read-only token
-# and a read-only Gradle cache: its event is main's, so a saved Gradle home
-# would land in the cache release.yml restores next to the signing secrets.
+# reject run main's scripts. verify runs the PR's code with a read-only token,
+# and setup-gradle restores main's Gradle cache without saving: its event is
+# main's, so a saved Gradle home would land in the cache release.yml restores
+# next to the signing secrets. The PR's build code shares that job and could
+# still write the cache itself, so this guards against accidents; the boundary
+# is that only same-repo PRs, whose authors have write access, are picked.
 # Fork PRs are never picked, and their events would get a read-only token
 # anyway. A `pull_request` event runs this file as the PR has it, which gives a
 # same-repo author nothing beyond the write access they already have. PR
