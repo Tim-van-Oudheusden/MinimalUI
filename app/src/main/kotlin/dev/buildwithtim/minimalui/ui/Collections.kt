@@ -130,7 +130,7 @@ internal fun CollectionChoice(
     state: PillListState,
     status: StatusPill? = null,
 ) {
-    // The last row, New collection, is the one without a name.
+    // The last row, [newLabel] (New collection or New group), is the one without a name.
     val rows: List<String?> = names + null
 
     TitledList(title, status, HintedScreen.Choice, onClose) { rowHeight, rowsPerPage ->

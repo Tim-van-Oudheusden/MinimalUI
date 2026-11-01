@@ -10,11 +10,12 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 ## Latest session
 
 - **Date:** 2026-11-01
-- **Worked:** #283 → `ci/283-claude-action-pin-comment`. The `Run Claude Code` step in `.github/workflows/claude.yml`
-  named v1.0.248 in a comment on the line above `uses:`, but the pinned SHA `d70510b…` is the commit behind the
-  annotated tag `v1.0.264`. Dependabot only rewrites a `# vX` comment at the end of the `uses:` line, so the
-  comment line went and the pin now ends with `# v1.0.264`, like every other pinned action.
-- **Outcome:** PR open, `Fixes #283`. It touches a workflow, so the maintainer merges it.
+- **Worked:** #272 → `docs/272-stale-case-lists`. Approved gate (option A): a Quality gates checklist item in
+  `.github/pull_request_template.md` and one line in AGENTS.md ask a PR that extends something to update the comments
+  and KDocs listing its cases, screens or callers. Fixed the three stale lists the issue named: `ui/TextEntry.kt`
+  (now names Rename group and New group too), `ui/Collections.kt` (last row is `newLabel`, New collection or New
+  group) and `core/ScreenStack.kt` (collections and groups shipped; dropped "later").
+- **Outcome:** PR open, `Closes #272`. It changes the PR template and agent rules, so the maintainer merges it.
 - **Open follow-ups:** none.
 - **Notes for next session:**
   - Podman may be missing on this host; then build on the host with `JAVA_HOME=~/tools/jdk` and
