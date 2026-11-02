@@ -29,6 +29,7 @@ done
 repo="$GITHUB_REPOSITORY"
 label=ci
 title="${WORKFLOW_NAME} fails on main"
+# The success branch parses ") on <sha>" out of this text; keep its grep in step.
 run="[run](${RUN_URL}) on ${HEAD_SHA}"
 
 case "$CONCLUSION" in
@@ -49,6 +50,7 @@ if [ "$failing" = true ]; then
     gh issue comment "$issue" --repo "$repo" --body "Failed again (\`${CONCLUSION}\`): ${run}."
     echo "${WORKFLOW_NAME} failed again on main: commented on #${issue}."
   else
+    # The success branch parses the body's "Commit: <sha>" line; keep its grep in step.
     url="$(gh issue create --repo "$repo" --title "$title" --label "$label" --body-file - <<EOF
 The **${WORKFLOW_NAME}** workflow failed on \`main\` (\`${CONCLUSION}\`).
 
