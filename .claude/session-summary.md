@@ -9,15 +9,17 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 
 ## Latest session
 
-- **Date:** 2026-11-01
-- **Worked:** #287 → `ci/287-workflow-permissions-policy`. The ACMM `acmm:policy-as-code` check looks for
-  `.github/policies/` (among other paths); #252 removed that directory when the risk tiers moved to
-  `.github/risk-assessment.yml`. As in website#992, the reviewed `GITHUB_TOKEN` scopes moved out of
-  `WorkflowInvariantsTest`'s inline maps into `.github/policies/workflow-permissions.yml`, which the new
-  `WorkflowPermissionsPolicyTest` evaluates.
-- **Outcome:** PR open, `Closes #287`. It touches `.github/` and `tests/`, so the maintainer merges it.
+- **Date:** 2026-11-02
+- **Worked:** #298 → `fix/298-auto-issues-stale-green`. Runs of one workflow on two quick pushes can finish out of
+  order, so an older commit's green closed #293 right after the newer commit's red opened it. On `success`,
+  `scripts/auto-issues.sh` now reads the failed commits off the open issue (its `Commit:` line and each "Failed again"
+  comment) and keeps the issue open when `compare/<failed>...<passing>` is `behind`; any other status, or a commit
+  GitHub cannot compare, closes it as before.
+- **Outcome:** PR open, `Fixes #298`. It touches `scripts/` and `tests/`; no workflow change.
 - **Open follow-ups:** none.
 - **Notes for next session:**
+  - The script parses the issue body and comment formats it writes itself; `AutoIssuesScriptTest` builds its fixtures
+    by running the script, so a wording change to either format fails the keep-open tests.
   - Podman may be missing on this host; then build on the host with `JAVA_HOME=~/tools/jdk` and
     `sdk.dir=/home/dev/tools/sdk` in `local.properties`. actionlint is not installed, and the host shellcheck is 0.9.0:
     fetch the pinned releases from `ci.yml` into `/tmp/bin`.
