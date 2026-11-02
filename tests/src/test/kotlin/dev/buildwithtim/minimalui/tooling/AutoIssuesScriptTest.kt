@@ -12,10 +12,13 @@ class AutoIssuesScriptTest {
     private val calls = dir.resolve("gh-calls.txt")
     private val body = dir.resolve("issue-body.md")
     private val openIssues = dir.resolve("open-issues.json")
+    private val issueView = dir.resolve("issue-view.json")
+    private val compareStatus = dir.resolve("compare-status.txt")
 
     /**
      * Fake `gh` first on PATH: logs each call's arguments tab-separated on one line, answers `issue list` with
-     * [openIssues], and keeps the body `issue create` reads from stdin in [body].
+     * [openIssues], `issue view` with [issueView] and `api` (the commit compare) with [compareStatus], and keeps the
+     * body `issue create` reads from stdin in [body].
      */
     private val bin =
         dir.resolve("bin").apply {
@@ -27,6 +30,8 @@ class AutoIssuesScriptTest {
                     (IFS=${'$'}'\t'; printf '%s\n' "${'$'}*") >> "${calls.path}"
                     case "${'$'}1 ${'$'}2" in
                       "issue list") cat "${openIssues.path}" ;;
+                      "issue view") cat "${issueView.path}" ;;
+                      api*) printf '{"status": "%s"}\n' "${'$'}(cat "${compareStatus.path}")" ;;
                       "issue create") cat > "${body.path}"; echo "https://github.com/owner/minimalui/issues/99" ;;
                     esac
 
@@ -43,14 +48,24 @@ class AutoIssuesScriptTest {
 
     private val runUrl = "https://github.com/owner/minimalui/actions/runs/42"
     private val sha = "0123456789abcdef0123456789abcdef01234567"
+    private val failedSha = "fedcba9876543210fedcba9876543210fedcba98"
+    private val laterFailedSha = "abcdefabcdefabcdefabcdefabcdefabcdefabcd"
+
+    /** What `gh issue view --json body,comments` returns for an issue the script opened for [failedSha]. */
+    private val openedIssue =
+        """{"body": "- Run: https://github.com/owner/minimalui/actions/runs/41\n- Commit: $failedSha\n", "comments": []}"""
 
     private fun autoIssues(
         conclusion: String,
         workflow: String = "CI",
         open: String = "[]",
+        view: String = openedIssue,
+        compare: String = "ahead",
         env: Map<String, String> = emptyMap(),
     ): ScriptResult {
         openIssues.writeText(open)
+        issueView.writeText(view)
+        compareStatus.writeText(compare)
         return runScript(
             "scripts/auto-issues.sh",
             env =
@@ -68,8 +83,9 @@ class AutoIssuesScriptTest {
     private fun calls(): List<List<String>> =
         if (calls.exists()) calls.readLines().map { it.split("\t") } else emptyList()
 
-    /** The calls that change an issue: everything but the `issue list` lookup. */
-    private fun changes() = calls().filterNot { it.take(2) == listOf("issue", "list") }
+    /** The calls that change an issue: everything but the `issue list` / `issue view` lookups and `api` reads. */
+    private fun changes() =
+        calls().filterNot { it[0] == "api" || it.take(2) in listOf(listOf("issue", "list"), listOf("issue", "view")) }
 
     private fun List<String>.option(name: String) = this[indexOf(name) + 1]
 
@@ -128,6 +144,36 @@ class AutoIssuesScriptTest {
         val close = changes().single()
         assertEquals(listOf("issue", "close", "7"), close.take(3))
         assertTrue(close.toString(), close.option("--comment").contains(runUrl))
+    }
+
+    // Runs on quick successive pushes finish out of order: a green on an older commit says nothing about the newer red.
+    @Test
+    fun `keeps the issue open when the passing commit is older than the failing one`() {
+        val result = autoIssues("success", open = "[${issue(7, "CI fails on main")}]", compare = "behind")
+
+        assertEquals(result.stderr, 0, result.exitCode)
+        assertEquals(emptyList<List<String>>(), changes())
+        assertTrue(result.stdout, result.stdout.contains("#7 stays open"))
+        val compare = calls().single { it[0] == "api" }
+        assertEquals("repos/owner/minimalui/compare/$failedSha...$sha", compare[1])
+    }
+
+    @Test
+    fun `checks the commits of later failures recorded in comments too`() {
+        val comment = "Failed again (`failure`): [run]($runUrl) on $laterFailedSha."
+        val view = """{"body": "- Commit: $failedSha\n", "comments": [{"body": "$comment"}]}"""
+
+        autoIssues("success", open = "[${issue(7, "CI fails on main")}]", view = view)
+
+        val compared = calls().filter { it[0] == "api" }.map { it[1] }.toSet()
+        assertEquals(
+            setOf(
+                "repos/owner/minimalui/compare/$failedSha...$sha",
+                "repos/owner/minimalui/compare/$laterFailedSha...$sha",
+            ),
+            compared,
+        )
+        assertEquals(listOf("issue", "close", "7"), changes().single().take(3))
     }
 
     @Test
