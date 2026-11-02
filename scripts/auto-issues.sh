@@ -10,7 +10,10 @@
 # "<workflow> fails on main" and labelled ci:
 #   - failure, timed_out, startup_failure: opens that issue, or comments on
 #     the open one with the new run.
-#   - success: comments with the run and closes the open issue.
+#   - success: comments with the run and closes the open issue, unless the
+#     run's commit is older than (an ancestor of) a failing commit recorded
+#     on the issue. Runs on quick successive pushes can finish out of order,
+#     and an older commit passing says nothing about the newer one that failed.
 #   - any other conclusion (cancelled, skipped, ...): changes nothing.
 # Prints what it did to stdout. Needs gh (authenticated through GH_TOKEN in
 # CI) and jq.
@@ -59,6 +62,17 @@ EOF
     echo "${WORKFLOW_NAME} failed on main: opened ${url}."
   fi
 elif [ -n "$issue" ]; then
+  # The failing commits this issue recorded: the body's "Commit:" line and each
+  # "Failed again ... on <sha>." comment.
+  texts="$(gh issue view "$issue" --repo "$repo" --json body,comments | jq -r '[.body, .comments[].body] | .[]')"
+  failed_shas="$(grep -oE '(Commit: |\) on )[0-9a-f]{40}' <<<"$texts" | grep -oE '[0-9a-f]{40}$' | sort -u)" || true
+  for failed in $failed_shas; do
+    status="$(gh api "repos/${repo}/compare/${failed}...${HEAD_SHA}" | jq -r '.status')"
+    if [ "$status" = behind ]; then
+      echo "${WORKFLOW_NAME} passed on ${HEAD_SHA}, which is older than failing ${failed}: #${issue} stays open."
+      exit 0
+    fi
+  done
   gh issue close "$issue" --repo "$repo" --comment "Passes again on \`main\`: ${run}."
   echo "${WORKFLOW_NAME} passes again on main: closed #${issue}."
 else

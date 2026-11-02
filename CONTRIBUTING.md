@@ -167,8 +167,9 @@ We favour small, focused changes tied to a tracked issue.
 Workflows that run on `main` (pushes, schedules, manual runs) file their own failures as issues:
 `.github/workflows/auto-issues.yml` runs `scripts/auto-issues.sh` after each of their runs. A failed or timed-out run
 opens an issue labelled `ci` and titled `<workflow> fails on main` with the run and commit, or comments on that issue
-when one is already open; the next successful run on `main` comments and closes it. Cancelled runs and pull request
-runs change nothing. The watched workflows are listed by name in the workflow's `workflow_run.workflows`; a new or
+when one is already open; the next successful run on `main` comments and closes it. A success on a commit older than
+one the issue recorded as failing (runs on quick successive pushes can finish out of order) leaves the issue open.
+Cancelled runs and pull request runs change nothing. The watched workflows are listed by name in the workflow's `workflow_run.workflows`; a new or
 renamed workflow that runs on `main` must be added there (`AutoIssuesWorkflowTest` fails until it is).
 
 ## Development workflow
