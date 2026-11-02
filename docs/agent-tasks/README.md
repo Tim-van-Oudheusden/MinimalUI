@@ -17,12 +17,15 @@ The coordination rules behind it are in [`../multi-agent.md`](../multi-agent.md)
 | Merge | Merge commit `Merge pull request #<PR> from <owner>/<branch>`, made by the merge queue or a maintainer | `9af64d1` | `main` only changes through merged PRs (`.github/rulesets/main.json`) |
 | Close | The merge closes the issue through `Fixes #<N>` | #246 closed by #248 | GitHub |
 
-The required rubric check is what guarantees the chain: a pull request into `main` cannot merge without an issue link.
+The required rubric check is what guarantees the chain: a pull request into `main` from a person cannot merge without an
+issue link.
 Branch names and commit subjects carry the number by convention, which makes them quicker to search but not
 authoritative. `Refs #<N>` satisfies the rubric without closing the issue; use it when a PR covers only part of one.
 
-**Exempt:** pull requests from bot accounts (`*[bot]`, in practice Dependabot) need no issue link. Their task is the
-dependency update itself, and the branch `dependabot/<ecosystem>/<package>` names it.
+**Exempt:** pull requests from bot accounts (`*[bot]`) skip the whole rubric, title and issue link alike (#303). In
+practice that is Dependabot, whose task is the dependency update itself (the branch `dependabot/<ecosystem>/<package>`
+names it), and Hive, whose GitHub App opens its pull requests. Hive's `Fixes #<N>` is a convention the check does not
+enforce.
 
 ## Following the chain
 
