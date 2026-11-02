@@ -14,6 +14,8 @@
 #     run's commit is older than (an ancestor of) a failing commit recorded
 #     on the issue. Runs on quick successive pushes can finish out of order,
 #     and an older commit passing says nothing about the newer one that failed.
+#     A failing commit GitHub can no longer compare (history rewritten since)
+#     is skipped, so it cannot hold the issue open for good.
 #   - any other conclusion (cancelled, skipped, ...): changes nothing.
 # Prints what it did to stdout. Needs gh (authenticated through GH_TOKEN in
 # CI) and jq.
@@ -69,7 +71,10 @@ elif [ -n "$issue" ]; then
   texts="$(gh issue view "$issue" --repo "$repo" --json body,comments | jq -r '[.body, .comments[].body] | .[]')"
   failed_shas="$(grep -oE '(Commit: |\) on )[0-9a-f]{40}' <<<"$texts" | grep -oE '[0-9a-f]{40}$' | sort -u)" || true
   for failed in $failed_shas; do
-    status="$(gh api "repos/${repo}/compare/${failed}...${HEAD_SHA}" | jq -r '.status')"
+    if ! status="$(gh api "repos/${repo}/compare/${failed}...${HEAD_SHA}" | jq -r '.status')"; then
+      echo "Could not compare failing ${failed} with ${HEAD_SHA}: skipped." >&2
+      continue
+    fi
     if [ "$status" = behind ]; then
       echo "${WORKFLOW_NAME} passed on ${HEAD_SHA}, which is older than failing ${failed}: #${issue} stays open."
       exit 0
