@@ -9,6 +9,7 @@ plugins {
 
 android {
     namespace = "dev.buildwithtim.minimalui.e2e"
+    // compileSdk, minSdk and targetSdk equal the app's in app/build.gradle.kts; SdkLevelsTest fails when they drift.
     compileSdk = 37
     targetProjectPath = ":app"
     // The tests run in their own process, not the app's: they see it only as a user does, and their androidx.test
