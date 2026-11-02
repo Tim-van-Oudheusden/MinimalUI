@@ -28,4 +28,25 @@ class E2eWorkflowTest {
         assertEquals("End-to-end tests", jobName)
         assertTrue(ruleset, ruleset.contains("""{ "context": "$jobName", "integration_id": 15368 }"""))
     }
+
+    // The job installs the managed device's system image itself so that a bad download is retried (#307). Once the
+    // device changes, a stale image loses that retry without failing anything: Gradle downloads the right one, once.
+    @Test
+    fun `installs the system image of the managed device`() {
+        val device = Repo.read("e2e/build.gradle.kts")
+
+        fun setting(name: String) =
+            checkNotNull(Regex("""\b$name = "?([\w-]+)"?""").find(device)) { "no $name in e2e/build.gradle.kts" }
+                .groupValues[1]
+        val installed =
+            e2e
+                .jobs()
+                .values
+                .single()
+                .steps()
+                .firstNotNullOf { it["env"]?.asMap()?.get("SYSTEM_IMAGE") }
+        val source = setting("systemImageSource").replace('-', '_')
+
+        assertEquals("system-images;android-${setting("apiLevel")};$source;${setting("testedAbi")}", installed)
+    }
 }
