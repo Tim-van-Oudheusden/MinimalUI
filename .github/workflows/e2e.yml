@@ -36,8 +36,28 @@ jobs:
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
-      # Gradle Managed Devices downloads the emulator and the ATD system image into the runner's SDK, boots it
-      # headless, installs the debug app and the e2e APK, and runs e2e/'s tests (docs/testing.md#end-to-end-tests).
+      # The runner's SDK has neither the emulator nor the system image the managed device needs. The SDK installer
+      # unzips whatever dl.google.com answered without checking its checksum, so a bad download fails with "Archive is
+      # not a ZIP archive" (#307). Gradle cannot recover from that in a later attempt: it installs the emulator only
+      # alongside a missing system image, and the failed run installed the image. So sdkmanager installs both first, up
+      # to three times; a retry finds the kept download's checksum wrong and fetches it again. Only the installs are
+      # retried: a failing test must still fail the run. SYSTEM_IMAGE is atdApi35's image (E2eWorkflowTest).
+      - name: Install the emulator and its system image
+        env:
+          SYSTEM_IMAGE: system-images;android-35;aosp_atd;x86_64
+        run: |
+          for attempt in 1 2 3; do
+            if "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install emulator "$SYSTEM_IMAGE"; then
+              exit 0
+            fi
+            echo "::warning::Installing the emulator and its system image failed (attempt $attempt of 3)"
+            if [ "$attempt" -lt 3 ]; then
+              sleep 30
+            fi
+          done
+          exit 1
+      # Gradle Managed Devices boots the emulator headless, installs the debug app and the e2e APK, and runs e2e/'s
+      # tests (docs/testing.md#end-to-end-tests).
       - name: End-to-end tests on a managed emulator
         run: ./gradlew :e2e:atdApi35DebugAndroidTest
       - name: Upload reports

@@ -9,15 +9,17 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 
 ## Latest session
 
-- **Date:** 2026-11-01
-- **Worked:** #287 → `ci/287-workflow-permissions-policy`. The ACMM `acmm:policy-as-code` check looks for
-  `.github/policies/` (among other paths); #252 removed that directory when the risk tiers moved to
-  `.github/risk-assessment.yml`. As in website#992, the reviewed `GITHUB_TOKEN` scopes moved out of
-  `WorkflowInvariantsTest`'s inline maps into `.github/policies/workflow-permissions.yml`, which the new
-  `WorkflowPermissionsPolicyTest` evaluates.
-- **Outcome:** PR open, `Closes #287`. It touches `.github/` and `tests/`, so the maintainer merges it.
+- **Date:** 2026-11-02
+- **Worked:** #307 → `fix/307-e2e-sdk-download-retry`. E2E on `main` (run 41485589533, a docs-only merge) failed in
+  `:e2e:atdApi35Setup`: the emulator zip arrived broken ("Archive is not a ZIP archive"). `e2e.yml` now installs the
+  emulator and the ATD image with `sdkmanager`, up to three times, before Gradle; `E2eWorkflowTest` keeps its
+  `SYSTEM_IMAGE` equal to `atdApi35`'s image.
+- **Outcome:** PR open, `Fixes #307`. It touches `.github/`, so the maintainer merges it.
 - **Open follow-ups:** none.
 - **Notes for next session:**
+  - Retrying `:e2e:atdApi35Setup` itself does not help: AGP installs the emulator only together with a missing system
+    image, so once a run has installed the image, a missing emulator fails with `MissingValueException` ("Cannot query
+    the value of this property"). Reproduced on this host with the image present and `emulator/` removed.
   - Podman may be missing on this host; then build on the host with `JAVA_HOME=~/tools/jdk` and
     `sdk.dir=/home/dev/tools/sdk` in `local.properties`. actionlint is not installed, and the host shellcheck is 0.9.0:
     fetch the pinned releases from `ci.yml` into `/tmp/bin`.
