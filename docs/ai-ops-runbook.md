@@ -98,8 +98,8 @@ by hand:
 ### The PR review rubric fails
 
 `scripts/pr-review-check.sh` has two requirements: a Conventional Commits title, and a body that links the issue
-(`Fixes #<N>`, or `Refs #<N>` for partial work). Bot authors are exempt from the link. Edit the PR title or body and
-the check runs again; no push is needed.
+(`Fixes #<N>`, or `Refs #<N>` for partial work). Bot authors (a login ending in `[bot]`) are exempt from both, since
+their titles follow the bot's own format (#303). Edit the PR title or body and the check runs again; no push is needed.
 
 ### Two agents worked the same issue
 

@@ -45,8 +45,10 @@ class PrReviewCheckScriptTest {
     }
 
     @Test
-    fun `does not require an issue link from bots`() {
-        assertEquals(0, check("build(deps): bump junit", "Bumps junit.", author = "dependabot[bot]").exitCode)
+    fun `does not check a bot's title or issue link`() {
+        val result = check("📖 docs(ci): point at the parser", "No issue here", author = "hive-forge-app[bot]")
+
+        assertEquals(result.stdout, 0, result.exitCode)
     }
 
     // The full case table (every closing keyword, CRLF, the colon form, the unfilled template) is a plain-bash script

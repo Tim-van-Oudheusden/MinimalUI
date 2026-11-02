@@ -63,9 +63,12 @@ expect fail 'body with keyword and number on separate lines' "$title" $'Fixes\n#
 expect fail 'body with keyword but no number' "$title" 'Fixes #'
 expect fail 'unfilled pull request template' "$title" "$(cat "$(dirname "$0")/../.github/pull_request_template.md")"
 
-# Author: bots need no issue link, but still need a valid title.
+# Author: bots are exempt from both items (#303); only a "[bot]" login counts.
 expect pass 'bot author without an issue link' 'build(deps): bump junit' 'Bumps junit.' 'dependabot[bot]'
-expect fail 'bot author with an invalid title' 'Bump junit' 'Bumps junit.' 'dependabot[bot]'
+expect pass 'bot author with a non-Conventional title' 'Bump junit' 'Bumps junit.' 'dependabot[bot]'
+expect pass "bot author with an emoji-prefixed title (Hive's format, #303)" '📖 docs(ci): point at the parser' 'Closes #301' 'hive-forge-app[bot]'
+expect fail 'human author with an emoji-prefixed title' '📖 docs(ci): point at the parser' "$body"
+expect fail "author merely ending in 'bot' without brackets" '📖 docs(ci): point at the parser' "$body" 'somebot'
 expect fail "author merely containing 'bot'" "$title" 'Small cleanup.' 'robotics-fan'
 
 # Both checks failing still exits non-zero.
