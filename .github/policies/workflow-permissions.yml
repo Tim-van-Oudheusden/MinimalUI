@@ -1,0 +1,122 @@
+# Policy: what GITHUB_TOKEN may do in each workflow.
+# Evaluated by WorkflowPermissionsPolicyTest in tests/, which
+# `./gradlew check` runs in CI: it fails when a workflow under
+# .github/workflows/ has no rule here, when a rule names a workflow that does
+# not exist, or when a workflow's `permissions:` blocks differ from its rule in
+# either direction (wider, narrower, or a job block the rule does not list).
+#
+# A workflow's top-level `permissions:` block equals `default` unless its rule
+# says otherwise, so a job without its own block can only read the repository.
+# A rule changes that with:
+#   permissions  the top-level block instead of `default`.
+#   jobs         the exact `permissions:` block of each job that declares one.
+#                A job's block replaces the top-level one; jobs not listed must
+#                not declare a block.
+# An empty rule means the default and no job-level blocks.
+#
+# The tests read this file with their own YAML reader, which has no flow
+# mappings (`{ ... }`): write every block as a block mapping.
+#
+# Widening a grant changes this file and the workflow, both high risk
+# (docs/risk-tiers.md), so the maintainer reviews and merges it.
+
+default:
+  contents: read
+
+workflows:
+  # Reads merged PRs for the audit trail.
+  ai-audit.yml:
+    permissions:
+      contents: read
+      pull-requests: read
+
+  auto-issues.yml:
+    jobs:
+      # Opens, comments on and closes the issue tracking a workflow that fails on main.
+      issue:
+        contents: read
+        issues: write
+
+  auto-review.yml:
+    jobs:
+      # Pushes the suggestions commit and posts the report; only trusted
+      # comments on same-repo PRs reach it.
+      apply:
+        contents: write
+        pull-requests: write
+
+  ci.yml:
+
+  claude.yml:
+    jobs:
+      claude:
+        contents: write
+        pull-requests: write
+        issues: write
+        id-token: write
+        actions: read
+
+  coverage-gate.yml:
+
+  e2e.yml:
+
+  # The sanctioned pull_request_target exception (docs/security/SECURITY-AI.md):
+  # checks out nothing and only labels the PR.
+  labeler.yml:
+    permissions:
+      contents: read
+      pull-requests: write
+
+  merge-queue.yml:
+    jobs:
+      # Lists open PRs and reads their merge state.
+      pick:
+        contents: read
+        pull-requests: read
+      # Merges the verified PR, then starts main's push workflows and the next queue run.
+      land:
+        actions: write
+        contents: write
+        pull-requests: write
+      # Labels a PR that failed verification `hold`, comments the run, starts the next queue run.
+      reject:
+        actions: write
+        contents: read
+        issues: write
+        pull-requests: write
+
+  nightly-compliance.yml:
+    jobs:
+      # The dependency submission API writes the graph through contents: write.
+      dependency-graph:
+        contents: write
+      # vulnerability-alerts: read lists Dependabot alerts.
+      compliance:
+        contents: read
+        vulnerability-alerts: read
+
+  # Reads closed PRs for the acceptance metric.
+  pr-metrics.yml:
+    permissions:
+      contents: read
+      pull-requests: read
+
+  quality-report.yml:
+
+  release.yml:
+    jobs:
+      # Tags the commit with a new versionName, creates its GitHub release and
+      # uploads the APK to it.
+      release:
+        contents: write
+
+  review.yml:
+
+  # Reads every issue and the PRs merged in the window for the strategy report.
+  strategy-report.yml:
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: read
+
+  tier-classifier.yml:

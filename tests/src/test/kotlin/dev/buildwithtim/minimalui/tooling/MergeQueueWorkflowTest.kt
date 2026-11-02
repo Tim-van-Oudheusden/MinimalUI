@@ -91,4 +91,25 @@ class MergeQueueWorkflowTest {
                 .toString(),
         )
     }
+
+    // Verification runs on a main-scoped event, so setup-gradle would save the Gradle home the pull request's code just
+    // ran in to main's cache, which release.yml (signing secrets) and claude.yml restore. It may read that cache, never
+    // write it; setup-java gets no `cache:` for the same reason.
+    @Test
+    fun `verifies without saving to main's Gradle or JDK cache`() {
+        val steps = queue.jobs().getValue("verify").steps()
+        val setupGradle = steps.filter { it["uses"].toString().startsWith("gradle/actions/setup-gradle@") }
+        val setupJava = steps.filter { it["uses"].toString().startsWith("actions/setup-java@") }
+
+        assertEquals(1, setupGradle.size)
+        assertEquals(
+            "true",
+            setupGradle
+                .single()["with"]
+                ?.asMap()
+                ?.get("cache-read-only")
+                .toString(),
+        )
+        setupJava.forEach { assertEquals(null, it["with"]?.asMap()?.get("cache")) }
+    }
 }

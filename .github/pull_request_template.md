@@ -21,6 +21,7 @@ Fixes #<!-- issue number -->
 
 - [ ] `./gradlew check` passes (unit tests, lint, formatting; `./gradlew spotlessApply` fixes formatting)
 - [ ] `./gradlew assembleDebug` passes
+- [ ] Comments and KDocs that list the cases, screens or callers of what this PR extends (grep the sibling names) are updated
 
 ## Notes for the reviewer
 

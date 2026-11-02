@@ -25,6 +25,9 @@ jvmTarget = "17"
 kover = "0.9.11"
 # The ktlint release Spotless formats Kotlin with (spotless {} in build.gradle.kts).
 ktlint = "1.8.0"
+# Floor for the lifecycle-runtime the Compose BOM brings (2.9.4): its lint.jar calls a Kotlin PSI API that AGP 9.5's
+# Lint no longer has, so lint reports ObsoleteLintCustomCheck, an error here. Applied in app/build.gradle.kts.
+lifecycleRuntime = "2.11.0"
 robolectric = "4.17"
 # The android-all jars Robolectric runs the app tests on, one per SDK they use (robolectric.properties and @Config).
 # Each is the build Robolectric's DefaultSdkProvider names for that SDK: change them together with robolectric (#279).
@@ -40,6 +43,7 @@ androidx-compose-material3 = { group = "androidx.compose.material3", name = "mat
 androidx-compose-ui = { group = "androidx.compose.ui", name = "ui" }
 androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
+androidx-lifecycle-runtime = { group = "androidx.lifecycle", name = "lifecycle-runtime", version.ref = "lifecycleRuntime" }
 androidx-test-runner = { group = "androidx.test", name = "runner", version.ref = "androidxTestRunner" }
 androidx-test-uiautomator = { group = "androidx.test.uiautomator", name = "uiautomator", version.ref = "androidxTestUiautomator" }
 compose-lint-checks = { group = "com.slack.lint.compose", name = "compose-lint-checks", version.ref = "composeLints" }

@@ -9,16 +9,13 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 
 ## Latest session
 
-- **Date:** 2026-10-31
-- **Worked:** #279 → `fix/279-robolectric-offline`. CI on `main` (run 41196461082, d1873d2) failed every Robolectric
-  class: Robolectric's own `MavenArtifactFetcher` got a 404 (`FileNotFoundException`) for an android-all jar from Maven
-  Central at test time. The same tree had passed on the PR, and the jar is on Maven Central, so the download was
-  transient. Gradle now resolves the android-all jars (`robolectric-android-all` bundle in `libs.versions.toml`, one
-  per SDK the tests use: 28 and 35), `:app:robolectricJars` copies them into `app/build/robolectric-jars`, and every
-  app `Test` task runs Robolectric with `robolectric.offline=true` from there. Dependabot ignores
-  `android-all-instrumented`: the versions follow the Robolectric release.
-- **Outcome:** PR open, `Fixes #279`. It touches build scripts and this file, so it is high risk and the maintainer
-  merges it.
+- **Date:** 2026-11-01
+- **Worked:** #287 → `ci/287-workflow-permissions-policy`. The ACMM `acmm:policy-as-code` check looks for
+  `.github/policies/` (among other paths); #252 removed that directory when the risk tiers moved to
+  `.github/risk-assessment.yml`. As in website#992, the reviewed `GITHUB_TOKEN` scopes moved out of
+  `WorkflowInvariantsTest`'s inline maps into `.github/policies/workflow-permissions.yml`, which the new
+  `WorkflowPermissionsPolicyTest` evaluates.
+- **Outcome:** PR open, `Closes #287`. It touches `.github/` and `tests/`, so the maintainer merges it.
 - **Open follow-ups:** none.
 - **Notes for next session:**
   - Podman may be missing on this host; then build on the host with `JAVA_HOME=~/tools/jdk` and

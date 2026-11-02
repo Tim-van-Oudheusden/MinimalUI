@@ -30,10 +30,11 @@ import dev.buildwithtim.minimalui.core.HintedScreen
 import dev.buildwithtim.minimalui.core.StatusPill
 
 /**
- * The one text-entry screen (#72), for a new name: Rename's and a new collection's. Under the [title] pill, the text
- * sits on a line of its own, starting as [initial] with the cursor at its end, and focused as the screen opens, so a
- * hardware keyboard types into it at once; a tap on it brings up the on-screen keyboard. Enter, NumPadEnter, D-pad
- * centre or the on-screen keyboard's Done action calls [onDone] with the text; Esc or Back calls [onClose].
+ * The one text-entry screen (#72), for a new name: an app's or a group's (Rename, Rename group, starting from the old
+ * name) and a new collection's or group's (starting blank). Under the [title] pill, the text sits on a line of its own,
+ * starting as [initial] with the cursor at its end, and focused as the screen opens, so a hardware keyboard types into
+ * it at once; a tap on it brings up the on-screen keyboard. Enter, NumPadEnter, D-pad centre or the on-screen
+ * keyboard's Done action calls [onDone] with the text; Esc or Back calls [onClose].
  */
 @Composable
 internal fun TextEntry(

@@ -52,9 +52,9 @@ behave. A mistake here can bypass every other check or ship to every device.
 Review: a human reviews the full diff line by line. Dependency changes follow
 the rules in `AGENTS.md` (approved, exact version, only in
 `gradle/libs.versions.toml`). Workflow changes keep PR-supplied fields in
-`env:`, never inline in `run:`, and update `WorkflowInvariantsTest` when they
-add a workflow or widen a token scope. Manifest changes justify every new
-permission.
+`env:`, never inline in `run:`, and update the token policy
+(`.github/policies/workflow-permissions.yml`) when they add a workflow or widen
+a token scope. Manifest changes justify every new permission.
 
 `.github/CODEOWNERS` makes the maintainer the owner of exactly these paths, so
 a PR that touches one requests his review automatically (GitHub skips the

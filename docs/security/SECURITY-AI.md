@@ -82,10 +82,11 @@ Agent changes go through the same gates as human ones, with no shortcuts:
   pass; review them before then or add `hold`. A human reviews and merges every high-risk PR
   ([`docs/risk-tiers.md`](../risk-tiers.md)) and every PR labelled `hold` or `sentinel-alert`. Look harder at changes
   that touch:
-  - `.github/workflows/`: keep `permissions:` least-privilege (the reviewed scopes are listed in
-    `tests/.../WorkflowInvariantsTest.kt`). Don't add `pull_request_target` to a job that checks out or runs PR code,
-    and don't interpolate event fields into `run:` (pass them through `env:`). `labeler.yml` is the sanctioned
-    `pull_request_target` exception: it checks out nothing and runs only `actions/labeler`.
+  - `.github/workflows/` and `.github/policies/`: keep `permissions:` least-privilege (the reviewed scopes are the
+    policy in `.github/policies/workflow-permissions.yml`, enforced by `WorkflowPermissionsPolicyTest`). Don't add
+    `pull_request_target` to a job that checks out or runs PR code, and don't interpolate event fields into `run:`
+    (pass them through `env:`). `labeler.yml` is the sanctioned `pull_request_target` exception: it checks out nothing
+    and runs only `actions/labeler`.
   - `.claude/settings.json`, `AGENTS.md`, `CLAUDE.md`, `prompts/`, and this file: any change that loosens agent
     boundaries needs explicit maintainer approval.
   - `app/src/main/AndroidManifest.xml`: new permissions, exported components, or intent filters change what other apps
