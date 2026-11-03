@@ -27,7 +27,9 @@ internal class ListEdits(
         action: MenuAction,
     ) {
         when (action) {
-            MenuAction.RenameGroup -> state.push(Screen.RenameGroup(menu.name))
+            MenuAction.RenameGroup -> {
+                state.push(Screen.RenameGroup(menu.name))
+            }
 
             MenuAction.DeleteGroup -> {
                 state.back()
@@ -36,7 +38,9 @@ internal class ListEdits(
             }
 
             // A group's menu lists only these two (groupMenu); naming both keeps a new row from deleting the group.
-            else -> Unit
+            else -> {
+                Unit
+            }
         }
     }
 
