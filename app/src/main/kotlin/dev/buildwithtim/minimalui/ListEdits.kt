@@ -26,13 +26,20 @@ internal class ListEdits(
         menu: Screen.GroupMenu,
         action: MenuAction,
     ) {
-        if (action == MenuAction.RenameGroup) {
-            state.push(Screen.RenameGroup(menu.name))
-            return
+        when (action) {
+            MenuAction.RenameGroup -> {
+                state.push(Screen.RenameGroup(menu.name))
+            }
+
+            MenuAction.DeleteGroup -> {
+                state.back()
+                stores.save(stores.userGroups.deleted(menu.name))
+                if (state.shownGroups.isEmpty()) state.back()
+            }
+
+            // A group's menu lists only these two (groupMenu); naming both keeps a new row from deleting the group.
+            else -> {}
         }
-        state.back()
-        stores.save(stores.userGroups.deleted(menu.name))
-        if (state.shownGroups.isEmpty()) state.back()
     }
 
     /**
