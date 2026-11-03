@@ -38,9 +38,7 @@ internal class ListEdits(
             }
 
             // A group's menu lists only these two (groupMenu); naming both keeps a new row from deleting the group.
-            else -> {
-                Unit
-            }
+            else -> {}
         }
     }
 
