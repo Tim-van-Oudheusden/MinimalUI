@@ -108,7 +108,9 @@ To keep a pull request out of the queue, add `hold` or leave it a draft. To drai
   (`SANDBOX_GRADLE_VOLUME=minimalui-sandbox-gradle-2 scripts/sandbox-gradlew.sh …`, see
   [Running the gates](testing.md#running-the-gates)). Finished worktrees are removed (`AGENTS.md`, Session Completion).
 - **Claude Code in CI** runs one job at a time per issue or pull request (concurrency group `claude-<number>`). A
-  newer request replaces the pending one instead of running next to the active job.
+  newer request replaces the pending one instead of running next to the active job. Its comment and label events run
+  on `main`'s ref while Claude may build a pull request's code, so it restores `main`'s Gradle cache without saving to
+  it, as the merge queue does (#320).
 - **Shared files.** `.claude/session-summary.md` is rewritten in each issue's own commit, so two PRs open at the same
   time conflict there. Resolve it by keeping the later session and carrying over the other's open follow-ups.
 

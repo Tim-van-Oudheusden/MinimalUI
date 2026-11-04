@@ -9,14 +9,16 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 
 ## Latest session
 
-- **Date:** 2026-11-02
-- **Worked:** #307 → `fix/307-e2e-sdk-download-retry`. E2E on `main` (run 41485589533, a docs-only merge) failed in
-  `:e2e:atdApi35Setup`: the emulator zip arrived broken ("Archive is not a ZIP archive"). `e2e.yml` now installs the
-  emulator and the ATD image with `sdkmanager`, up to three times, before Gradle; `E2eWorkflowTest` keeps its
-  `SYSTEM_IMAGE` equal to `atdApi35`'s image.
-- **Outcome:** PR open, `Fixes #307`. It touches `.github/`, so the maintainer merges it.
+- **Date:** 2026-11-04
+- **Worked:** #320 → `fix/320-claude-gradle-cache-read-only`. `claude.yml` answers `issue_comment`/`issues` events on
+  `main`'s ref, and Claude may build a same-repo PR's code there, so setup-gradle's post step could save that Gradle
+  home to the cache `release.yml` restores. Its setup-gradle now sets `cache-read-only: true`, as merge-queue `verify`
+  does since #285; `ClaudeWorkflowTest` asserts it and that setup-java has no `cache:`.
+- **Outcome:** PR open, `Fixes #320`. It touches `.github/`, so the maintainer merges it.
 - **Open follow-ups:** none.
 - **Notes for next session:**
+  - No JDK at `~/tools/jdk` on this host this time: a Temurin 21 tarball from `api.adoptium.net` into `/tmp/jdk21`
+    runs `:tests:test` and `spotlessCheck` with `JAVA_HOME=/tmp/jdk21`, no Android SDK needed for those.
   - Retrying `:e2e:atdApi35Setup` itself does not help: AGP installs the emulator only together with a missing system
     image, so once a run has installed the image, a missing emulator fails with `MissingValueException` ("Cannot query
     the value of this property"). Reproduced on this host with the image present and `emulator/` removed.
