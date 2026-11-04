@@ -46,8 +46,10 @@ flowchart LR
     work --> pr["PR: Fixes #N"]
     pr --> checks["Required checks, risk tier,<br/>sentinel, review"]
     checks --> queue["Merge queue: re-checks<br/>on latest main, merges"]
+    checks --> sweep["Hive's merge sweep:<br/>low or medium risk"]
     checks --> manual["Maintainer merges:<br/>high risk, hold, sentinel-alert"]
     queue --> closed[Issue closes]
+    sweep --> closed
     manual --> closed
 ```
 
@@ -69,10 +71,10 @@ flowchart LR
 4. **Same gates for everyone.** Agent pull requests run the same required checks as any other (`PR review rubric`,
    `Build, lint, test`, `Unit-test coverage floors`, `Static checks`, `End-to-end tests`) and get a
    [risk tier](risk-tiers.md).
-5. **The merge queue or a person merges.** No agent merges its own work. The [merge queue](#merge-queue) merges a
-   low- or medium-risk pull request once its required checks pass; a maintainer merges high-risk ones and any labelled
-   `hold` (Hive's hold-gated mode puts it on every Hive pull request) or `sentinel-alert`. `.claude/settings.json` asks
-   before `gh pr merge`.
+5. **The merge queue, Hive or a person merges.** The [merge queue](#merge-queue) merges a low- or medium-risk pull
+   request once its required checks pass, and Hive's merge sweep may do the same. A maintainer merges high-risk ones and
+   any labelled `hold` (Hive's hold-gated mode puts it on every Hive pull request) or `sentinel-alert`.
+   `.claude/settings.json` asks before `gh pr merge`.
 
 ## Merge queue
 
@@ -156,8 +158,8 @@ and the label descriptions on GitHub give their exact meaning.
   maintainer removes the label after reviewing the change.
 - **Dependencies:** any dependency or plugin change needs explicit approval (`AGENTS.md`, Dependency Management).
 - **Merges and the ruleset:** a maintainer merges every high-risk pull request and every one labelled `hold` or
-  `sentinel-alert`; the merge queue merges the rest. A maintainer applies `.github/rulesets/main.json` after a change to
-  it lands.
+  `sentinel-alert`; the merge queue or Hive's merge sweep merges the rest. A maintainer applies
+  `.github/rulesets/main.json` after a change to it lands.
 
 ## Measuring it
 

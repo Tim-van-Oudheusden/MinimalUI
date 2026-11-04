@@ -188,8 +188,9 @@ merge. The file is the source of truth: a change to it lands by PR, then a maint
 `gh api -X PUT repos/Tim-van-Oudheusden/MinimalUI/rulesets/<id> --input .github/rulesets/main.json`.
 
 Once its checks pass, the [merge queue](docs/multi-agent.md#merge-queue) re-runs `./gradlew check assembleDebug` on the
-pull request merged with the latest `main` and merges it. High-risk pull requests and those labelled `hold` or
-`sentinel-alert` wait for a maintainer; add `hold` or leave a pull request a draft to keep it out of the queue.
+pull request merged with the latest `main` and merges it. Hive's merge sweep may also merge a low- or medium-risk pull
+request. High-risk pull requests and those labelled `hold` or `sentinel-alert` wait for a maintainer; add `hold` or
+leave a pull request a draft to keep it out of the queue.
 
 [conventional-commits]: https://www.conventionalcommits.org/
 
