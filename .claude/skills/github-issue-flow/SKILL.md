@@ -39,8 +39,9 @@ branch is what you push.
    The body says `Fixes #<number>`; the `PR review rubric` check fails without
    that link or a Conventional Commits title.
 3. Confirm `git status` shows up to date with `origin/<branch>`, and hand off
-   the PR URL. The merge queue (or the maintainer, for high-risk, `hold` or
-   `sentinel-alert` PRs) merges it, and the merge closes the issue.
+   the PR URL. The merge queue or Hive's merge sweep (or the maintainer, for
+   high-risk, `hold` or `sentinel-alert` PRs) merges it, and the merge closes
+   the issue.
 4. Mirror into beads. Non-interactive shells lack the token:
    `export GITHUB_TOKEN="$(gh auth token)"`, then `bd github sync --pull-only`.
 

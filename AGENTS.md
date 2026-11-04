@@ -49,7 +49,8 @@ bd prime                     # Full beads workflow reference
   that lists them (#272)
 - When done: push the branch and open a pull request whose body says `Fixes #<number>`. Once the required checks pass,
   the merge queue (`docs/multi-agent.md#merge-queue`) merges it, or a maintainer does if it is high risk or labelled
-  `hold` or `sentinel-alert`; never merge it yourself. The merge closes the issue
+  `hold` or `sentinel-alert`. Working by hand, never merge it yourself; the sole exception is Hive's merge sweep, which
+  may merge low- and medium-risk pull requests only. The merge closes the issue
 
 ## Session Completion
 
