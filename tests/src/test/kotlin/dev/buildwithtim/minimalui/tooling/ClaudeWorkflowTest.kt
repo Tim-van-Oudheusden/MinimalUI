@@ -33,9 +33,10 @@ class ClaudeWorkflowTest {
         assertTrue(!source.contains("pull_request_target"))
     }
 
-    // claude-code-action refuses a bot sender, and hive-forge-app files issues already labelled ai-fix-requested, so a
-    // bot's label would only add a failed run. The workflow-level group is resolved before the job's `if`, so it needs
-    // the same check, or a bot's label would replace a pending run a person asked for. Bots stay out: no allowed_bots.
+    // claude-code-action refuses a bot sender, and hive-worker-bee files issues already labelled ai-fix-requested, so
+    // a bot's label would only add a failed run. The workflow-level group is resolved before the job's `if`, so it
+    // needs the same check, or a bot's label would replace a pending run a person asked for. Bots stay out: no
+    // allowed_bots.
     @Test
     fun `answers the ai-fix-requested label only when a person applies it`() {
         val personLabel =

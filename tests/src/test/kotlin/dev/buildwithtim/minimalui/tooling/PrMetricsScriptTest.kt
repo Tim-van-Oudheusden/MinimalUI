@@ -54,6 +54,19 @@ class PrMetricsScriptTest {
         assertEquals("| Other | 0 | 0 | 0 | n/a |", result.row("Other"))
     }
 
+    // The App was renamed from hive-forge-app; GitHub reports the new login for its old PRs too (#318).
+    @Test
+    fun `counts the renamed hive-worker-bee App as an agent whatever its branch`() {
+        val result =
+            report(
+                pr(7, merged = false, branch = "fix/7-crash", author = "app/hive-worker-bee"),
+                pr(8, merged = true, branch = "fix/8-crash", author = "hive-worker-bee[bot]"),
+            )
+
+        assertEquals("| Agent | 2 | 1 | 1 | 50% |", result.row("Agent"))
+        assertEquals("| Other | 0 | 0 | 0 | n/a |", result.row("Other"))
+    }
+
     @Test
     fun `reports n-a rather than a rate when the window is empty`() {
         val result = report()

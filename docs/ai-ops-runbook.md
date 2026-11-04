@@ -50,7 +50,7 @@ The launcher itself runs no AI and sends nothing anywhere. For a bad release see
   job's `if`; a comment or review passes only when it mentions `@claude` and its author is an `OWNER`, `MEMBER` or
   `COLLABORATOR`.
 - **`skipped` on the `issues` event that labelled the issue** means a bot added the label (the Hive ACMM evaluation
-  files its issues already labelled, as `hive-forge-app`). The job answers only a person's label; Claude Code's action
+  files its issues already labelled, as `hive-worker-bee`). The job answers only a person's label; Claude Code's action
   would refuse a bot sender anyway ("Workflow initiated by non-human actor"). To hand the issue over, a maintainer
   removes the label and adds it again:
   `gh issue edit <N> --remove-label ai-fix-requested && gh issue edit <N> --add-label ai-fix-requested`.

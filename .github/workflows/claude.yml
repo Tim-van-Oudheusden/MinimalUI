@@ -37,7 +37,7 @@ jobs:
   claude:
     name: Claude Code
     # Labels can only be applied by triagers, and only a person's label counts:
-    # claude-code-action refuses a bot sender (hive-forge-app files issues with
+    # claude-code-action refuses a bot sender (hive-worker-bee files issues with
     # `ai-fix-requested`), so that run would only fail. Mentions are limited to
     # people with write access so outside commenters cannot spend runs or
     # steer them.

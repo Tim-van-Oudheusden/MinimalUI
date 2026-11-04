@@ -2,8 +2,9 @@ name: PR metrics
 
 # PR acceptance metric: of the pull requests closed in the reporting window,
 # how many were merged vs. closed without merging. Split by agent-authored
-# (claude/* head branch or the hive-forge-app GitHub App) vs. other PRs so agent
-# work has its own feedback loop. Results land in the run's job summary.
+# (claude/* head branch or the hive-worker-bee GitHub App, formerly hive-forge-app)
+# vs. other PRs so agent work has its own feedback loop. Results land in the run's
+# job summary.
 
 on:
   schedule:
