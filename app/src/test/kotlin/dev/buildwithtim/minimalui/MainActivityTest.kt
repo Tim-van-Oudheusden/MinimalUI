@@ -1434,6 +1434,52 @@ class MainActivityTest {
     }
 
     @Test
+    fun `uninstalling a collection's only app closes its list, back on the collections`() {
+        install("Alarm", "com.example.alarm")
+        install("Bell", "com.example.bell")
+        val activity = launch()
+        awaitListed("Bell")
+        addToCollection(activity, "tools", new = true)
+        press(Key.DirectionDown)
+        addToCollection(activity, "games", new = true)
+        press(Key.DirectionUp)
+        press(Key.DirectionUp)
+        press(Key.Enter)
+        awaitListed("games")
+        chooseRow("games")
+        awaitListed("tools", listed = false)
+        assertEquals(listOf("Bell"), shownRows())
+        fromMenu(activity, "Uninstall")
+
+        // Android's uninstall prompt covers the launcher; the list reloads on the way back.
+        leaveAndComeBack(activity) { uninstall("com.example.bell") }
+
+        awaitListed("tools")
+        assertEquals(listOf("tools"), shownRows())
+        rule.onNodeWithText("tools").assertIsFocused()
+    }
+
+    @Test
+    fun `an app uninstalled while the collections list is up closes it with the last collection`() {
+        install("Alarm", "com.example.alarm")
+        install("Bell", "com.example.bell")
+        val activity = launch()
+        awaitListed("Bell")
+        press(Key.DirectionDown)
+        addToCollection(activity, "games", new = true)
+        press(Key.DirectionUp)
+        press(Key.DirectionUp)
+        press(Key.Enter)
+        awaitListed("games")
+
+        // Reached without Home: the notification shade into Settings, say, then Back.
+        leaveAndComeBack(activity) { uninstall("com.example.bell") }
+
+        awaitListed("Alarm")
+        rule.onNodeWithText("Collections").assertDoesNotExist()
+    }
+
+    @Test
     fun `Hide is disabled for Android's Settings and for the MinimalUI settings row`() {
         installSystemSettings()
         val activity = launch()
@@ -2265,6 +2311,26 @@ class MainActivityTest {
         type(activity, KeyEvent.KEYCODE_ESCAPE)
         awaitListed("Alarm")
         assertEquals(listOf("Alarm", "MinimalUI", "MinimalUI settings", "Groups"), shownRows())
+    }
+
+    @Test
+    fun `uninstalling an automatic group's only app closes its list, back on the groups`() {
+        install("Alarm", "com.example.alarm")
+        install("Chess", "com.example.chess", ApplicationInfo.CATEGORY_GAME)
+        val activity = launch()
+        awaitListed("Chess")
+        openGroups()
+        press(Key.Enter)
+        awaitListed("Other", listed = false)
+        assertEquals(listOf("Chess"), shownRows())
+        fromMenu(activity, "Uninstall")
+
+        // Android's uninstall prompt covers the launcher; the list reloads on the way back.
+        leaveAndComeBack(activity) { uninstall("com.example.chess") }
+
+        awaitListed("Other")
+        assertEquals(listOf("Other"), shownRows())
+        rule.onNodeWithText("Other").assertIsFocused()
     }
 
     @Test

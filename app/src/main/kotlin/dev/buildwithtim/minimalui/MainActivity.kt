@@ -60,7 +60,7 @@ class MainActivity : ComponentActivity() {
             background = worker,
             main = mainExecutor,
             load = ::installedApps,
-            publish = { state.loaded = it },
+            publish = { state.load(it) },
         )
     }
 

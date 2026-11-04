@@ -10,15 +10,20 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 ## Latest session
 
 - **Date:** 2026-11-04
-- **Worked:** #320 → `fix/320-claude-gradle-cache-read-only`. `claude.yml` answers `issue_comment`/`issues` events on
-  `main`'s ref, and Claude may build a same-repo PR's code there, so setup-gradle's post step could save that Gradle
-  home to the cache `release.yml` restores. Its setup-gradle now sets `cache-read-only: true`, as merge-queue `verify`
-  does since #285; `ClaudeWorkflowTest` asserts it and that setup-java has no `cache:`.
-- **Outcome:** PR open, `Fixes #320`. It touches `.github/`, so the maintainer merges it.
-- **Open follow-ups:** none.
+- **Worked:** #323 → `fix/323-close-emptied-lists`. Uninstall only starts Android's prompt, so the app left a
+  collection's or group's list on the next reload, which nothing closed: an empty titled list whose tapped `⎋ BACK`
+  hint did nothing. `LauncherState.load` now publishes every reload and closes a collection or group on top that shows
+  no app, with the `listsClosing` count Remove from collection, Remove from group and Hide use. `leaveCollectionIfGone`
+  and `leaveGroupIfGone` moved from `AppActions` to `LauncherState` so both paths share them; `loaded` is now
+  `private set`. Two `MainActivityTest` cases uninstall a collection's and an automatic group's only app.
+- **Outcome:** PR open, `Fixes #323`.
+- **Open follow-ups:** none filed. `load` checks only the list on top: an app's menu open over the emptied list (the
+  app removed some other way meanwhile) still returns to it empty. Uninstall cannot reach that: it closes the menu
+  first.
 - **Notes for next session:**
-  - No JDK at `~/tools/jdk` on this host this time: a Temurin 21 tarball from `api.adoptium.net` into `/tmp/jdk21`
-    runs `:tests:test` and `spotlessCheck` with `JAVA_HOME=/tmp/jdk21`, no Android SDK needed for those.
+  - No JDK or SDK at `~/tools` on this host this time: a Temurin 21 tarball from `api.adoptium.net` into `/tmp/jdk21`,
+    and the command-line tools into `/tmp/sdk` (no `unzip`: `jar xf` extracts the zip) with `sdkmanager
+    "platforms;android-37.0"`, then `sdk.dir=/tmp/sdk` in `local.properties`, run the full `check assembleDebug`.
   - Retrying `:e2e:atdApi35Setup` itself does not help: AGP installs the emulator only together with a missing system
     image, so once a run has installed the image, a missing emulator fails with `MissingValueException` ("Cannot query
     the value of this property"). Reproduced on this host with the image present and `emulator/` removed.
