@@ -3,7 +3,6 @@ package dev.buildwithtim.minimalui.ui
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.res.stringResource
 import dev.buildwithtim.minimalui.R
 import dev.buildwithtim.minimalui.core.HintedScreen
@@ -40,7 +39,7 @@ fun ContextMenu(
             rowsPerPage = rowsPerPage,
             onConfirm = { onChoose(it.action) },
             enabled = { it.enabled },
-            onKey = { key, _ -> (key == Key.Escape).also { if (it) onClose() } },
+            onKey = { key, _ -> closesOnEscape(key, onClose) },
         )
     }
 }
