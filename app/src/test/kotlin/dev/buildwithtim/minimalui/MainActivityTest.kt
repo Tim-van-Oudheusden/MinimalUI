@@ -1460,6 +1460,26 @@ class MainActivityTest {
     }
 
     @Test
+    fun `an app uninstalled while the collections list is up closes it with the last collection`() {
+        install("Alarm", "com.example.alarm")
+        install("Bell", "com.example.bell")
+        val activity = launch()
+        awaitListed("Bell")
+        press(Key.DirectionDown)
+        addToCollection(activity, "games", new = true)
+        press(Key.DirectionUp)
+        press(Key.DirectionUp)
+        press(Key.Enter)
+        awaitListed("games")
+
+        // Reached without Home: the notification shade into Settings, say, then Back.
+        leaveAndComeBack(activity) { uninstall("com.example.bell") }
+
+        awaitListed("Alarm")
+        rule.onNodeWithText("Collections").assertDoesNotExist()
+    }
+
+    @Test
     fun `Hide is disabled for Android's Settings and for the MinimalUI settings row`() {
         installSystemSettings()
         val activity = launch()

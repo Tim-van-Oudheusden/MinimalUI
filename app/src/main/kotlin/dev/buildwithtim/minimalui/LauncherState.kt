@@ -118,13 +118,15 @@ internal class LauncherState(
     /**
      * The installed apps, loaded anew: on every return, and when a package or profile changes while the launcher is up.
      * A collection or group on top that no longer shows any app closes, as when its last app is taken out of it: an
-     * app uninstalled from its menu leaves the list only here, once its prompt is gone (#323).
+     * app uninstalled from its menu leaves the list only here, once its prompt is gone (#323). So does the list of
+     * collections on top once no collection shows any, as when the last app of the last one goes while it is up.
      */
     fun load(apps: Loaded) {
         loaded = apps
         when (val top = screens.top) {
             is Screen.Collection -> leaveCollectionIfGone(top.name)
             is Screen.Group -> leaveGroupIfGone(top.name)
+            is Screen.CollectionsList -> if (stores.collections.names(visibleApps).isEmpty()) back()
             else -> Unit
         }
     }
