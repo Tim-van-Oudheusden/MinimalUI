@@ -149,6 +149,17 @@ class ContextMenuTest {
     }
 
     @Test
+    fun `the Space still held from the long press that opened the menu chooses nothing`() {
+        show()
+
+        send(AndroidKeyEvent.ACTION_DOWN, AndroidKeyEvent.KEYCODE_SPACE, repeat = 2)
+        send(AndroidKeyEvent.ACTION_UP, AndroidKeyEvent.KEYCODE_SPACE)
+
+        assertEquals(emptyList<MenuAction>(), chosen)
+        rule.onNodeWithText("App info").assertIsFocused()
+    }
+
+    @Test
     fun `the status pill stays at the top`() {
         show(status = StatusPill(wifi = false, battery = Battery(57, charging = false), clock = "9:41"))
 

@@ -97,11 +97,11 @@ class PillListState {
  * row's label in an inverted pill that hugs it (see BRANDING.md) and holds focus; a row's [value], when it has one,
  * sits at its right end. A row's [suffix], when it has one (what tells apart apps of the same name, #72), follows its
  * label on the same line, smaller and dim, and is cut off first when the row is too narrow for both. Up/Down move one
- * row and wrap around at the ends, except while held. Left/Right turn a page, stopping at the ends. Enter, D-pad centre
- * or a tap confirms a row; a disabled row is drawn dim and confirms nothing.
+ * row and wrap around at the ends, except while held. Left/Right turn a page, stopping at the ends. Enter, Space, D-pad
+ * centre or a tap confirms a row; a disabled row is drawn dim and confirms nothing.
  * A [dim] row is drawn dim too, selected or not, yet works as any other (a hidden app that type-to-filter found).
  * An item that is not [selectable] is an empty row (the root list's blank row): it takes a row on every page, and the
- * selection skips it. Holding Enter or D-pad centre until it repeats, or a touch long-press, calls [onLongPress]
+ * selection skips it. Holding Enter, Space or D-pad centre until it repeats, or a touch long-press, calls [onLongPress]
  * instead, and the release that ends it confirms nothing. [onKey] sees every other key press first, arrows included,
  * with the selected item; a key it takes does nothing else. Touch scrolling snaps to whole rows.
  */
@@ -180,7 +180,7 @@ internal fun <T> PillList(
 }
 
 /** The keys that confirm a row, as Compose's clickable reads them. */
-private val ConfirmKeys = setOf(Key.Enter, Key.NumPadEnter, Key.DirectionCenter)
+private val ConfirmKeys = setOf(Key.Enter, Key.NumPadEnter, Key.Spacebar, Key.DirectionCenter)
 
 /** The keys that move the selection: Up/Down a row, Left/Right a page. */
 private val MoveKeys =

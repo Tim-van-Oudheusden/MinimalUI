@@ -88,19 +88,19 @@ row by their glyphs, `⏎` Enter, `⎋` Esc (or Back), `☰` Menu and `⌫` Back
 a list opened from it and `⎋ CANCEL  ⏎ SAVE` in the text editor. Tapping a hint does the same as pressing its key, so
 the keys also work by touch. Screens narrower than 320 dp show only the right-hand hints.
 
-| Key                          | Action                                                                        |
-| ---------------------------- | ----------------------------------------------------------------------------- |
-| Up / Down (arrows, D-pad)    | Move one row. A fresh press past either end wraps around; holding stops there |
-| Left / Right (arrows, D-pad) | Turn a page, stopping at the first or last app                                |
-| Left / Right in settings     | Change the highlighted setting to its previous / next value, wrapping around  |
-| Enter or D-pad centre        | Open the highlighted app, collection, group or list; in a menu, do the action |
-| Enter in settings            | Change the highlighted setting to its next value; on a link row, open it      |
-| Enter in Hidden apps         | Unhide the highlighted app                                                    |
-| Menu, or hold Enter / centre | Open the highlighted app's or group's menu (touch: long-press it)             |
-| Letters, digits, Backspace   | Filter the home screen; in the text editor, type the name                     |
-| Enter in the text editor     | Save the name (Esc or Back cancels)                                           |
-| Back or Esc                  | Close the open list, one at a time; does nothing on the home screen           |
-| Home                         | Close every open list and return to the top of the home screen                |
+| Key                                  | Action                                                                        |
+| ------------------------------------ | ----------------------------------------------------------------------------- |
+| Up / Down (arrows, D-pad)            | Move one row. A fresh press past either end wraps around; holding stops there |
+| Left / Right (arrows, D-pad)         | Turn a page, stopping at the first or last app                                |
+| Left / Right in settings             | Change the highlighted setting to its previous / next value, wrapping around  |
+| Enter, Space or D-pad centre         | Open the highlighted app, collection, group or list; in a menu, do the action |
+| Enter in settings                    | Change the highlighted setting to its next value; on a link row, open it      |
+| Enter in Hidden apps                 | Unhide the highlighted app                                                    |
+| Menu, or hold Enter / Space / centre | Open the highlighted app's or group's menu (touch: long-press it)             |
+| Letters, digits, Backspace           | Filter the home screen; in the text editor, type the name                     |
+| Enter in the text editor             | Save the name (Esc or Back cancels)                                           |
+| Back or Esc                          | Close the open list, one at a time; does nothing on the home screen           |
+| Home                                 | Close every open list and return to the top of the home screen                |
 
 How each screen behaves (the home screen's blocks, the app menu, renaming, hiding, collections, groups, work apps, app
 clones and MinimalUI's own settings) is described in [`docs/usage.md`](docs/usage.md).
