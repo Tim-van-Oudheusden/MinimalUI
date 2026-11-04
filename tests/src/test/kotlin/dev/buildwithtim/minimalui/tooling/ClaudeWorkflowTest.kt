@@ -67,6 +67,24 @@ class ClaudeWorkflowTest {
         assertTrue(run.contains("exit 1"))
     }
 
+    // Comment and label events are main-scoped and this job can run a pull request's code, so setup-gradle would save
+    // that Gradle home to main's cache, which release.yml (signing secrets) restores. It may read that cache, never
+    // write it; setup-java gets no `cache:` for the same reason.
+    @Test
+    fun `restores main's Gradle cache without saving to it or the JDK cache`() {
+        val setupGradle = job.steps().single { it["uses"].toString().startsWith("gradle/actions/setup-gradle@") }
+        val setupJava = job.steps().filter { it["uses"].toString().startsWith("actions/setup-java@") }
+
+        assertEquals(
+            "true",
+            setupGradle["with"]
+                ?.asMap()
+                ?.get("cache-read-only")
+                .toString(),
+        )
+        setupJava.forEach { assertEquals(null, it["with"]?.asMap()?.get("cache")) }
+    }
+
     @Test
     fun `lets Claude run only the quality gates`() {
         val args =
