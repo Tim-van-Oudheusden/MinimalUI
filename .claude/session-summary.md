@@ -10,15 +10,16 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 ## Latest session
 
 - **Date:** 2026-11-04
-- **Worked:** #320 → `fix/320-claude-gradle-cache-read-only`. `claude.yml` answers `issue_comment`/`issues` events on
-  `main`'s ref, and Claude may build a same-repo PR's code there, so setup-gradle's post step could save that Gradle
-  home to the cache `release.yml` restores. Its setup-gradle now sets `cache-read-only: true`, as merge-queue `verify`
-  does since #285; `ClaudeWorkflowTest` asserts it and that setup-java has no `cache:`.
-- **Outcome:** PR open, `Fixes #320`. It touches `.github/`, so the maintainer merges it.
+- **Worked:** #322 → `fix/322-space-confirm-key`. Compose's clickable confirms on Space too, but `PillList`'s
+  `ConfirmKeys` left it out, so the Space still held from a long press that opened the app menu chose App info there.
+  `ConfirmKeys` now holds `Key.Spacebar`; `ContextMenuTest` pins the held Space, and `AppListTest` a Space press and a
+  Space long press. The KDocs and README's key table name Space; `TextEntry` keeps Space as typed text.
+- **Outcome:** PR open, `Fixes #322`.
 - **Open follow-ups:** none.
 - **Notes for next session:**
-  - No JDK at `~/tools/jdk` on this host this time: a Temurin 21 tarball from `api.adoptium.net` into `/tmp/jdk21`
-    runs `:tests:test` and `spotlessCheck` with `JAVA_HOME=/tmp/jdk21`, no Android SDK needed for those.
+  - No JDK or SDK on this host this time: Temurin 21 into `~/.jdks` (CONTRIBUTING), Android CLI's `install.sh`, then
+    `android sdk install platform-tools platforms/android-37.0` into `~/Android/Sdk` and `sdk.dir` in
+    `local.properties` ran `./gradlew check assembleDebug` on the host; AGP fetched build-tools itself.
   - Retrying `:e2e:atdApi35Setup` itself does not help: AGP installs the emulator only together with a missing system
     image, so once a run has installed the image, a missing emulator fails with `MissingValueException` ("Cannot query
     the value of this property"). Reproduced on this host with the image present and `emulator/` removed.

@@ -1,6 +1,6 @@
 package dev.buildwithtim.minimalui.core
 
-/** What a list does with a confirm key's press or release (Enter, D-pad centre). */
+/** What a list does with a confirm key's press or release (Enter, Space, D-pad centre). */
 enum class ConfirmKeyAction {
     /** Lets the row see it, so a press and the release that ends it confirm the row. */
     Pass,

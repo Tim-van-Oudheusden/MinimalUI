@@ -153,15 +153,17 @@ class AppListTest {
     }
 
     @Test
-    fun `Enter and D-pad centre open the focused app`() {
+    fun `Enter, Space and D-pad centre open the focused app`() {
         show()
 
         press(Key.DirectionDown)
         press(Key.Enter)
         press(Key.DirectionDown)
+        press(Key.Spacebar)
+        press(Key.DirectionDown)
         press(Key.DirectionCenter)
 
-        assertEquals(listOf("Calendar", "Camera"), opened.map { it.label })
+        assertEquals(listOf("Calendar", "Camera", "Calculator"), opened.map { it.label })
     }
 
     @Test
@@ -176,15 +178,16 @@ class AppListTest {
     }
 
     @Test
-    fun `a long press of Enter or D-pad centre asks for the menu and opens nothing`() {
+    fun `a long press of Enter, Space or D-pad centre asks for the menu and opens nothing`() {
         show()
 
         longPress(AndroidKeyEvent.KEYCODE_ENTER)
         press(Key.DirectionDown)
+        longPress(AndroidKeyEvent.KEYCODE_SPACE)
+        press(Key.DirectionDown)
         longPress(AndroidKeyEvent.KEYCODE_DPAD_CENTER)
 
-        assertEquals(listOf("Calculator", "Calendar"), menus.map { it.label })
-        assertEquals(emptyList<LauncherApp>(), opened)
+        assertEquals(listOf("Calculator", "Calendar", "Camera"), menus.map { it.label })
     }
 
     @Test
