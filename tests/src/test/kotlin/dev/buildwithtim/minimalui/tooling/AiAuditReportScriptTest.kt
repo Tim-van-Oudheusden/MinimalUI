@@ -113,6 +113,21 @@ class AiAuditReportScriptTest {
         )
     }
 
+    // The App was renamed from hive-forge-app; GitHub reports the new login for its old PRs too (#318).
+    @Test
+    fun `counts a hive-worker-bee PR as Hive even without a signature`() {
+        val result =
+            report(
+                pr(10, branch = "claude/issue-10", author = "app/hive-worker-bee", body = "No signature."),
+                pr(11, author = "hive-worker-bee[bot]", body = ""),
+            )
+
+        assertEquals(
+            listOf("| #10 | Hive | — | — |", "| #11 | Hive | — | — |"),
+            result.rows("Ledger").map { row -> row.split(" | ").let { "${it[0]} | ${it[2]} | ${it[3]} | ${it[4]} |" } },
+        )
+    }
+
     @Test
     fun `counts merges per source and per merging account, leaving out merges before the window`() {
         val result =

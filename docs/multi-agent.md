@@ -11,7 +11,7 @@ agent works is set by [`AGENTS.md`](../AGENTS.md), which is authoritative. The s
 
 | Agent | Started by | Produces |
 | --- | --- | --- |
-| Hive agents, through the `hive-forge-app` GitHub App | Hive, on its own schedule, or an operator in the Hive dashboard | Issues titled `[<agent>] …` and labelled `agent/<agent>`; pull requests authored by `hive-forge-app` and labelled `hold` |
+| Hive agents, through the `hive-worker-bee` GitHub App (formerly `hive-forge-app`) | Hive, on its own schedule, or an operator in the Hive dashboard | Issues titled `[<agent>] …` and labelled `agent/<agent>`; pull requests authored by `hive-worker-bee` and labelled `hold` |
 | Hive ACMM evaluation | An operator in the Hive dashboard | Issues titled `[ACMM L<n>] …` and labelled `acmm` and `origin/dashboard` |
 | Claude Code in CI ([`claude.yml`](../.github/workflows/claude.yml)) | A triager labelling an issue `ai-fix-requested` (the label only counts when a person applies it), or an `@claude` mention from an owner, member or collaborator | A `claude/*` branch and a pull request, or a review |
 | Local agents (Claude Code, omp, Copilot, Cursor) | A maintainer, on one issue | A `<type>/<number>-<slug>` branch and a pull request under the maintainer's account |
@@ -144,7 +144,7 @@ and the label descriptions on GitHub give their exact meaning.
 ## Where a person decides
 
 - **What agents may work on:** only triagers can apply `ai-fix-requested`, and Claude Code in CI starts only when a
-  person applies it (`github.event.sender.type == 'User'`): when `hive-forge-app` adds the label, the run is
+  person applies it (`github.event.sender.type == 'User'`): when `hive-worker-bee` adds the label, the run is
   `skipped`. `claude-code-action` would refuse that sender anyway (`Workflow initiated by non-human actor`). To hand
   such an issue to Claude Code, a maintainer first checks that no agent holds it (`hive/claimed-by-<agent>`,
   `hive/in-progress` or `stage/020-claimed` and up), then removes the label and adds it again.
@@ -160,9 +160,9 @@ and the label descriptions on GitHub give their exact meaning.
 ## Measuring it
 
 The weekly `PR metrics` workflow reports how many agent-authored pull requests (`claude/*` branches and
-`hive-forge-app`) were merged and how many were closed unmerged; see [`metrics/README.md`](metrics/README.md). A falling
-rate means the instructions, prompts or skills need another look. The weekly `AI audit trail` workflow records which
-agent and model are behind each pull request merged into `main`, and who merged it
+`hive-worker-bee`) were merged and how many were closed unmerged; see [`metrics/README.md`](metrics/README.md). A
+falling rate means the instructions, prompts or skills need another look. The weekly `AI audit trail` workflow records
+which agent and model are behind each pull request merged into `main`, and who merged it
 ([`metrics/README.md`](metrics/README.md#ai-audit-trail)).
 
 The weekly `Strategy report` workflow shows whether the agents keep up: issues opened against issues closed, the open

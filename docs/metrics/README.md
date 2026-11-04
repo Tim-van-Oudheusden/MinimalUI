@@ -63,8 +63,8 @@ scripts/auto-qa-tuner.sh --report quality-report.md --write  # apply to .github/
 ## PR acceptance rate
 
 Of the PRs closed in the reporting window (default 28 days), how many were merged vs. closed without merging. Split
-into agent-authored (head branch `claude/*`, or authored by the `hive-forge-app` GitHub App) and other. A falling
-agent acceptance rate is the signal to revisit agent instructions, prompts or skills.
+into agent-authored (head branch `claude/*`, or authored by the `hive-worker-bee` GitHub App, formerly `hive-forge-app`)
+and other. A falling agent acceptance rate is the signal to revisit agent instructions, prompts or skills.
 
 Run it with a different window from the Actions tab (**PR metrics → Run workflow → days**), or locally with an
 authenticated `gh`:
@@ -130,7 +130,7 @@ one source, checked in this order:
 
 - **Hive**: the PR body has Hive's signature line (`— hive: agent=<name> … model=<model> …`), from which the agent and
   model are taken (contributor runs sign without `agent=`, shown as `—`), or the PR is authored by the
-  `hive-forge-app` GitHub App.
+  `hive-worker-bee` GitHub App (formerly `hive-forge-app`).
 - **Claude Code (CI)**: head branch `claude/*`.
 - **Dependabot**: head branch `dependabot/*`.
 - **Other**: anything else, such as the maintainer or a local agent ([`multi-agent.md`](../multi-agent.md)).

@@ -306,7 +306,7 @@ token start no CI run, so push again or re-run CI before merging.
 issue `ai-fix-requested`, or mention `@claude` in an issue comment, PR review, or review comment, and Claude works the
 request on a `claude/*` branch and opens a pull request; it never pushes to `main`. On a pull request, `@claude review
 this` asks for a review. Mentions only count from `OWNER`/`MEMBER`/`COLLABORATOR`, the label can only be applied by
-triagers and only counts when a person applies it (a bot's or GitHub App's label, such as the one `hive-forge-app` puts
+triagers and only counts when a person applies it (a bot's or GitHub App's label, such as the one `hive-worker-bee` puts
 on `[ACMM L<n>]` issues, skips the job), and fork pull requests are refused, so outside contributors cannot start or
 steer a run. Claude may run only the quality gates (`./gradlew test`, `lint`, `assembleDebug`, `check`, and the module
 test tasks) and `./gradlew spotlessApply`. Its PRs go through the same checks and human review as any other. The workflow needs the
@@ -426,7 +426,7 @@ The security side of these layers (trust boundaries, secrets, supply chain, revi
 [`docs/security/SECURITY-AI.md`](docs/security/SECURITY-AI.md).
 
 How agent work fares is measured, not guessed: the weekly `PR metrics` workflow reports how many agent-authored PRs
-(`claude/*` branches and the `hive-forge-app` GitHub App) were merged vs. closed unmerged, the weekly `Strategy report`
+(`claude/*` branches and the `hive-worker-bee` GitHub App) were merged vs. closed unmerged, the weekly `Strategy report`
 whether the backlog is shrinking and which ACMM gaps are still open, and the weekly `AI audit trail` workflow lists
 every PR merged into `main` with the agent and model behind it and who merged it. Every metric, its
 cadence, where it is published and how to reproduce it locally is catalogued in
