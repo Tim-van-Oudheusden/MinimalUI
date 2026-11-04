@@ -188,6 +188,7 @@ class AppListTest {
         longPress(AndroidKeyEvent.KEYCODE_DPAD_CENTER)
 
         assertEquals(listOf("Calculator", "Calendar", "Camera"), menus.map { it.label })
+        assertEquals(emptyList<LauncherApp>(), opened)
     }
 
     @Test
