@@ -103,7 +103,7 @@ internal fun AboutList(
             rowHeight = rowHeight,
             rowsPerPage = rowsPerPage,
             onConfirm = {},
-            onKey = { key, _ -> (key == Key.Escape).also { if (it) onClose() } },
+            onKey = { key, _ -> closesOnEscape(key, onClose) },
         )
     }
 }
