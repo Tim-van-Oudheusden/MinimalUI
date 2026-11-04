@@ -10,16 +10,20 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 ## Latest session
 
 - **Date:** 2026-11-04
-- **Worked:** #322 → `fix/322-space-confirm-key`. Compose's clickable confirms on Space too, but `PillList`'s
-  `ConfirmKeys` left it out, so the Space still held from a long press that opened the app menu chose App info there.
-  `ConfirmKeys` now holds `Key.Spacebar`; `ContextMenuTest` pins the held Space, and `AppListTest` a Space press and a
-  Space long press. The KDocs and README's key table name Space; `TextEntry` keeps Space as typed text.
-- **Outcome:** PR open, `Fixes #322`.
-- **Open follow-ups:** none.
+- **Worked:** #323 → `fix/323-close-emptied-lists`. Uninstall only starts Android's prompt, so the app left a
+  collection's or group's list on the next reload, which nothing closed: an empty titled list whose tapped `⎋ BACK`
+  hint did nothing. `LauncherState.load` now publishes every reload and closes a collection or group on top that shows
+  no app, with the `listsClosing` count Remove from collection, Remove from group and Hide use. `leaveCollectionIfGone`
+  and `leaveGroupIfGone` moved from `AppActions` to `LauncherState` so both paths share them; `loaded` is now
+  `private set`. Two `MainActivityTest` cases uninstall a collection's and an automatic group's only app.
+- **Outcome:** PR open, `Fixes #323`.
+- **Open follow-ups:** none filed. `load` checks only the list on top: an app's menu open over the emptied list (the
+  app removed some other way meanwhile) still returns to it empty. Uninstall cannot reach that: it closes the menu
+  first.
 - **Notes for next session:**
-  - No JDK or SDK on this host this time: Temurin 21 into `~/.jdks` (CONTRIBUTING), Android CLI's `install.sh`, then
-    `android sdk install platform-tools platforms/android-37.0` into `~/Android/Sdk` and `sdk.dir` in
-    `local.properties` ran `./gradlew check assembleDebug` on the host; AGP fetched build-tools itself.
+  - No JDK or SDK at `~/tools` on this host this time: a Temurin 21 tarball from `api.adoptium.net` into `/tmp/jdk21`,
+    and the command-line tools into `/tmp/sdk` (no `unzip`: `jar xf` extracts the zip) with `sdkmanager
+    "platforms;android-37.0"`, then `sdk.dir=/tmp/sdk` in `local.properties`, run the full `check assembleDebug`.
   - Retrying `:e2e:atdApi35Setup` itself does not help: AGP installs the emulator only together with a missing system
     image, so once a run has installed the image, a missing emulator fails with `MissingValueException` ("Cannot query
     the value of this property"). Reproduced on this host with the image present and `emulator/` removed.

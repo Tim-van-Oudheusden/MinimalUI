@@ -11,7 +11,7 @@ agent works is set by [`AGENTS.md`](../AGENTS.md), which is authoritative. The s
 
 | Agent | Started by | Produces |
 | --- | --- | --- |
-| Hive agents, through the `hive-worker-bee` GitHub App (formerly `hive-forge-app`) | Hive, on its own schedule, or an operator in the Hive dashboard | Issues titled `[<agent>] …` and labelled `agent/<agent>`; pull requests authored by `hive-worker-bee` and labelled `hold` |
+| Hive agents, through the `hive-worker-bee` GitHub App (formerly `hive-forge-app`) | Hive, on its own schedule, or an operator in the Hive dashboard | Issues titled `[<agent>] …` and labelled `agent/<agent>`; pull requests authored by `hive-worker-bee`, labelled `hold` in Hive's hold-gated mode |
 | Hive ACMM evaluation | An operator in the Hive dashboard | Issues titled `[ACMM L<n>] …` and labelled `acmm` and `origin/dashboard` |
 | Claude Code in CI ([`claude.yml`](../.github/workflows/claude.yml)) | A triager labelling an issue `ai-fix-requested` (the label only counts when a person applies it), or an `@claude` mention from an owner, member or collaborator | A `claude/*` branch and a pull request, or a review |
 | Local agents (Claude Code, omp, Copilot, Cursor) | A maintainer, on one issue | A `<type>/<number>-<slug>` branch and a pull request under the maintainer's account |

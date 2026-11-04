@@ -67,9 +67,9 @@ issue](#two-agents-worked-the-same-issue)).
 The merge queue (`merge-queue.yml`, logic in `scripts/merge-queue.sh`) only picks a PR that meets every condition in
 [`multi-agent.md`](multi-agent.md#merge-queue). Check them in order:
 
-1. **Draft, `hold` or `sentinel-alert`:** `gh pr view <N> --json isDraft,labels`. Hive puts `hold` on its own PRs and
-   `sentinel-alert` on PRs that touch workflows, policies or security docs; the queue puts `hold` on a PR that failed
-   verification.
+1. **Draft, `hold` or `sentinel-alert`:** `gh pr view <N> --json isDraft,labels`. Hive's hold-gated mode puts `hold` on
+   Hive's own PRs, Hive puts `sentinel-alert` on PRs that touch workflows, policies or security docs, and the queue
+   puts `hold` on a PR that failed verification.
 2. **Required checks:** `gh pr view <N> --json mergeStateStatus` must be `CLEAN`. `BLOCKED` means a required check
    (`PR review rubric`, `Build, lint, test`, `Unit-test coverage floors`, `Static checks`, `End-to-end tests`) failed
    or has not run, or a review thread is unresolved. `BEHIND` and `DIRTY` mean the branch needs a rebase or a conflict

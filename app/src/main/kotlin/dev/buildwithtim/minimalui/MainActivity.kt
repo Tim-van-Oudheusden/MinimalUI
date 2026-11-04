@@ -60,7 +60,7 @@ class MainActivity : ComponentActivity() {
             background = worker,
             main = mainExecutor,
             load = ::installedApps,
-            publish = { state.loaded = it },
+            publish = { state.load(it) },
         )
     }
 
@@ -115,10 +115,10 @@ class MainActivity : ComponentActivity() {
         state.home()
     }
 
-    // Typing filters the list. Rows only handle arrows, Enter and Space, so typed keys fall through to here, and still
-    // arrive when the filter leaves no row to hold focus. Other keys, and Ctrl or Meta shortcuts, keep their usual job,
-    // and so does every key while another list (a context menu, the settings) or the text editor is open: the editor
-    // takes its own typing.
+    // Typing filters the list. Rows only handle arrows, Enter, Space and Menu, so typed keys fall through to here, and
+    // still arrive when the filter leaves no row to hold focus. Other keys, and Ctrl or Meta shortcuts, keep their
+    // usual job, and so does every key while another list (a context menu, the settings) or the text editor is open:
+    // the editor takes its own typing.
     override fun onKeyDown(
         keyCode: Int,
         event: KeyEvent,
