@@ -13,6 +13,7 @@ import dev.buildwithtim.minimalui.core.StatusPill
 import dev.buildwithtim.minimalui.core.appGroups
 import dev.buildwithtim.minimalui.core.duplicateSuffixes
 import dev.buildwithtim.minimalui.core.listContent
+import dev.buildwithtim.minimalui.core.listsClosing
 import dev.buildwithtim.minimalui.core.rowApps
 import dev.buildwithtim.minimalui.ui.Returned
 
@@ -35,8 +36,9 @@ internal class LauncherState(
     val stores: LauncherStores,
 ) {
     // The installed apps with their system labels, null until the first load arrives, so loading (a blank screen) is
-    // told apart from having no apps.
+    // told apart from having no apps. Set by [load].
     var loaded by mutableStateOf<Loaded?>(null)
+        private set
 
     /**
      * The installed apps as every list shows them: renamed ones by their alias, sorted by it (#72). Every list, the
@@ -112,6 +114,32 @@ internal class LauncherState(
     fun backPastMenu() {
         screens = screens.poppedPast { it is Screen.Menu || it is Screen.GroupMenu }
     }
+
+    /**
+     * The installed apps, loaded anew: on every return, and when a package or profile changes while the launcher is up.
+     * A collection or group on top that no longer shows any app closes, as when its last app is taken out of it: an
+     * app uninstalled from its menu leaves the list only here, once its prompt is gone (#323).
+     */
+    fun load(apps: Loaded) {
+        loaded = apps
+        when (val top = screens.top) {
+            is Screen.Collection -> leaveCollectionIfGone(top.name)
+            is Screen.Group -> leaveGroupIfGone(top.name)
+            else -> Unit
+        }
+    }
+
+    /**
+     * The collection called [name], on top, changed: its list closes once it shows no app, and the list of
+     * collections too once no collection shows any.
+     */
+    fun leaveCollectionIfGone(name: String) = back(listsClosing(name, stores.collections.names(visibleApps)))
+
+    /**
+     * The group called [name], on top, changed: its list closes once it shows no app, and the list of groups too once
+     * no group shows any.
+     */
+    fun leaveGroupIfGone(name: String) = back(listsClosing(name, shownGroups.map { it.name }))
 
     /** Home: back on the root list, unfiltered. */
     fun home() {

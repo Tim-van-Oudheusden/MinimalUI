@@ -9,7 +9,6 @@ import dev.buildwithtim.minimalui.core.contextMenu
 import dev.buildwithtim.minimalui.core.isLauncherSettings
 import dev.buildwithtim.minimalui.core.isOtherProfile
 import dev.buildwithtim.minimalui.core.keepsMenu
-import dev.buildwithtim.minimalui.core.listsClosing
 
 /** What the user does to one app from a list: open it, or open its context menu and choose a row there. */
 internal class AppActions(
@@ -122,7 +121,7 @@ internal class AppActions(
             MenuAction.RemoveFromCollection -> {
                 menu.collection?.let { name ->
                     stores.save(stores.collections.removed(name, app))
-                    leaveCollectionIfGone(name)
+                    state.leaveCollectionIfGone(name)
                 }
             }
 
@@ -137,7 +136,7 @@ internal class AppActions(
             MenuAction.RemoveFromGroup -> {
                 menu.group?.let { name ->
                     stores.save(stores.userGroups.removed(name, app))
-                    leaveGroupIfGone(name)
+                    state.leaveGroupIfGone(name)
                 }
             }
 
@@ -156,15 +155,7 @@ internal class AppActions(
     // Hidden from inside a collection, the app leaves its list as if removed, though the collection still holds it.
     private fun hide(menu: Screen.Menu) {
         stores.save(stores.hidden.hidden(menu.app, packageManager.systemSettings()?.packageName))
-        menu.collection?.let(::leaveCollectionIfGone)
-        menu.group?.let(::leaveGroupIfGone)
+        menu.collection?.let(state::leaveCollectionIfGone)
+        menu.group?.let(state::leaveGroupIfGone)
     }
-
-    // The collection's list closes with its last app shown, and the list of collections with the last collection that
-    // shows any.
-    private fun leaveCollectionIfGone(name: String) =
-        state.back(listsClosing(name, stores.collections.names(state.visibleApps)))
-
-    // The group's list closes once it shows no app, and the list of groups once no group shows any.
-    private fun leaveGroupIfGone(name: String) = state.back(listsClosing(name, state.shownGroups.map { it.name }))
 }
