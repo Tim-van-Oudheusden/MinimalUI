@@ -86,10 +86,12 @@ startup crash; don't assume the reporter already knows it.
 
 ## Prevention
 
-- `./gradlew test lint` runs before every signed build in `release.yml`, but neither exercises `MainActivity`'s
-  actual startup path on a device — a startup crash can still pass CI. There is no additional release-time device
-  smoke test today; adding one (emulator boot + HOME launch check in `release.yml`) is a `.github/workflows/*` change
-  and so is out of scope for this runbook (see `docs/risk-tiers.md`: `.github/*` is high-risk, human-reviewed).
+- `./gradlew check` runs before every signed build in `release.yml`, on the JVM only. The app starts on Android in
+  just one place, the required `End-to-end tests` check ([`docs/testing.md`](../testing.md#end-to-end-tests)): a debug
+  build on one API 35 emulator image. So a startup crash in the signed APK, on another Android version or on a real
+  device can still pass CI. There is no release-time device smoke test today; adding one (emulator boot + HOME launch
+  check in `release.yml`) is a `.github/workflows/*` change and so is out of scope for this runbook (see
+  `docs/risk-tiers.md`: `.github/*` is high-risk, human-reviewed).
 - [`DEVICES.md`](../../DEVICES.md) exists precisely because this app's failure modes are device-specific; keep
   reporting the device and Android version on every crash issue so patterns (a bad release that only breaks one OEM)
   are visible.
