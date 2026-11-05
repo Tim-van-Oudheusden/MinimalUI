@@ -17,9 +17,9 @@
 #
 # Ready means: from this repository (not a fork), not a draft, neither a `hold`
 # nor a `sentinel-alert` label (Hive's flag on a sensitive change, removed by a
-# maintainer after review), every required check passing (merge state CLEAN),
-# and not high risk by scripts/tier-classify.sh — high-risk changes wait for
-# the maintainer.
+# maintainer after review), merge state CLEAN (every required check passing and
+# no other check red or pending), and not high risk by scripts/tier-classify.sh
+# — high-risk changes wait for the maintainer.
 # Needs gh authenticated (GH_TOKEN) and pointed at the repository (GH_REPO, or
 # run from a checkout).
 set -euo pipefail
@@ -61,11 +61,16 @@ tier_of() {
 }
 
 next() {
-  local number head tier
+  local number head tier state
   # gh lists open pull requests by default; --jq runs gh's built-in jq, so the
   # runner needs no jq.
   while read -r number head; do
-    [ "$(merge_state "$number")" = CLEAN ] || continue
+    state="$(merge_state "$number")"
+    # Required checks pass here, so nothing else on the PR says why it waits.
+    if [ "$state" = UNSTABLE ]; then
+      echo "::notice title=Merge queue::#${number} is UNSTABLE: a check that is not required is red or pending; it stays out of the queue until that check passes"
+    fi
+    [ "$state" = CLEAN ] || continue
     git fetch --no-tags --quiet origin "refs/pull/${number}/head"
     # A push since the listing: the run its checks start sees it.
     [ "$(git rev-parse FETCH_HEAD)" = "$head" ] || continue

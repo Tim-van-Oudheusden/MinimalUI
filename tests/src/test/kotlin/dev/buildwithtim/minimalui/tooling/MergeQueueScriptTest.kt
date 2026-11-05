@@ -261,6 +261,20 @@ class MergeQueueScriptTest {
         assertEquals(emptyList<List<String>>(), calls())
     }
 
+    // UNSTABLE means every required check passed and another check did not, so nothing else says why the pull request
+    // waits. The queue still requires CLEAN: picking it would merge past a red CodeQL or risk tier check.
+    @Test
+    fun `next reports a pull request held back by a check that is not required, without picking it`() {
+        setUp(mapOf("README.md" to "launcher\n"), Pull(4, mergeStateStatus = "UNSTABLE"))
+
+        val result = mergeQueue("next")
+
+        assertEquals(result.stderr, 0, result.exitCode)
+        assertTrue(result.stdout, result.stdout.contains("::notice title=Merge queue::#4 is UNSTABLE"))
+        assertEquals(emptyMap<String, String>(), output())
+        assertEquals(emptyList<List<String>>(), calls())
+    }
+
     // A merge made with GITHUB_TOKEN starts no push run, so the queue starts main's own runs: without them a failure
     // on main would go unnoticed (auto-issues.yml watches those runs).
     @Test

@@ -85,7 +85,8 @@ check (`CI`, `Coverage gate`, `E2E`, `PR review rubric`) succeeds, a draft is ma
 
 - comes from this repository, not a fork, and is not a draft;
 - has neither a `hold` nor a `sentinel-alert` label;
-- passes every required check (merge state `CLEAN`, so review threads are resolved too);
+- has merge state `CLEAN`: every required check passes, no other check is red or pending, and review threads are
+  resolved;
 - is not high risk ([`risk-tiers.md`](risk-tiers.md)), rated by `main`'s `scripts/tier-classify.sh`.
 
 It merges that pull request onto the current `main` and runs `./gradlew check assembleDebug` on the result; the

@@ -73,7 +73,9 @@ The merge queue (`merge-queue.yml`, logic in `scripts/merge-queue.sh`) only pick
 2. **Required checks:** `gh pr view <N> --json mergeStateStatus` must be `CLEAN`. `BLOCKED` means a required check
    (`PR review rubric`, `Build, lint, test`, `Unit-test coverage floors`, `Static checks`, `End-to-end tests`) failed
    or has not run, or a review thread is unresolved. `BEHIND` and `DIRTY` mean the branch needs a rebase or a conflict
-   fixed.
+   fixed. `UNSTABLE` means every required check passed but another check, such as CodeQL, is red or pending, and the
+   queue logs `#<N> is UNSTABLE` as a notice in its run. Re-run that check if it failed on infrastructure, otherwise
+   fix what it found.
 3. **High risk:** the queue leaves high-risk PRs for a maintainer and logs `#<N> is high risk` as a notice in its run.
    The tier comes from the rules in [`risk-tiers.md`](risk-tiers.md), and `.github/CODEOWNERS` has requested the
    maintainer's review on them.
