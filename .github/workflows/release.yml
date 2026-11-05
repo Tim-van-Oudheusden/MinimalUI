@@ -121,6 +121,8 @@ jobs:
         run: ./gradlew assembleRelease
       # app-release.apk exists only when the build was signed; an unsigned build is app-release-unsigned.apk.
       # --target tags this commit; a tag that already exists was checked to mark it in the plan job.
+      # The notes open with this versionCode's user changelog (#349; FastlaneMetadataTest requires it), then the install
+      # note; --generate-notes appends GitHub's list of merged pull requests below them.
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -130,6 +132,9 @@ jobs:
         run: |
           apk="minimalui-${TAG}.apk"
           cp app/build/outputs/apk/release/app-release.apk "$apk"
+          version_code="$(sed -nE 's/^[[:space:]]*versionCode = ([0-9]+)[[:space:]]*$/\1/p' app/build.gradle.kts)"
+          changes="$(cat "fastlane/metadata/android/en-US/changelogs/${version_code}.txt")"
+          printf -v notes '%s\n\n%s' "$changes" "Install \`${apk}\` on the phone; it installs over an earlier release and keeps your settings. A debug build (from a CI run or \`./gradlew installDebug\`) is signed with a different key, so uninstall that first. [DEVICES.md](https://github.com/${GH_REPO}/blob/${TAG}/DEVICES.md) lists the phones it has been tried on."
           prerelease=()
           if [ "$PRERELEASE" = true ]; then prerelease=(--prerelease); fi
           gh release create "$TAG" "$apk" \
@@ -137,4 +142,4 @@ jobs:
             "${prerelease[@]}" \
             --title "MinimalUI ${TAG}" \
             --generate-notes \
-            --notes "Install \`${apk}\` on the phone; it installs over an earlier release and keeps your settings. A debug build (from a CI run or \`./gradlew installDebug\`) is signed with a different key, so uninstall that first. [DEVICES.md](https://github.com/${GH_REPO}/blob/${TAG}/DEVICES.md) lists the phones it has been tried on."
+            --notes "$notes"
