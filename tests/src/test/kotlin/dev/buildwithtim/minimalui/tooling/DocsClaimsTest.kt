@@ -6,16 +6,28 @@ import org.junit.Test
 
 /**
  * Facts the docs state about this repository, read from the docs and from the file that decides them. A doc names the
- * release APK, the required checks, the labels that keep a pull request out of the merge queue and the untranslated
- * group and suffix names; a later pull request changes one of them, and until now nothing failed (#329, after #175,
- * #185 and #209). Each test extracts both sides with a Regex and fails when either stops matching, so rewording a doc
- * cannot make a claim pass by finding nothing to compare.
+ * release APK, the required checks, the labels that keep a pull request out of the merge queue, the workflows that
+ * start the queue or that it starts, and the untranslated group and suffix names; a later pull request changes one of
+ * them, and until now nothing failed (#329, after #175, #185 and #209). Each test extracts both sides with a Regex and
+ * fails when either stops matching, so rewording a doc cannot make a claim pass by finding nothing to compare.
  *
  * It covers facts a file records. A claim about code behaviour or about how Hive behaves at run time is out of scope.
  */
 class DocsClaimsTest {
     private fun backticked(text: String): Set<String> =
         Regex("""`([^`]+)`""").findAll(text).map { it.groupValues[1] }.toSet()
+
+    /** The backticked names listed straight after [leadIn], as `a`, `b` and `c` or as (`a`, `b`, `c`). */
+    private fun namesAfter(
+        leadIn: String,
+        doc: String,
+    ): Set<String> =
+        Regex(
+            leadIn.split(" ").joinToString("""\s+""") { Regex.escape(it) } +
+                """\s*\(?(`[^`]+`(?:,?\s+(?:and\s+)?`[^`]+`)+)""",
+        ).find(Repo.read(doc))
+            ?.let { backticked(it.groupValues[1]) }
+            .orEmpty()
 
     // README.md names the file a user downloads; the release workflow names the file it attaches, built from the tag.
     // The tag carries the `v` (#175), which scripts/release-version.sh puts there.
@@ -46,15 +58,12 @@ class DocsClaimsTest {
                 "docs/multi-agent.md" to "run the same required checks as any other",
                 "docs/ai-ops-runbook.md" to "means a required check",
                 "AGENTS.md" to "with passing checks",
+                "CONTRIBUTING.md" to "changes land only through pull requests whose",
             )
         assertTrue("required_status_checks contexts in .github/rulesets/main.json", required.isNotEmpty())
 
         lists.forEach { (doc, leadIn) ->
-            val names =
-                Regex(Regex.escape(leadIn) + """\s*\((`[^`]+`(?:,\s+`[^`]+`)+)\)""")
-                    .find(Repo.read(doc))
-                    ?.let { backticked(it.groupValues[1]) }
-                    .orEmpty()
+            val names = namesAfter(leadIn, doc)
             assertTrue("a list of check names after \"$leadIn\" in $doc", names.isNotEmpty())
 
             assertEquals("$doc: names missing from the ruleset", emptySet<String>(), names - required)
@@ -85,6 +94,70 @@ class DocsClaimsTest {
         assertTrue("\"neither a `x` nor a `y`\" in docs/multi-agent.md", inDoc.isNotEmpty())
 
         assertEquals("labels the doc names, then the script's", inDoc, inScript)
+    }
+
+    // workflow_run decides what starts the queue, and docs/multi-agent.md restates it.
+    @Test
+    fun `the docs name the workflows that start the merge queue`() {
+        val watched =
+            Repo
+                .workflows()
+                .getValue("merge-queue.yml")
+                .getValue("on")
+                .asMap()
+                .getValue("workflow_run")
+                .asMap()
+                .getValue("workflows")
+                .asList()
+                .map { it.toString() }
+                .toSet()
+        val inDoc = namesAfter("Whenever a workflow holding a required check", "docs/multi-agent.md")
+        assertTrue("(`x`, `y`) after \"Whenever a workflow holding a required check\" in docs", inDoc.isNotEmpty())
+
+        assertEquals("workflows the doc names, then merge-queue.yml's", inDoc, watched)
+    }
+
+    // A merge made with GITHUB_TOKEN starts no push run, so the queue starts these on main itself. Both docs name them,
+    // and the runbook gives the loop that starts them by hand when the queue did not: a workflow missing from that
+    // loop goes unnoticed in exactly the failure the loop is there for.
+    @Test
+    fun `the docs name the workflows the merge queue starts on main`() {
+        val files =
+            Regex("""(?m)^MAIN_PUSH_WORKFLOWS=\(([^)]*)\)$""")
+                .find(Repo.read("scripts/merge-queue.sh"))
+                ?.groupValues
+                ?.get(1)
+                ?.trim()
+                ?.split(Regex("""\s+"""))
+                .orEmpty()
+        val names =
+            files
+                .map {
+                    Repo
+                        .workflows()
+                        .getValue(it)
+                        .getValue("name")
+                        .toString()
+                }.toSet()
+        val byHand =
+            Regex("""for w in ([^;`]+); do gh workflow run""")
+                .find(Repo.read("docs/ai-ops-runbook.md"))
+                ?.groupValues
+                ?.get(1)
+                ?.trim()
+                ?.split(Regex("""\s+"""))
+                .orEmpty()
+        val prose =
+            mapOf(
+                "docs/multi-agent.md" to "it merges the pull request (a merge commit) and starts",
+                "docs/ai-ops-runbook.md" to "after each merge the queue starts",
+            )
+        assertTrue("MAIN_PUSH_WORKFLOWS=(...) in scripts/merge-queue.sh", files.isNotEmpty())
+
+        assertEquals("the runbook's loop, then the script's array", byHand.toSet(), files.toSet())
+        prose.forEach { (doc, leadIn) ->
+            assertEquals("$doc: workflows after \"$leadIn\", then the script's", namesAfter(leadIn, doc), names)
+        }
     }
 
     // CONTRIBUTING.md says these two words stay in English and names the constants that hold them. BRANDING.md gives
