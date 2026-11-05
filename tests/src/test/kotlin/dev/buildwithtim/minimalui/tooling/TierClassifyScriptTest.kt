@@ -154,6 +154,17 @@ class TierClassifyScriptTest {
     }
 
     @Test
+    fun `fails without a tier on a risk assessment that holds no rule`() {
+        for (assessment in listOf("", "# only a comment\n\n", "rules:\n", "rules:\n  # no items yet\n")) {
+            val result = classifyWithFile(assessment, ".github/workflows/ci.yml")
+
+            assertEquals(assessment, 2, result.exitCode)
+            assertTrue(result.stderr, result.stderr.contains("no rules"))
+            assertFalse(result.stdout, result.stdout.contains("tier="))
+        }
+    }
+
+    @Test
     fun `fails without a tier when the risk assessment file is missing`() {
         val result = classify("docs/a.md", env = mapOf("RISK_TIER_POLICY" to temp.root.resolve("absent.yml").path))
 
@@ -361,6 +372,8 @@ class TierClassifyScriptTest {
                 ".devcontainer/devcontainer.json",
                 "Dockerfile",
                 ".gitattributes",
+                "config/detekt/detekt.yml",
+                ".editorconfig",
             )
 
         val result = classify(*high.toTypedArray())
@@ -378,7 +391,6 @@ class TierClassifyScriptTest {
                 "app/src/main/res/values/strings.xml",
                 "core/src/main/kotlin/dev/buildwithtim/minimalui/core/AppSearch.kt",
                 "core/src/test/kotlin/dev/buildwithtim/minimalui/core/AppSearchTest.kt",
-                ".editorconfig",
                 "somewhere/new.txt",
             )
 

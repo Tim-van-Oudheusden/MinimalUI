@@ -24,6 +24,11 @@ rules:
   - high    scripts/*
   - high    tests/*
 
+  # Gate configuration: what detekt and ktlint enforce, so a rule turned off
+  # here stops failing `check`. Spotless reads only the root .editorconfig.
+  - high    config/*
+  - high    .editorconfig
+
   # Build and dependencies (supply chain): version catalog, wrapper, build scripts.
   - high    gradle/*
   - high    *.gradle.kts

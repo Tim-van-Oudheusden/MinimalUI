@@ -6,16 +6,11 @@
 # on stdin and prints a Markdown report.
 #
 # usage: ai-audit-report.sh --since YYYY-MM-DD
-# Sources, first match wins:
-#   Hive             the body has Hive's signature line ("— hive: agent=<a> … model=<m> …";
-#                    the agent and model come from it, contributor runs leave out agent=),
-#                    or the author is the hive-worker-bee GitHub App, formerly hive-forge-app
-#                    (gh pr list reports it as app/hive-worker-bee, the REST API as
-#                    hive-worker-bee[bot]; the old names are still matched)
-#   Claude Code (CI) head branch claude/*
-#   Dependabot       head branch dependabot/*
-#   Other            anything else
+# scripts/lib/pr-source.jq defines the sources; the agent and model come from Hive's
+# signature line in the PR body.
 set -uo pipefail
+
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 usage() {
   echo "usage: $0 --since YYYY-MM-DD" >&2
@@ -33,27 +28,17 @@ done
 # mergedAt is compared as text, which orders correctly only against a YYYY-MM-DD date.
 [[ "$since" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || usage
 
-jq -r --arg since "$since" '
+jq -r -L "$HERE/lib" --arg since "$since" '
+  include "pr-source";
   def none: "—";
-  # Hive ends every PR body it writes with its signature line.
-  def signature:
-    (.body // "") | split("\n") | map(rtrimstr("\r") | select(startswith("— hive: "))) | .[0];
   def fields($line):
     if $line == null then {}
     else [$line | scan("([A-Za-z_]+)=([^ ]+)")] | map({(.[0]): .[1]}) | add // {} end;
   def attribution:
-    signature as $line
-    | fields($line) as $sig
-    | (.headRefName // "") as $branch
-    | if $line != null or ((.author.login // "") | IN("app/hive-worker-bee", "hive-worker-bee[bot]",
-                                                     "app/hive-forge-app", "hive-forge-app[bot]")) then
-        {source: "Hive", agent: ($sig.agent // none), model: ($sig.model // none)}
-      elif ($branch | startswith("claude/")) then {source: "Claude Code (CI)", agent: none, model: none}
-      elif ($branch | startswith("dependabot/")) then {source: "Dependabot", agent: none, model: none}
-      else {source: "Other", agent: none, model: none} end;
+    fields(signature) as $sig
+    | {source: source, agent: ($sig.agent // none), model: ($sig.model // none)};
   # Escapes | so text from a PR cannot add or shift table columns.
   def cell: tostring | split("|") | join("\\|");
-  def sources: ["Hive", "Claude Code (CI)", "Dependabot", "Other"];
 
   if type != "array" then error("expected a JSON array of pull requests") else . end
   | map(select(.mergedAt != null and .mergedAt >= $since) | . + {attribution: attribution})

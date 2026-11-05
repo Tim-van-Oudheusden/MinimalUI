@@ -114,9 +114,10 @@ Use the Android SDK's `apksigner` (build-tools 33 or later) and the backup copy 
    the setup is still there. Then publish it on the merge commit, in the same form the workflow uses:
 
    ```bash
+   changes="$(cat fastlane/metadata/android/en-US/changelogs/<versionCode>.txt)"
    gh release create v<versionName> minimalui-v<versionName>.apk --target <merge-commit-sha> \
      --title "MinimalUI v<versionName>" --generate-notes \
-     --notes "Signed with a new release key; it installs over earlier releases and keeps your settings. <why>."
+     --notes "$changes"$'\n\n'"Signed with a new release key; it installs over earlier releases and keeps your settings. <why>."
    ```
 
    Once that release exists, the Release workflow treats the version as released and stops there.
