@@ -51,6 +51,23 @@ tasks.test {
     for (module in rootProject.childProjects.keys) {
         inputs.file(repoRoot.file("$module/build.gradle.kts")).withPropertyName("repo-$module-build")
     }
+    // DocsClaimsTest reads these files as well. Gradle replays the last result until a declared input changes, so
+    // without them a pull request that makes one of their claims stale gets the cached pass (#337).
+    val docsClaims =
+        listOf(
+            "AGENTS.md",
+            "BRANDING.md",
+            "CONTRIBUTING.md",
+            "README.md",
+            "core/src/main/kotlin/dev/buildwithtim/minimalui/core/AppGroups.kt",
+            "core/src/main/kotlin/dev/buildwithtim/minimalui/core/DuplicateLabels.kt",
+        )
+    for (path in docsClaims) {
+        inputs
+            .file(repoRoot.file(path))
+            .withPropertyName("repo-$path")
+            .withPathSensitivity(PathSensitivity.RELATIVE)
+    }
     // CodeownersTest compares what CODEOWNERS and the risk rules select among the tracked files, so a file added or
     // removed anywhere in the repository can change its result.
     inputs
