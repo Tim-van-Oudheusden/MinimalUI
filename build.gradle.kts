@@ -65,6 +65,22 @@ subprojects {
     }
 }
 
+// Java compilation one task at a time (#339): CodeQL's autobuild intermittently fails a JavaCompile task with no
+// compiler output. Whether concurrent javac runs are the cause is a hypothesis, which this tests. Only generated
+// BuildConfig is compiled, so serializing costs next to nothing. The service holds no state; it exists to be limited.
+abstract class JavacLimit : BuildService<BuildServiceParameters.None>
+
+val javacLimit =
+    gradle.sharedServices.registerIfAbsent("javacLimit", JavacLimit::class) {
+        maxParallelUsages.set(1)
+    }
+
+subprojects {
+    tasks.withType<JavaCompile>().configureEach {
+        usesService(javacLimit)
+    }
+}
+
 // Formatting for the whole repository: `./gradlew spotlessApply` fixes it, `spotlessCheck` (part of `check`) fails on
 // it. ktlint takes its style from .editorconfig; build output, tool state and local checkouts are not ours to format.
 val notOurs = listOf("**/build/**", ".gradle/**", ".kotlin/**", ".beads/**", ".tmp/**", "worktrees/**")
