@@ -69,7 +69,7 @@ data class LauncherSetup(
             )
         }
 
-        private fun Map<*, *>.members(name: String): Map<*, *> = this[name] as? Map<*, *> ?: emptyMap<Any, Any>()
+        private fun Map<*, *>.members(name: String): Map<*, *> = (this[name] as? Map<*, *>).orEmpty()
 
         private fun Map<*, *>.components(name: String): List<String> = components(this[name])
 
@@ -84,7 +84,7 @@ data class LauncherSetup(
         private fun Map<*, *>.aliases(): String =
             members("aliases").entries.joinToString("\n") { (component, alias) ->
                 val app = component.toString().takeUnless { it.any(Char::isISOControl) }.orEmpty()
-                "$app\t${typedName(alias as? String ?: "")}"
+                "$app\t${typedName((alias as? String).orEmpty())}"
             }
     }
 }

@@ -15,49 +15,49 @@ class RootSelectionTest {
 
     @Test
     fun `the first rows to arrive select the top`() {
-        assertEquals(SelectionMove.Top, selectionMove(cause, null, null, emptyList(), 0, rows))
+        assertEquals(SelectionMove.Top, selectionMove(cause, null, null, RowChange(emptyList(), 0, rows)))
     }
 
     @Test
     fun `another Home press or query selects the top again, even with a return waiting`() {
-        assertEquals(SelectionMove.Top, selectionMove(cause.copy(homePresses = 1), cause, 2, rows, 1, rows))
-        assertEquals(SelectionMove.Top, selectionMove(cause.copy(query = "b"), cause, null, rows, 1, rows))
+        assertEquals(SelectionMove.Top, selectionMove(cause.copy(homePresses = 1), cause, 2, RowChange(rows, 1, rows)))
+        assertEquals(SelectionMove.Top, selectionMove(cause.copy(query = "b"), cause, null, RowChange(rows, 1, rows)))
     }
 
     @Test
     fun `losing every app is a new cause too`() {
         val none = cause.copy(hasApps = false)
 
-        assertEquals(SelectionMove.Top, selectionMove(none, cause, null, rows, 1, emptyList()))
+        assertEquals(SelectionMove.Top, selectionMove(none, cause, null, RowChange(rows, 1, emptyList())))
     }
 
     @Test
     fun `a new return selects its row`() {
-        assertEquals(SelectionMove.Return(2), selectionMove(cause, cause, 2, rows, 0, rows))
+        assertEquals(SelectionMove.Return(2), selectionMove(cause, cause, 2, RowChange(rows, 0, rows)))
     }
 
     @Test
     fun `a return with no apps listed waits`() {
         val none = cause.copy(hasApps = false)
 
-        assertEquals(SelectionMove.Stay, selectionMove(none, none, 2, emptyList(), 0, emptyList()))
+        assertEquals(SelectionMove.Stay, selectionMove(none, none, 2, RowChange(emptyList(), 0, emptyList())))
     }
 
     @Test
     fun `unchanged rows keep the selection`() {
-        assertEquals(SelectionMove.Stay, selectionMove(cause, cause, null, rows, 1, rows))
+        assertEquals(SelectionMove.Stay, selectionMove(cause, cause, null, RowChange(rows, 1, rows)))
     }
 
     @Test
     fun `a block growing above the selection follows its entry`() {
         val grown = listOf(recentBell, RootEntry.Blank()) + rows
 
-        assertEquals(SelectionMove.Follow(3), selectionMove(cause, cause, null, rows, 1, grown))
+        assertEquals(SelectionMove.Follow(3), selectionMove(cause, cause, null, RowChange(rows, 1, grown)))
     }
 
     @Test
     fun `rows changing below the selection keep it where it is`() {
-        assertEquals(SelectionMove.Stay, selectionMove(cause, cause, null, rows, 1, listOf(alarm, bell)))
+        assertEquals(SelectionMove.Stay, selectionMove(cause, cause, null, RowChange(rows, 1, listOf(alarm, bell))))
     }
 
     @Test
@@ -65,6 +65,6 @@ class RootSelectionTest {
         val before = listOf(alarm, RootEntry.Collections, RootEntry.Blank(), bell)
         val now = listOf(alarm, RootEntry.Blank(), bell)
 
-        assertEquals(SelectionMove.Follow(1), selectionMove(cause, cause, null, before, 1, now))
+        assertEquals(SelectionMove.Follow(1), selectionMove(cause, cause, null, RowChange(before, 1, now)))
     }
 }

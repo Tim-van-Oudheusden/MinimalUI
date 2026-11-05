@@ -44,8 +44,9 @@ tasks.test {
     }
     // FastlaneMetadataTest reads versionCode from app/build.gradle.kts; LintConfigTest, TestTimeoutConfigTest,
     // CompilerWarningsConfigTest and SdkLevelsTest read the build script of every module in settings.gradle.kts, and
-    // TestTimeoutConfigTest and CompilerWarningsConfigTest the root script's test timeout and compiler flags. The
-    // modules come from the build itself, so a module added to settings.gradle.kts is an input too (#245).
+    // TestTimeoutConfigTest, CompilerWarningsConfigTest and DetektAnalysisConfigTest the root script's test timeout,
+    // compiler flags and detekt tasks. The modules come from the build itself, so a module added to settings.gradle.kts
+    // is an input too (#245).
     inputs.file(repoRoot.file("settings.gradle.kts")).withPropertyName("repo-settings")
     inputs.file(repoRoot.file("build.gradle.kts")).withPropertyName("repo-root-build")
     for (module in rootProject.childProjects.keys) {

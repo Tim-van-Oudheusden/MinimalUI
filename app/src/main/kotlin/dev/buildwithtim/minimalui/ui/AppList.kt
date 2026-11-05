@@ -25,6 +25,7 @@ import dev.buildwithtim.minimalui.core.LauncherApp
 import dev.buildwithtim.minimalui.core.ListContent
 import dev.buildwithtim.minimalui.core.ListPosition
 import dev.buildwithtim.minimalui.core.RootEntry
+import dev.buildwithtim.minimalui.core.RowChange
 import dev.buildwithtim.minimalui.core.SelectionMove
 import dev.buildwithtim.minimalui.core.StatusPill
 import dev.buildwithtim.minimalui.core.TopCause
@@ -141,7 +142,7 @@ private fun AppListState.follow(
     rowsPerPage: Int,
 ) {
     val fresh = returned?.takeIf { it != this.returned }
-    val move = selectionMove(cause, topFor, fresh?.row, shown, list.position.selected, entries)
+    val move = selectionMove(cause, topFor, fresh?.row, RowChange(shown, list.position.selected, entries))
     shown = entries
     when (move) {
         SelectionMove.Top -> {

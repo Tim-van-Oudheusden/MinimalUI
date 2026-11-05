@@ -7,6 +7,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
 import java.nio.file.Files
+import java.util.Locale
 
 class ApplyReviewSuggestionsScriptTest {
     private val sandbox: File = Files.createTempDirectory("apply-review-").toFile()
@@ -38,7 +39,7 @@ class ApplyReviewSuggestionsScriptTest {
                 when {
                     c == '"' -> append("\\\"")
                     c == '\\' -> append("\\\\")
-                    c < ' ' -> append("\\u%04x".format(c.code))
+                    c < ' ' -> append("\\u%04x".format(Locale.ROOT, c.code))
                     else -> append(c)
                 }
             }

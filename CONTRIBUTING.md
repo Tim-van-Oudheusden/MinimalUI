@@ -280,11 +280,15 @@ saying why. Never `@Suppress`/`@SuppressLint` a finding and never add a lint bas
 ### Static analysis
 
 [detekt](https://detekt.dev) checks the Kotlin of every module (`src/main` and `src/test`) against its default rules
-for code smells: overlong or overly complex functions, swallowed exceptions, magic numbers. `./gradlew detekt`, part of
-`check`, fails on a finding; the report names the rule and lands in `<module>/build/reports/detekt/`. Fix the code: a
-function that grows past a size or complexity limit is split, not exempted. `config/detekt/detekt.yml` holds only the
-overrides, each with the reason: detekt's documented Compose settings, and size and complexity limits lifted for test
-sources. A rule that misfires is changed there for the whole project; never `@Suppress` a finding or add a baseline.
+for code smells: overlong or overly complex functions, swallowed exceptions, magic numbers, unused private code, unsafe
+casts. `./gradlew check` runs two kinds of detekt task in each module and fails on a finding from either. The plain
+`detekt` task has no classpath, so it skips every rule that needs type analysis, which makes `./gradlew detekt` alone a
+partial run. `detektMain` and `detektTest` run every rule against each compilation's classpath; in an Android module
+they run one task per variant (`detektDebug`, `detektDebugUnitTest`, ...). The report names the rule and lands in
+`<module>/build/reports/detekt/`. Fix the code: a function that grows past a size or complexity limit is split, not
+exempted. `config/detekt/detekt.yml` holds only the overrides, each with the reason: detekt's documented Compose
+settings, composables' exemption from the parameter limit, and size and complexity limits lifted for test sources. A
+rule that misfires is changed there for the whole project; never `@Suppress` a finding or add a baseline.
 
 ### Applying review suggestions
 
