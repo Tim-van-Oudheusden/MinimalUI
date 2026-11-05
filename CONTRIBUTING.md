@@ -322,9 +322,10 @@ PR-body template.
 `versionName` in `app/build.gradle.kts` decides what gets released. When `main` gets a `versionName` that has no GitHub
 release yet, `.github/workflows/release.yml` runs the unit tests and lint and builds the release APK signed with the
 MinimalUI release key. It then tags that commit `v<versionName>` and publishes a GitHub release with
-`minimalui-v<versionName>.apk` and generated notes attached. A version with a `-` suffix (`0.2.0-beta.1`) is marked as
-a pre-release. Every release is signed with the same key, so it installs over the previous one and keeps the user's
-settings.
+`minimalui-v<versionName>.apk` attached. Its notes start with the version's changelog
+(`fastlane/metadata/android/en-US/changelogs/<versionCode>.txt`) and an install note, followed by GitHub's generated
+list of merged pull requests. A version with a `-` suffix (`0.2.0-beta.1`) is marked as a pre-release. Every release is
+signed with the same key, so it installs over the previous one and keeps the user's settings.
 
 ### The release key
 
