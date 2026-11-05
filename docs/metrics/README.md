@@ -63,8 +63,8 @@ scripts/auto-qa-tuner.sh --report quality-report.md --write  # apply to .github/
 ## PR acceptance rate
 
 Of the PRs closed in the reporting window (default 28 days), how many were merged vs. closed without merging. Split
-into agent-authored (head branch `claude/*`, or authored by the `hive-worker-bee` GitHub App, formerly `hive-forge-app`)
-and other. A falling agent acceptance rate is the signal to revisit agent instructions, prompts or skills.
+into agent-authored (the sources Hive and Claude Code (CI) of the [AI audit trail](#ai-audit-trail);
+`scripts/lib/pr-source.jq` holds that one definition, so the two reports agree) and other. A falling agent acceptance rate is the signal to revisit agent instructions, prompts or skills.
 
 Run it with a different window from the Actions tab (**PR metrics → Run workflow → days**), or locally with an
 authenticated `gh`:
@@ -72,7 +72,7 @@ authenticated `gh`:
 ```bash
 since="$(date -u -d '28 days ago' +%Y-%m-%d)"
 gh pr list -R Tim-van-Oudheusden/MinimalUI --state closed --limit 1000 --search "closed:>=${since}" \
-  --json number,mergedAt,headRefName,author | scripts/pr-metrics.sh --since "$since" --days 28
+  --json number,mergedAt,headRefName,author,body | scripts/pr-metrics.sh --since "$since" --days 28
 ```
 
 ## Strategy report

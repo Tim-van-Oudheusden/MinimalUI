@@ -145,7 +145,10 @@ class MergeQueueScriptTest {
         return heads
     }
 
-    private fun mergeQueue(vararg args: String): ScriptResult {
+    private fun mergeQueue(
+        vararg args: String,
+        env: Map<String, String> = emptyMap(),
+    ): ScriptResult {
         githubOutput.writeText("")
         return runScript(
             "scripts/merge-queue.sh",
@@ -155,7 +158,7 @@ class MergeQueueScriptTest {
                     mapOf(
                         "PATH" to "${bin.path}:${System.getenv("PATH")}",
                         "GITHUB_OUTPUT" to githubOutput.path,
-                    ),
+                    ) + env,
             workDir = clone,
         )
     }
@@ -238,6 +241,18 @@ class MergeQueueScriptTest {
         val result = mergeQueue("next")
 
         assertEquals(result.stderr, 0, result.exitCode)
+        assertEquals(emptyMap<String, String>(), output())
+    }
+
+    // No rating is not a rating: a rule-less risk assessment on main must stop the queue, not merge what it can't rate.
+    @Test
+    fun `next fails and picks nothing when the risk assessment holds no rules`() {
+        setUp(mapOf("README.md" to "launcher\n"), Pull(2, files = mapOf(".github/workflows/ci.yml" to "name: CI\n")))
+        val policy = dir.resolve("risk-assessment.yml").apply { writeText("# only a comment\n") }
+
+        val result = mergeQueue("next", env = mapOf("RISK_TIER_POLICY" to policy.path))
+
+        assertEquals(result.stderr, 2, result.exitCode)
         assertEquals(emptyMap<String, String>(), output())
     }
 

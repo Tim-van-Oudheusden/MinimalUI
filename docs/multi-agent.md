@@ -163,8 +163,8 @@ and the label descriptions on GitHub give their exact meaning.
 
 ## Measuring it
 
-The weekly `PR metrics` workflow reports how many agent-authored pull requests (`claude/*` branches and
-`hive-worker-bee`) were merged and how many were closed unmerged; see [`metrics/README.md`](metrics/README.md). A
+The weekly `PR metrics` workflow reports how many agent-authored pull requests (`claude/*` branches,
+`hive-worker-bee`, and pull requests with Hive's signature) were merged and how many were closed unmerged; see [`metrics/README.md`](metrics/README.md). A
 falling rate means the instructions, prompts or skills need another look. The weekly `AI audit trail` workflow records
 which agent and model are behind each pull request merged into `main`, and who merged it
 ([`metrics/README.md`](metrics/README.md#ai-audit-trail)).

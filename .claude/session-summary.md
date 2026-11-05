@@ -9,21 +9,21 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 
 ## Latest session
 
-- **Date:** 2026-11-04
-- **Worked:** #323 → `fix/323-close-emptied-lists`. Uninstall only starts Android's prompt, so the app left a
-  collection's or group's list on the next reload, which nothing closed: an empty titled list whose tapped `⎋ BACK`
-  hint did nothing. `LauncherState.load` now publishes every reload and closes a collection or group on top that shows
-  no app, with the `listsClosing` count Remove from collection, Remove from group and Hide use. `leaveCollectionIfGone`
-  and `leaveGroupIfGone` moved from `AppActions` to `LauncherState` so both paths share them; `loaded` is now
-  `private set`. Two `MainActivityTest` cases uninstall a collection's and an automatic group's only app.
-- **Outcome:** PR open, `Fixes #323`.
-- **Open follow-ups:** none filed. `load` checks only the list on top: an app's menu open over the emptied list (the
-  app removed some other way meanwhile) still returns to it empty. Uninstall cannot reach that: it closes the menu
-  first.
+- **Date:** 2026-11-05
+- **Worked:** #349 → `feat/349-release-notes-changelog`. The GitHub release page, the only install path, showed an
+  install note and GitHub's generated PR list but never the user changelog. The `Publish release` step in
+  `release.yml` now reads `versionCode` from `app/build.gradle.kts` and puts
+  `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` first in `--notes`, then the install note;
+  `--generate-notes` still appends the PR list. Two `ReleaseWorkflowTest` cases run that step with a fake `gh`: the
+  notes open with the changelog, and a missing changelog fails the step before `gh` runs. CONTRIBUTING "Releasing"
+  and the manual `gh release create` in `docs/runbooks/release-key.md` say the same.
+- **Outcome:** PR open, `Closes #349`.
+- **Open follow-ups:** none filed. The workflow itself has not run; the first real check is the 0.1.4 release.
 - **Notes for next session:**
   - No JDK or SDK at `~/tools` on this host this time: a Temurin 21 tarball from `api.adoptium.net` into `/tmp/jdk21`,
     and the command-line tools into `/tmp/sdk` (no `unzip`: `jar xf` extracts the zip) with `sdkmanager
     "platforms;android-37.0"`, then `sdk.dir=/tmp/sdk` in `local.properties`, run the full `check assembleDebug`.
+    `:tests:check` and `spotlessCheck` need only the JDK: Gradle configures without an SDK.
   - Retrying `:e2e:atdApi35Setup` itself does not help: AGP installs the emulator only together with a missing system
     image, so once a run has installed the image, a missing emulator fails with `MissingValueException` ("Cannot query
     the value of this property"). Reproduced on this host with the image present and `emulator/` removed.

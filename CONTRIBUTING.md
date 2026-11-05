@@ -322,9 +322,10 @@ PR-body template.
 `versionName` in `app/build.gradle.kts` decides what gets released. When `main` gets a `versionName` that has no GitHub
 release yet, `.github/workflows/release.yml` runs the unit tests and lint and builds the release APK signed with the
 MinimalUI release key. It then tags that commit `v<versionName>` and publishes a GitHub release with
-`minimalui-v<versionName>.apk` and generated notes attached. A version with a `-` suffix (`0.2.0-beta.1`) is marked as
-a pre-release. Every release is signed with the same key, so it installs over the previous one and keeps the user's
-settings.
+`minimalui-v<versionName>.apk` attached. Its notes start with the version's changelog
+(`fastlane/metadata/android/en-US/changelogs/<versionCode>.txt`) and an install note, followed by GitHub's generated
+list of merged pull requests. A version with a `-` suffix (`0.2.0-beta.1`) is marked as a pre-release. Every release is
+signed with the same key, so it installs over the previous one and keeps the user's settings.
 
 ### The release key
 
@@ -419,16 +420,17 @@ AI agents working in this repo are bounded by several layers:
 3. **Personal overrides** — `.claude/settings.local.json` (gitignored). Deny rules from the project file still apply.
 4. **Structural gates** — the ruleset on `main` and CI must pass before merge, regardless of who wrote the change.
    `.github/CODEOWNERS` makes the maintainer the owner of the high-risk paths
-   ([`docs/risk-tiers.md`](docs/risk-tiers.md)): a change to CI, scripts, the build, the manifest or agent instructions
-   requests his review, and the merge queue leaves it for him to merge. What `GITHUB_TOKEN` may do in each workflow is
+   ([`docs/risk-tiers.md`](docs/risk-tiers.md)): a change to CI, scripts, the detekt or ktlint configuration, the build,
+   the manifest or agent instructions requests his review, and the merge queue leaves it for him to merge. What `GITHUB_TOKEN` may do in each workflow is
    policy as code in `.github/policies/workflow-permissions.yml`, which `WorkflowPermissionsPolicyTest` enforces.
 
 The security side of these layers (trust boundaries, secrets, supply chain, review focus, reporting) is set out in
 [`docs/security/SECURITY-AI.md`](docs/security/SECURITY-AI.md).
 
 How agent work fares is measured, not guessed: the weekly `PR metrics` workflow reports how many agent-authored PRs
-(`claude/*` branches and the `hive-worker-bee` GitHub App) were merged vs. closed unmerged, the weekly `Strategy report`
-whether the backlog is shrinking and which ACMM gaps are still open, and the weekly `AI audit trail` workflow lists
-every PR merged into `main` with the agent and model behind it and who merged it. Every metric, its
+(`claude/*` branches, the `hive-worker-bee` GitHub App, and PRs with Hive's signature) were merged vs. closed unmerged,
+the weekly `Strategy report` whether the backlog is shrinking and which ACMM gaps are still open, and the weekly
+`AI audit trail` workflow lists every PR merged into `main` with the agent and model behind it and who merged it. Every
+metric, its
 cadence, where it is published and how to reproduce it locally is catalogued in
 [`docs/metrics/README.md`](docs/metrics/README.md).
