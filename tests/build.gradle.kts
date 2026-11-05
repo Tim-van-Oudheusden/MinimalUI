@@ -68,6 +68,14 @@ tasks.test {
             .withPropertyName("repo-$path")
             .withPathSensitivity(PathSensitivity.RELATIVE)
     }
+    // AgentGuidanceParityTest compares the Claude and Cursor guidance with .github/copilot-instructions.md; .github/ is
+    // an input already, these two are not (#351).
+    for (path in listOf("CLAUDE.md", ".cursor/rules/agent-guidance.mdc")) {
+        inputs
+            .file(repoRoot.file(path))
+            .withPropertyName("repo-$path")
+            .withPathSensitivity(PathSensitivity.RELATIVE)
+    }
     // CodeownersTest compares what CODEOWNERS and the risk rules select among the tracked files, so a file added or
     // removed anywhere in the repository can change its result.
     inputs

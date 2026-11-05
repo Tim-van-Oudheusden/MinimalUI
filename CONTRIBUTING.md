@@ -414,7 +414,8 @@ to lay out.
 AI agents working in this repo are bounded by several layers:
 
 1. **Instructions** — `AGENTS.md` (authoritative), `CLAUDE.md`, `.github/copilot-instructions.md` and
-   `.cursor/rules/agent-guidance.mdc` state the rules.
+   `.cursor/rules/agent-guidance.mdc` state the rules. The last three differ only in their header; edit all three
+   together, because `AgentGuidanceParityTest` fails when their text from `## Issue tracking` on differs.
 2. **Project permissions** — `.claude/settings.json` pre-approves the quality gates, asks before dependency and
    history-rewriting commands, and denies reading secrets (`.env*`, keystores), force-pushes and `--no-verify` commits.
 3. **Personal overrides** — `.claude/settings.local.json` (gitignored). Deny rules from the project file still apply.

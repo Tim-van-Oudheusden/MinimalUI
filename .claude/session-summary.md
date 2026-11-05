@@ -10,15 +10,15 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 ## Latest session
 
 - **Date:** 2026-11-05
-- **Worked:** #349 → `feat/349-release-notes-changelog`. The GitHub release page, the only install path, showed an
-  install note and GitHub's generated PR list but never the user changelog. The `Publish release` step in
-  `release.yml` now reads `versionCode` from `app/build.gradle.kts` and puts
-  `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` first in `--notes`, then the install note;
-  `--generate-notes` still appends the PR list. Two `ReleaseWorkflowTest` cases run that step with a fake `gh`: the
-  notes open with the changelog, and a missing changelog fails the step before `gh` runs. CONTRIBUTING "Releasing"
-  and the manual `gh release create` in `docs/runbooks/release-key.md` say the same.
-- **Outcome:** PR open, `Closes #349`.
-- **Open follow-ups:** none filed. The workflow itself has not run; the first real check is the 0.1.4 release.
+- **Worked:** #351 → `test/351-agent-guidance-parity`. `CLAUDE.md`, `.github/copilot-instructions.md` and
+  `.cursor/rules/agent-guidance.mdc` are one text from `## Issue tracking` on, and nothing compared them: #332 missed
+  the Cursor copy. `AgentGuidanceParityTest` compares the three bodies and names the file that left the text the
+  others share, with its first differing line. `CLAUDE.md` and the Cursor file are now inputs of `:tests:test`, so an
+  edit to either reruns it instead of replaying the cached pass. `CONTRIBUTING.md` "Agent safety layers" says to edit
+  the three together.
+- **Outcome:** PR open, `Closes #351`.
+- **Open follow-ups:** none filed. #338 merged first; the rebase kept both input loops in `tests/build.gradle.kts`,
+  and its `TestTaskInputsTest` finds the new test's `Repo.file("…")` literals declared.
 - **Notes for next session:**
   - No JDK or SDK at `~/tools` on this host this time: a Temurin 21 tarball from `api.adoptium.net` into `/tmp/jdk21`,
     and the command-line tools into `/tmp/sdk` (no `unzip`: `jar xf` extracts the zip) with `sdkmanager
