@@ -361,6 +361,8 @@ class TierClassifyScriptTest {
                 ".devcontainer/devcontainer.json",
                 "Dockerfile",
                 ".gitattributes",
+                "config/detekt/detekt.yml",
+                ".editorconfig",
             )
 
         val result = classify(*high.toTypedArray())
@@ -378,7 +380,6 @@ class TierClassifyScriptTest {
                 "app/src/main/res/values/strings.xml",
                 "core/src/main/kotlin/dev/buildwithtim/minimalui/core/AppSearch.kt",
                 "core/src/test/kotlin/dev/buildwithtim/minimalui/core/AppSearchTest.kt",
-                ".editorconfig",
                 "somewhere/new.txt",
             )
 
