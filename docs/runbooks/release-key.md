@@ -11,7 +11,7 @@ One of these, about the key that signs every release
 - **Lost.** The backup keystore or its password is gone, so the key can't be used outside CI. Or the
   `RELEASE_KEYSTORE_BASE64` secret was overwritten or deleted too, and no copy of the key is left anywhere.
 
-Every release so far, v0.1.0 to v0.1.3, is signed by the same certificate: `CN=MinimalUI`, RSA 4096, with a v2
+Every release so far, from v0.1.0 on, is signed by the same certificate: `CN=MinimalUI`, RSA 4096, with a v2
 signature only. Its SHA-256 digest is:
 
 ```text
