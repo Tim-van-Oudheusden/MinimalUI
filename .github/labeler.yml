@@ -26,7 +26,13 @@ build:
 
 ci:
   - changed-files:
-      - any-glob-to-any-file: ['.github/**', 'scripts/**', 'tests/**', '.beads/**']
+      - any-glob-to-any-file:
+          - '.github/**'
+          - 'scripts/**'
+          - 'tests/**'
+          - '.beads/**'
+          - 'config/**'
+          - '.editorconfig'
 
 documentation:
   - changed-files:

@@ -1,6 +1,6 @@
 # Code owners: the maintainer owns every path .github/risk-assessment.yml rates
-# high (docs/risk-tiers.md): CI and gates, gate tooling, build and
-# dependencies, the app manifest, agent instructions, and container
+# high (docs/risk-tiers.md): CI and gates, gate tooling and configuration, build
+# and dependencies, the app manifest, agent instructions, and container
 # configuration. A pull request that touches one requests his review, and the
 # merge queue leaves it for him to merge. Low- and medium-risk paths have no
 # owner, so their PRs merge through the queue once the required checks pass.
@@ -16,6 +16,10 @@
 # Gate tooling: CI scripts and the tests that pin the workflows.
 /scripts/                           @Tim-van-Oudheusden
 /tests/                             @Tim-van-Oudheusden
+
+# Gate configuration: what detekt and ktlint enforce.
+/config/                            @Tim-van-Oudheusden
+/.editorconfig                      @Tim-van-Oudheusden
 
 # Build and dependencies (supply chain): version catalog, wrapper, build scripts.
 /gradle/                            @Tim-van-Oudheusden

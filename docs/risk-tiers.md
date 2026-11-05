@@ -11,8 +11,9 @@ them before then or add `hold`; a maintainer merges high-risk PRs after the
 review below.
 
 The **highest tier of any changed file wins**, so one workflow edit makes the
-whole PR high risk. A path that matches no rule is **medium** — new kinds of
-files get a real review until they are classified.
+whole PR high risk. A path that matches no rule is **medium**, and medium merges
+without a human review, so a new kind of file that configures a gate or the
+build needs a high rule in the same PR that adds it.
 
 The workflow runs the **base branch's** script and risk assessment (a second
 checkout of the base commit) against the PR's diff, so a PR cannot lower its
@@ -44,6 +45,7 @@ behave. A mistake here can bypass every other check or ship to every device.
 | ------------------------------------------------------------------------------------ | ---------------------------------------------------- |
 | `.github/*`                                                                          | CI gates, review rubric, rulesets, the risk rules    |
 | `scripts/*`, `tests/*`                                                               | Gate tooling and the tests that pin the workflows    |
+| `config/*`, `.editorconfig`                                                          | What detekt and ktlint enforce in `check`            |
 | `gradle/*`, `*.gradle.kts`, `gradle.properties`, `gradlew`, `gradlew.bat`            | Build, version catalog, wrapper (supply chain)       |
 | `app/src/main/AndroidManifest.xml`                                                   | App permissions and the HOME intent filter           |
 | `AGENTS.md`, `CLAUDE.md`, `.claude/*`, `.cursor/*`, `.beads/*`, `prompts/*`          | Agent instructions and governance                    |
@@ -72,7 +74,7 @@ it.
 
 Application code and anything not otherwise classified: `app/*`, `core/*`
 (sources, resources and tests), `e2e/*` (the end-to-end tests), plus root files
-such as `.editorconfig`.
+such as `.gitignore`.
 
 Review: the standard rubric in `.github/workflows/review.yml` — TDD evidence,
 behaviour-level tests, no weakened tests, keyboard and D-pad usability, quality
