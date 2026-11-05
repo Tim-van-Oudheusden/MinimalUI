@@ -147,11 +147,12 @@ that Gradle starts, not in `./gradlew test`; see [End-to-end tests](docs/testing
 `GITHUB_TOKEN` scopes to the policy in `.github/policies/workflow-permissions.yml`; adding a workflow means adding its
 rule there. `WorkflowInvariantsTest` checks that every job has `timeout-minutes`, every action is pinned to a commit
 SHA, no `run:` interpolates event payload (pass it through `env:`), and no `pull_request_target` workflow checks out
-code. A test for `scripts/foo.sh` goes in
-`tests/src/test/kotlin/dev/buildwithtim/minimalui/tooling/` and runs it with `runScript`. `FastlaneMetadataTest`
-holds the store listing to the stores' limits and requires a changelog for the current `versionCode`. The module sits
-at the root as `tests/` because the ACMM evaluation finds a test suite only by a root `tests/` directory (#235);
-module tests under `<module>/src/test/` are invisible to it.
+code. A test for `scripts/foo.sh` goes in `tests/src/test/kotlin/dev/buildwithtim/minimalui/tooling/` and runs it with
+`runScript`; any other command a test starts goes through `runProcess`, which kills a hung command and everything it
+started instead of leaving it running after the test (#357). `FastlaneMetadataTest` holds the store listing to the
+stores' limits and requires a changelog for the current `versionCode`. The module sits at the root as `tests/`
+because the ACMM evaluation finds a test suite only by a root `tests/` directory (#235); module tests under
+`<module>/src/test/` are invisible to it.
 
 ## Finding and claiming work
 

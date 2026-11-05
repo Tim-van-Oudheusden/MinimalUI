@@ -87,15 +87,9 @@ class MergeQueueScriptTest {
         workDir: File,
         vararg args: String,
     ): String {
-        val process =
-            ProcessBuilder(listOf("git") + args)
-                .directory(workDir)
-                .redirectErrorStream(true)
-                .apply { environment().putAll(gitEnv) }
-                .start()
-        val output = process.inputStream.bufferedReader().readText()
-        check(process.waitFor() == 0) { "git ${args.joinToString(" ")} failed: $output" }
-        return output.trim()
+        val result = runProcess(listOf("git") + args, workDir, gitEnv, mergeStderr = true)
+        check(result.exitCode == 0) { "git ${args.joinToString(" ")} failed: ${result.stdout}" }
+        return result.stdout.trim()
     }
 
     private fun commit(

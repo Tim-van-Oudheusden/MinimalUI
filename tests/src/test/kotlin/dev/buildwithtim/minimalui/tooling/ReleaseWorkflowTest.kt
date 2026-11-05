@@ -7,7 +7,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
 import java.nio.file.Files
-import java.util.concurrent.TimeUnit
 
 class ReleaseWorkflowTest {
     private val release = Repo.workflows().getValue("release.yml")
@@ -71,14 +70,15 @@ class ReleaseWorkflowTest {
         env: Map<String, String>,
         workDir: File = dir,
     ): Pair<Int, String> {
-        val process =
-            ProcessBuilder("bash", "-eo", "pipefail", "-c", step["run"].toString())
-                .directory(workDir)
-                .redirectErrorStream(true)
-                .apply { environment().putAll(env) }
-                .start()
-        check(process.waitFor(60, TimeUnit.SECONDS)) { "${step["name"]} did not finish within 60 s" }
-        return process.exitValue() to process.inputStream.bufferedReader().readText()
+        val result =
+            runProcess(
+                listOf("bash", "-eo", "pipefail", "-c", step["run"].toString()),
+                workDir,
+                env,
+                mergeStderr = true,
+                name = step["name"].toString(),
+            )
+        return result.exitCode to result.stdout
     }
 
     private fun checkSecrets(env: Map<String, String>): Pair<Int, String> = runStep(secretsCheck, env)
