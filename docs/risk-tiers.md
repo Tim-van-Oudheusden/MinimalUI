@@ -94,8 +94,10 @@ items, one per line, where the **first matching rule wins** — keep high-risk
 rules above broad globs such as `app/*` and `*.md`. `*` matches across `/`.
 `scripts/tier-classify.sh` evaluates the rules and fails without a tier if a
 line is not a blank line, a whole-line `#` comment, the `rules:` line or such
-an item, or if an item names an unknown tier; set `RISK_TIER_POLICY` to try a
-different file locally.
+an item, if an item names an unknown tier, or if the file holds no item at all
+(empty, only comments, or `rules:` with nothing under it), since every path
+would otherwise rate medium; set `RISK_TIER_POLICY` to try a different file
+locally.
 
 The engine and the shipped rules are covered by
 `tests/src/test/kotlin/dev/buildwithtim/minimalui/tooling/TierClassifyScriptTest.kt`,
