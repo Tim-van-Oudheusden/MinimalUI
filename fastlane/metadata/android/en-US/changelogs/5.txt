@@ -1,0 +1,1 @@
+Holding Space on a list now opens the highlighted app's menu the way holding Enter does, and letting go no longer opens App info by itself. Uninstalling the last app in a collection or group now closes that list, instead of leaving it open and empty with a Back hint that did nothing.
