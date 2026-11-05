@@ -5,13 +5,16 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class PrMetricsScriptTest {
+    /** One PR as `gh pr list --json number,mergedAt,headRefName,author,body` prints it; a null body leaves it out. */
     private fun pr(
         number: Int,
         merged: Boolean,
         branch: String,
         author: String = "Tim-van-Oudheusden",
+        body: String? = null,
     ) = """{"number":$number,"mergedAt":${if (merged) "\"2026-10-01T10:00:00Z\"" else "null"},""" +
-        """"headRefName":"$branch","author":{"login":"$author"}}"""
+        """"headRefName":"$branch","author":{"login":"$author"}""" +
+        (body?.let { ",\"body\":\"${it.replace("\n", "\\n")}\"" } ?: "") + "}"
 
     private fun report(vararg prs: String) =
         runScript(
@@ -65,6 +68,21 @@ class PrMetricsScriptTest {
 
         assertEquals("| Agent | 2 | 1 | 1 | 50% |", result.row("Agent"))
         assertEquals("| Other | 0 | 0 | 0 | n/a |", result.row("Other"))
+    }
+
+    // Local Hive runs open PRs under the maintainer's account from a fix/<N>-… branch; only the signature line marks
+    // them, as it does in ai-audit-report.sh (#342). A signature quoted mid-line is not one.
+    @Test
+    fun `counts a PR whose body has the Hive signature line as an agent whatever its author and branch`() {
+        val result =
+            report(
+                pr(9, merged = true, branch = "fix/9-crash", body = "Fixes #9\n\n— hive: backend=omp model=m\n"),
+                pr(10, merged = false, branch = "fix/10-crash", body = "Fixes #10, unlike a `— hive: ` run."),
+            )
+
+        assertEquals(result.stderr, 0, result.exitCode)
+        assertEquals("| Agent | 1 | 1 | 0 | 100% |", result.row("Agent"))
+        assertEquals("| Other | 1 | 0 | 1 | 0% |", result.row("Other"))
     }
 
     @Test

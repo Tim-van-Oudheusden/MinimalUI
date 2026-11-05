@@ -63,8 +63,10 @@ scripts/auto-qa-tuner.sh --report quality-report.md --write  # apply to .github/
 ## PR acceptance rate
 
 Of the PRs closed in the reporting window (default 28 days), how many were merged vs. closed without merging. Split
-into agent-authored (head branch `claude/*`, or authored by the `hive-worker-bee` GitHub App, formerly `hive-forge-app`)
-and other. A falling agent acceptance rate is the signal to revisit agent instructions, prompts or skills.
+into agent-authored (the **Hive** and **Claude Code (CI)** sources of the [AI audit trail](#ai-audit-trail)) and
+other. Both reports take the sources from `scripts/lib/pr-source.jq`, so they agree on which PRs are agent work. The
+Hive signature is read from the PR body, so the input needs the `body` field. A falling agent acceptance rate is the
+signal to revisit agent instructions, prompts or skills.
 
 Run it with a different window from the Actions tab (**PR metrics → Run workflow → days**), or locally with an
 authenticated `gh`:
@@ -72,7 +74,7 @@ authenticated `gh`:
 ```bash
 since="$(date -u -d '28 days ago' +%Y-%m-%d)"
 gh pr list -R Tim-van-Oudheusden/MinimalUI --state closed --limit 1000 --search "closed:>=${since}" \
-  --json number,mergedAt,headRefName,author | scripts/pr-metrics.sh --since "$since" --days 28
+  --json number,mergedAt,headRefName,author,body | scripts/pr-metrics.sh --since "$since" --days 28
 ```
 
 ## Strategy report
@@ -126,7 +128,7 @@ without it, the move reads as a change to its new path only.
 ## AI audit trail
 
 A record of what reached `main` and who was behind it. Each PR merged in the window (default 7 days) is attributed to
-one source, checked in this order:
+one source, checked in this order (`scripts/lib/pr-source.jq`):
 
 - **Hive**: the PR body has Hive's signature line (`— hive: agent=<name> … model=<model> …`), from which the agent and
   model are taken (contributor runs sign without `agent=`, shown as `—`), or the PR is authored by the

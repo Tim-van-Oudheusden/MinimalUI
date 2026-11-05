@@ -9,18 +9,19 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 
 ## Latest session
 
-- **Date:** 2026-11-04
-- **Worked:** #323 → `fix/323-close-emptied-lists`. Uninstall only starts Android's prompt, so the app left a
-  collection's or group's list on the next reload, which nothing closed: an empty titled list whose tapped `⎋ BACK`
-  hint did nothing. `LauncherState.load` now publishes every reload and closes a collection or group on top that shows
-  no app, with the `listsClosing` count Remove from collection, Remove from group and Hide use. `leaveCollectionIfGone`
-  and `leaveGroupIfGone` moved from `AppActions` to `LauncherState` so both paths share them; `loaded` is now
-  `private set`. Two `MainActivityTest` cases uninstall a collection's and an automatic group's only app.
-- **Outcome:** PR open, `Fixes #323`.
-- **Open follow-ups:** none filed. `load` checks only the list on top: an app's menu open over the emptied list (the
-  app removed some other way meanwhile) still returns to it empty. Uninstall cannot reach that: it closes the menu
-  first.
+- **Date:** 2026-11-05
+- **Worked:** #342 → `refactor/342-shared-pr-source`. `pr-metrics.sh` and `ai-audit-report.sh` each held a copy of
+  "is this PR agent work?", and only the audit read the `— hive:` signature, so a signed PR from the maintainer's
+  account counted as Hive in one report and Other in the other. The rule now lives in `scripts/lib/pr-source.jq`
+  (`sources`, `signature`, `source`, `agent_authored`), included by both with `jq -L "$HERE/lib"`. Audit output is
+  unchanged (diffed old vs. new on a fixture); without `body` the metric splits as before.
+- **Outcome:** PR open, `Refs #342`: the workflow part stays open.
+- **Open follow-ups:** the workflow part of #342 needs a human (no Workflows permission for agents):
+  `pr-metrics.yml` must add `body` to its `--json`, plus the `PrMetricsScriptTest` case in the issue. Until then the
+  scheduled metric still misses signed PRs.
 - **Notes for next session:**
+  - A JDK 21 was at `~/.jdks/jdk-21.0.13+9` this time: `JAVA_HOME=~/.jdks/jdk-21.0.13+9 ./gradlew :tests:test`
+    runs the tooling tests on the host without podman.
   - No JDK or SDK at `~/tools` on this host this time: a Temurin 21 tarball from `api.adoptium.net` into `/tmp/jdk21`,
     and the command-line tools into `/tmp/sdk` (no `unzip`: `jar xf` extracts the zip) with `sdkmanager
     "platforms;android-37.0"`, then `sdk.dir=/tmp/sdk` in `local.properties`, run the full `check assembleDebug`.
@@ -30,9 +31,10 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
   - Podman may be missing on this host; then build on the host with `JAVA_HOME=~/tools/jdk` and
     `sdk.dir=/home/dev/tools/sdk` in `local.properties`. actionlint is not installed, and the host shellcheck is 0.9.0:
     fetch the pinned releases from `ci.yml` into `/tmp/bin`.
-  - The host's `jq` is jaq 3.1.1, which rejects `$module`/`$label` as variable names, so 12 tests in
-    `AutoQaTunerScriptTest`, `PrMetricsScriptTest` and `QualityReportScriptTest` fail locally on an unmodified `main`
-    too; CI uses jq and passes. Put jq 1.7.1 (`jqlang/jq` release `jq-linux-amd64`) first on `PATH` to run them.
+  - The shell's `jq` is jaq 3.1.1 and `/usr/bin/jq` (what scripts started from Gradle get) is jq 1.6; both reject
+    `$module`/`$label` as variable names, so `AutoQaTunerScriptTest`, `PrMetricsScriptTest` and
+    `QualityReportScriptTest` fail locally on an unmodified `main` too; CI uses jq 1.7 and passes. Put jq 1.7.1
+    (`jqlang/jq` release `jq-linux-amd64`) first on `PATH` to run them.
   - The emulator on this host segfaults with SwiftShader Vulkan; use `-gpu swangle_indirect`
     (`docs/reflections/2026-10-29-emulator-on-this-host.md`).
   - Sandbox Gradle in this checkout needs `--project-cache-dir /tmp/pcache`, otherwise Spotless trips over host paths
