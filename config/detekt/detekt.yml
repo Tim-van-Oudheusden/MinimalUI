@@ -41,6 +41,9 @@ style:
   ReturnCount:
     # Tests only: the test helpers' parsers return as soon as they know the answer.
     excludes: ['**/test/**']
+  UnusedImport:
+    # Off by default, and neither ktlint (opt-in rule) nor the compiler reports an unused import (#369).
+    active: true
   UnusedPrivateFunction:
     # Compose: @Preview functions are called by Android Studio, never by code. (detekt 1's UnusedPrivateMember.)
     ignoreAnnotated: ['Preview']
