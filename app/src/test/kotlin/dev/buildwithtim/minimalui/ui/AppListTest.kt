@@ -42,6 +42,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import java.util.Locale
 import android.view.KeyEvent as AndroidKeyEvent
 
 @OptIn(ExperimentalTestApi::class)
@@ -96,7 +97,9 @@ class AppListTest {
     }
 
     // Enough apps for several pages, named so they sort and read in list order.
-    private val manyApps = (0 until 40).map { "App %02d".format(it) }.map { LauncherApp(it, "pkg.$it", "pkg.$it.Main") }
+    private val manyApps = (0 until 40).map { rowLabel(it) }.map { LauncherApp(it, "pkg.$it", "pkg.$it.Main") }
+
+    private fun rowLabel(row: Int) = "App %02d".format(Locale.ROOT, row)
 
     private fun press(key: Key) = rule.onRoot().performKeyInput { pressKey(key) }
 
@@ -213,7 +216,7 @@ class AppListTest {
         rule.onNodeWithText("App 00").assertDoesNotExist()
         listShown = true
 
-        rule.onNodeWithText("App %02d".format(rows + 1)).assertIsFocused()
+        rule.onNodeWithText(rowLabel(rows + 1)).assertIsFocused()
         assertEquals(page, rowsOnScreen())
     }
 
@@ -286,17 +289,17 @@ class AppListTest {
         show(manyApps)
         val page = rowsOnScreen()
         val rows = page.size
-        assertEquals((0 until rows).map { "App %02d".format(it) }, page)
+        assertEquals((0 until rows).map { rowLabel(it) }, page)
 
         press(Key.DirectionDown)
         press(Key.DirectionRight)
 
-        rule.onNodeWithText("App %02d".format(rows + 1)).assertIsFocused()
-        assertEquals((rows until 2 * rows).map { "App %02d".format(it) }, rowsOnScreen())
+        rule.onNodeWithText(rowLabel(rows + 1)).assertIsFocused()
+        assertEquals((rows until 2 * rows).map { rowLabel(it) }, rowsOnScreen())
 
         repeat(manyApps.size / rows + 1) { press(Key.DirectionRight) }
         rule.onNodeWithText("App 39").assertIsFocused()
-        assertEquals((40 - rows until 40).map { "App %02d".format(it) }, rowsOnScreen())
+        assertEquals((40 - rows until 40).map { rowLabel(it) }, rowsOnScreen())
 
         repeat(manyApps.size / rows + 1) { press(Key.DirectionLeft) }
         rule.onNodeWithText("App 00").assertIsFocused()
@@ -310,9 +313,9 @@ class AppListTest {
         val rows = rowsOnScreen().size
 
         repeat(rows) { press(Key.DirectionDown) }
-        rule.onNodeWithText("App %02d".format(rows)).assertIsFocused()
+        rule.onNodeWithText(rowLabel(rows)).assertIsFocused()
         rule.onNodeWithText("App 00").assertIsNotDisplayed()
-        assertEquals((1..rows).map { "App %02d".format(it) }, rowsOnScreen())
+        assertEquals((1..rows).map { rowLabel(it) }, rowsOnScreen())
 
         repeat(rows) { press(Key.DirectionUp) }
         rule.onNodeWithText("App 00").assertIsFocused()
@@ -341,7 +344,7 @@ class AppListTest {
         press(Key.DirectionRight)
 
         // Row number `rows` is the full list's app `rows - 2`: the block's one app and the blank row come first.
-        rule.onNodeWithText("App %02d".format(rows - 2)).assertIsFocused()
+        rule.onNodeWithText(rowLabel(rows - 2)).assertIsFocused()
         assertFillsWithWholeRows()
     }
 

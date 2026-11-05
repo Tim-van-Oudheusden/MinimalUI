@@ -27,12 +27,18 @@ plugins {
 }
 
 // Static analysis for every Kotlin module (#135): detekt's default rules plus the overrides in config/detekt/detekt.yml
-// (the plugin's default config location). Its `detekt` task covers src/main and src/test, runs under `check` and fails
-// on a finding.
+// (the plugin's default config location). `check` runs two kinds of detekt task, and either fails on a finding. The
+// plain `detekt` task covers src/main and src/test with no classpath, so it skips every rule that needs type analysis.
+// `detektMain` and `detektTest` have each compilation's classpath and run every rule, but the plugin leaves them out of
+// `check`, so this adds them (#356). In an Android module they group the per-variant tasks (`detektDebug`, ...).
 subprojects {
     apply(plugin = "dev.detekt")
     extensions.configure<dev.detekt.gradle.extensions.DetektExtension> {
         buildUponDefaultConfig = true
+    }
+    // By name, and matched as it appears: a module applies the plugins that add these tasks after this block has run.
+    tasks.matching { it.name == "check" }.configureEach {
+        dependsOn("detektMain", "detektTest")
     }
 }
 

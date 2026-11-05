@@ -1,6 +1,9 @@
 # detekt (#135) runs its default rules (buildUponDefaultConfig in build.gradle.kts); this file holds only the
-# overrides, each with the reason. Main code meets every size and complexity limit; tests are exempt from those below.
-# The Compose settings are the ones detekt documents: https://detekt.dev/docs/introduction/compose
+# overrides, each with the reason. `check` applies them through two kinds of task (#356): the plain `detekt` task has no
+# classpath and skips every rule that needs type analysis, and `detektMain` and `detektTest` run every rule.
+# Main code meets every size and complexity limit but LongParameterList's, which composables are exempt from below;
+# tests are exempt from those below. The Compose settings are the ones detekt documents, plus that exemption:
+# https://detekt.dev/docs/introduction/compose
 
 complexity:
   CyclomaticComplexMethod:
@@ -10,7 +13,10 @@ complexity:
     # Tests only: one test class per screen keeps its scenarios together (MainActivityTest).
     excludes: ['**/test/**']
   LongParameterList:
-    # Compose: composables take many parameters, most of them defaulted (modifier, colours, callbacks).
+    # Compose: a stateless composable takes its state and callbacks as parameters; a class holding them only to pass
+    # them on would hide what it depends on.
+    ignoreAnnotated: ['Composable']
+    # A parameter with a default costs a caller nothing, so only the ones each call must pass count.
     ignoreDefaultParameters: true
 
 naming:

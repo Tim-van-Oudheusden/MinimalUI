@@ -26,37 +26,38 @@ sealed interface SelectionMove {
     ) : SelectionMove
 }
 
+/** The root list's rows going from [before] to [now], with row [selected] selected. */
+class RowChange(
+    val before: List<RootEntry>,
+    val selected: Int,
+    val now: List<RootEntry>,
+)
+
 /**
- * How the root list's selection moves when its rows change from [before] to [now], with row [selected] selected. A
- * [cause] other than the [lastCause] the top was selected for selects the top; else a return not yet acted on, to
- * [returnedRow], selects its row once there are apps; else rows that changed keep the selection on its entry
- * ([followedRow]), moving it only when that entry moved or its row is now blank.
+ * How the root list's selection moves when its [rows] change. A [cause] other than the [lastCause] the top was selected
+ * for selects the top; else a return not yet acted on, to [returnedRow], selects its row once there are apps; else rows
+ * that changed keep the selection on its entry ([followedRow]), moving it only when that entry moved or its row is now
+ * blank.
  */
 fun selectionMove(
     cause: TopCause,
     lastCause: TopCause?,
     returnedRow: Int?,
-    before: List<RootEntry>,
-    selected: Int,
-    now: List<RootEntry>,
+    rows: RowChange,
 ): SelectionMove {
-    val hasApps = now.isNotEmpty()
+    val hasApps = rows.now.isNotEmpty()
     return when {
         cause != lastCause -> SelectionMove.Top
         returnedRow != null && hasApps -> SelectionMove.Return(returnedRow)
-        hasApps && now != before -> followed(before, selected, now)
+        hasApps && rows.now != rows.before -> followed(rows)
         else -> SelectionMove.Stay
     }
 }
 
-private fun followed(
-    before: List<RootEntry>,
-    selected: Int,
-    now: List<RootEntry>,
-): SelectionMove {
-    val row = followedRow(before, selected, now)
-    return if (row != selected ||
-        now.getOrNull(row)?.selectable == false
+private fun followed(rows: RowChange): SelectionMove {
+    val row = followedRow(rows.before, rows.selected, rows.now)
+    return if (row != rows.selected ||
+        rows.now.getOrNull(row)?.selectable == false
     ) {
         SelectionMove.Follow(row)
     } else {
