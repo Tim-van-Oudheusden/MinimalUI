@@ -285,11 +285,9 @@ class TierClassifyScriptTest {
             script: String,
             stdin: String = "",
         ): String {
-            val process = ProcessBuilder("bash", "-c", script).directory(repo).redirectErrorStream(true).start()
-            process.outputStream.use { it.write(stdin.toByteArray(Charsets.UTF_8)) }
-            val output = process.inputStream.readBytes().toString(Charsets.UTF_8)
-            assertEquals(output, 0, process.waitFor())
-            return output
+            val result = runProcess(listOf("bash", "-c", script), repo, stdin = stdin, mergeStderr = true)
+            assertEquals(result.stdout, 0, result.exitCode)
+            return result.stdout
         }
         bash(
             """

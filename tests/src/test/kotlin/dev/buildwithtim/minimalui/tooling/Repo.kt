@@ -1,8 +1,9 @@
 package dev.buildwithtim.minimalui.tooling
 
 import java.io.File
-import java.io.IOException
 import java.util.concurrent.TimeUnit
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 /** The repository under test; `tests/build.gradle.kts` passes its root as the `repo.root` system property. */
 object Repo {
@@ -112,27 +113,62 @@ fun runScript(
     env: Map<String, String> = emptyMap(),
     stdin: String = "",
     workDir: File = Repo.root,
+): ScriptResult = runProcess(listOf(Repo.file(script).path) + args, workDir, env, stdin, name = script)
+
+/**
+ * Runs [command] in [workDir] with [env] added to a copy of this process's environment and [stdin] as its input, and
+ * waits up to [timeout] for it. With [mergeStderr], stderr goes to [ScriptResult.stdout] as well. [name] is how a
+ * failure refers to the command.
+ *
+ * If the command runs past [timeout], or the wait fails any other way (an interrupt), the command and every process it
+ * started are killed and waited for before the failure propagates: a hung script must not outlive the test (#357).
+ */
+fun runProcess(
+    command: List<String>,
+    workDir: File = Repo.root,
+    env: Map<String, String> = emptyMap(),
+    stdin: String = "",
+    mergeStderr: Boolean = false,
+    timeout: Duration = 60.seconds,
+    name: String = command.joinToString(" "),
 ): ScriptResult {
-    val out = File.createTempFile("script-out", ".txt")
-    val err = File.createTempFile("script-err", ".txt")
+    val input = File.createTempFile("process-in", ".txt").apply { writeText(stdin) }
+    val out = File.createTempFile("process-out", ".txt")
+    val err = File.createTempFile("process-err", ".txt")
     try {
         val process =
-            ProcessBuilder(listOf(Repo.file(script).path) + args)
+            ProcessBuilder(command)
                 .directory(workDir)
+                .redirectInput(input)
                 .redirectOutput(out)
-                .redirectError(err)
-                .apply { environment().putAll(env) }
-                .start()
+                .apply {
+                    if (mergeStderr) redirectErrorStream(true) else redirectError(err)
+                    environment().putAll(env)
+                }.start()
         try {
-            process.outputStream.bufferedWriter().use { it.write(stdin) }
-        } catch (ignored: IOException) {
-            // The script exited before reading all of stdin (a usage or policy error); its exit code and output
-            // below are the result.
+            check(process.waitFor(timeout.inWholeMilliseconds, TimeUnit.MILLISECONDS)) {
+                "$name did not finish within $timeout"
+            }
+        } catch (failure: Throwable) {
+            runCatching { process.killTree() }.exceptionOrNull()?.let(failure::addSuppressed)
+            throw failure
         }
-        check(process.waitFor(60, TimeUnit.SECONDS)) { "$script did not finish within 60 s" }
         return ScriptResult(process.exitValue(), out.readText(), err.readText())
     } finally {
+        input.delete()
         out.delete()
         err.delete()
     }
+}
+
+/**
+ * Kills this process and every process it started (`quality-report.sh` runs Gradle, which starts daemons), and waits
+ * for them all to exit. The tree is listed before the kill, while the children are still this process's.
+ */
+private fun Process.killTree() {
+    val descendants = descendants().toList()
+    destroyForcibly()
+    descendants.forEach { it.destroyForcibly() }
+    waitFor()
+    descendants.forEach { it.onExit().get(10, TimeUnit.SECONDS) }
 }

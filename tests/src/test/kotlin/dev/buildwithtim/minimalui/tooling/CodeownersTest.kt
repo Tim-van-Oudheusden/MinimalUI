@@ -5,7 +5,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import java.util.concurrent.TimeUnit
 
 /**
  * `.github/CODEOWNERS` makes the maintainer the owner of exactly the paths `.github/risk-assessment.yml` rates high,
@@ -24,16 +23,9 @@ class CodeownersTest {
             .filter { it.isNotEmpty() && !it.startsWith("#") }
 
     private fun git(vararg args: String): String {
-        val out = temp.newFile()
-        val process =
-            ProcessBuilder(listOf("git") + args)
-                .directory(Repo.root)
-                .redirectOutput(out)
-                .redirectError(ProcessBuilder.Redirect.INHERIT)
-                .start()
-        check(process.waitFor(60, TimeUnit.SECONDS)) { "git ${args.joinToString(" ")} did not finish within 60 s" }
-        assertEquals("git ${args.joinToString(" ")}", 0, process.exitValue())
-        return out.readText()
+        val result = runProcess(listOf("git") + args)
+        assertEquals("git ${args.joinToString(" ")}: ${result.stderr}", 0, result.exitCode)
+        return result.stdout
     }
 
     private fun String.nulSeparated(): List<String> = split('\u0000').filter { it.isNotEmpty() }.sorted()

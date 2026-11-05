@@ -8,7 +8,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
 import java.nio.file.Files
-import java.util.concurrent.TimeUnit
 
 class AutoReviewWorkflowTest {
     private val workflow = Yaml.parse(Repo.read(".github/workflows/auto-review.yml")).asMap()
@@ -129,23 +128,24 @@ class AutoReviewWorkflowTest {
         )
         workDir.resolve("commit.json").writeText("""{"commit":{"committer":{"date":"$headCommittedAt"}}}""")
         val outputs = workDir.resolve("github-output").apply { writeText("") }
-        val log = workDir.resolve("log.txt")
 
-        val process =
-            ProcessBuilder("bash", "-c", step("Resolve pull request head")["run"].toString())
-                .directory(workDir)
-                .redirectErrorStream(true)
-                .redirectOutput(log)
-                .apply {
-                    environment()["PATH"] = "${workDir.path}:${System.getenv("PATH")}"
-                    environment()["FAKE_DIR"] = workDir.path
-                    environment()["GITHUB_OUTPUT"] = outputs.path
-                    environment()["REPO"] = "owner/minimalui"
-                    environment()["PR_NUMBER"] = "7"
-                    environment()["COMMENT_AT"] = commentedAt
-                }.start()
-        check(process.waitFor(60, TimeUnit.SECONDS)) { "step did not finish within 60 s" }
-        return StepRun(process.exitValue(), log.readText(), outputs.readText())
+        val run =
+            runProcess(
+                listOf("bash", "-c", step("Resolve pull request head")["run"].toString()),
+                workDir,
+                env =
+                    mapOf(
+                        "PATH" to "${workDir.path}:${System.getenv("PATH")}",
+                        "FAKE_DIR" to workDir.path,
+                        "GITHUB_OUTPUT" to outputs.path,
+                        "REPO" to "owner/minimalui",
+                        "PR_NUMBER" to "7",
+                        "COMMENT_AT" to commentedAt,
+                    ),
+                mergeStderr = true,
+                name = "Resolve pull request head",
+            )
+        return StepRun(run.exitCode, run.stdout, outputs.readText())
     }
 
     @Test

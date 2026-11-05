@@ -10,16 +10,20 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 ## Latest session
 
 - **Date:** 2026-11-05
-- **Worked:** #351 → `test/351-agent-guidance-parity`. `CLAUDE.md`, `.github/copilot-instructions.md` and
-  `.cursor/rules/agent-guidance.mdc` are one text from `## Issue tracking` on, and nothing compared them: #332 missed
-  the Cursor copy. `AgentGuidanceParityTest` compares the three bodies and names the file that left the text the
-  others share, with its first differing line. `CLAUDE.md` and the Cursor file are now inputs of `:tests:test`, so an
-  edit to either reruns it instead of replaying the cached pass. `CONTRIBUTING.md` "Agent safety layers" says to edit
-  the three together.
-- **Outcome:** PR open, `Closes #351`.
-- **Open follow-ups:** none filed. #338 merged first; the rebase kept both input loops in `tests/build.gradle.kts`,
-  and its `TestTaskInputsTest` finds the new test's `Repo.file("…")` literals declared.
+- **Worked:** #357 → `fix/357-kill-hung-scripts`. A script that hung under `runScript` was dropped still running when
+  the 60 s wait gave up, and outlived the test, the JVM and Gradle (39 orphans at 100 % CPU after a mutation run).
+  `runProcess` in `Repo.kt` now runs every command the tooling tests start, `runScript` included: stdin, stdout and
+  stderr are temp files, and on a timeout or any failed wait it kills the process and its descendants and waits for
+  them before rethrowing. The five other `ProcessBuilder` sites use it, which gives the two unbounded `waitFor()` calls
+  a timeout. `RunProcessTest` runs a shell that loops forever with a `sleep` child, through a timeout and through an
+  interrupt, and checks both PIDs are dead afterwards.
+- **Outcome:** PR open, `Fixes #357`.
+- **Open follow-ups:** none filed. A SIGKILLed test JVM still orphans its scripts; per the issue that's for the
+  external harness to handle.
 - **Notes for next session:**
+  - No JDK on this host, but the `localhost/minimalui-android:jq` image has JDK 21, the SDK at `/opt/android-sdk` and
+    jq 1.8.1: `podman run --rm --init -v "$PWD":"$PWD":z -v minimalui-sandbox-gradle:/root/.gradle -w "$PWD"` with
+    `GIT_CONFIG_*` setting `safe.directory=*`. `--init` gives the container a PID 1 that reaps orphans, as a runner has.
   - No JDK or SDK at `~/tools` on this host this time: a Temurin 21 tarball from `api.adoptium.net` into `/tmp/jdk21`,
     and the command-line tools into `/tmp/sdk` (no `unzip`: `jar xf` extracts the zip) with `sdkmanager
     "platforms;android-37.0"`, then `sdk.dir=/tmp/sdk` in `local.properties`, run the full `check assembleDebug`.
