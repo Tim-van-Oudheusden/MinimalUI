@@ -10,8 +10,9 @@ class PrMetricsScriptTest {
         merged: Boolean,
         branch: String,
         author: String = "Tim-van-Oudheusden",
+        body: String = "Fixes #1",
     ) = """{"number":$number,"mergedAt":${if (merged) "\"2026-10-01T10:00:00Z\"" else "null"},""" +
-        """"headRefName":"$branch","author":{"login":"$author"}}"""
+        """"headRefName":"$branch","author":{"login":"$author"},"body":"$body"}"""
 
     private fun report(vararg prs: String) =
         runScript(
@@ -65,6 +66,28 @@ class PrMetricsScriptTest {
 
         assertEquals("| Agent | 2 | 1 | 1 | 50% |", result.row("Agent"))
         assertEquals("| Other | 0 | 0 | 0 | n/a |", result.row("Other"))
+    }
+
+    // Local agents open PRs under the maintainer's account on <type>/<N>-<slug> branches; only the signature tells.
+    @Test
+    fun `counts a Hive-signed PR as an agent whatever its author and branch`() {
+        val signature = "\\n\\n— hive: backend=omp model=claude-opus-5-5 effort=high"
+        val result =
+            report(
+                pr(9, merged = true, branch = "fix/9-crash", body = "Fixes #9$signature"),
+                pr(10, merged = false, branch = "fix/10-crash", body = "Mentions — hive: mid-line"),
+            )
+
+        assertEquals("| Agent | 1 | 1 | 0 | 100% |", result.row("Agent"))
+        assertEquals("| Other | 1 | 0 | 1 | 0% |", result.row("Other"))
+    }
+
+    @Test
+    fun `leaves a Dependabot PR out of the agent row`() {
+        val result = report(pr(11, merged = true, branch = "dependabot/gradle/junit", author = "dependabot[bot]"))
+
+        assertEquals("| Agent | 0 | 0 | 0 | n/a |", result.row("Agent"))
+        assertEquals("| Other | 1 | 1 | 0 | 100% |", result.row("Other"))
     }
 
     @Test
