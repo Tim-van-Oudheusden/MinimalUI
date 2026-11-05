@@ -87,7 +87,8 @@ class DocsClaimsTest {
         assertEquals("labels the doc names, then the script's", inDoc, inScript)
     }
 
-    // CONTRIBUTING.md and BRANDING.md call these two words untranslated text and name the constants that hold them.
+    // CONTRIBUTING.md says these two words stay in English and names the constants that hold them. BRANDING.md gives
+    // the same words as the row suffixes, without the constants.
     @Test
     fun `the docs give the work group and clone suffix the values core defines`() {
         val work = constant("core/src/main/kotlin/dev/buildwithtim/minimalui/core/AppGroups.kt", "WORK_GROUP")
