@@ -41,6 +41,11 @@ style:
   ReturnCount:
     # Tests only: the test helpers' parsers return as soon as they know the answer.
     excludes: ['**/test/**']
+  UnusedImport:
+    # Off in detekt's defaults, and ktlint's no-unused-imports needs an .editorconfig opt-in, so without this nothing
+    # in `check` fails on an import a refactor leaves behind (#369). It needs type analysis: only detektMain and
+    # detektTest apply it.
+    active: true
   UnusedPrivateFunction:
     # Compose: @Preview functions are called by Android Studio, never by code. (detekt 1's UnusedPrivateMember.)
     ignoreAnnotated: ['Preview']

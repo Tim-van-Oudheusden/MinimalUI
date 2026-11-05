@@ -10,17 +10,16 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 ## Latest session
 
 - **Date:** 2026-11-05
-- **Worked:** #357 → `fix/357-kill-hung-scripts`. A script that hung under `runScript` was dropped still running when
-  the 60 s wait gave up, and outlived the test, the JVM and Gradle (39 orphans at 100 % CPU after a mutation run).
-  `runProcess` in `Repo.kt` now runs every command the tooling tests start, `runScript` included: stdin, stdout and
-  stderr are temp files, and on a timeout or any failed wait it kills the process and its descendants and waits for
-  them before rethrowing. The five other `ProcessBuilder` sites use it, which gives the two unbounded `waitFor()` calls
-  a timeout. `RunProcessTest` runs a shell that loops forever with a `sleep` child, through a timeout and through an
-  interrupt, and checks both PIDs are dead afterwards.
-- **Outcome:** PR open, `Fixes #357`.
-- **Open follow-ups:** none filed. A SIGKILLed test JVM still orphans its scripts; per the issue that's for the
-  external harness to handle.
+- **Worked:** #369 → `fix/369-unused-import`. `LintConfigTest.kt` carried an unused `assertEquals` import that no gate
+  saw: detekt ships `UnusedImport` off and ktlint's rule needs an `.editorconfig` opt-in. `config/detekt/detekt.yml`
+  turns `UnusedImport` on and the import is gone. Confirmed first: with the rule on and the import present,
+  `:tests:detektTest` fails with exactly that one finding; plain `:tests:detekt` passes, as the rule needs type
+  analysis.
+- **Outcome:** PR open, `Fixes #369`.
+- **Open follow-ups:** none.
 - **Notes for next session:**
+  - This host had a JDK at `~/.jdks/jdk-21.0.13+9` and the SDK at `~/Android/Sdk` (`platforms;android-37.0`): set
+    `JAVA_HOME` and `sdk.dir=/home/dev/Android/Sdk` in `local.properties`, no container needed.
   - No JDK on this host, but the `localhost/minimalui-android:jq` image has JDK 21, the SDK at `/opt/android-sdk` and
     jq 1.8.1: `podman run --rm --init -v "$PWD":"$PWD":z -v minimalui-sandbox-gradle:/root/.gradle -w "$PWD"` with
     `GIT_CONFIG_*` setting `safe.directory=*`. `--init` gives the container a PID 1 that reaps orphans, as a runner has.
