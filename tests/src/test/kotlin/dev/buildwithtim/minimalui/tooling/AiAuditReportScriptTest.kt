@@ -98,6 +98,24 @@ class AiAuditReportScriptTest {
         assertTrue(row, row.startsWith("| #7 | 2026-10-10 12:00 | Hive | scanner | claude-sonnet-5 |"))
     }
 
+    @Test
+    fun `prints dashes for a signature with no fields and for a deleted author`() {
+        val deleted = pr(7, author = "ghost", body = "— hive: nothing here\n").replace("""{"login":"ghost"}""", "null")
+
+        val result = report(deleted)
+
+        assertEquals(result.stderr, 0, result.exitCode)
+        val row = result.rows("Ledger").single()
+        assertTrue(row, row.contains(" | Hive | — | — | — | Tim-van-Oudheusden | "))
+    }
+
+    @Test
+    fun `reads a source branch from the prefix, not from a mention`() {
+        val result = report(pr(8, branch = "fix/claude/8"), pr(9, branch = "fix/dependabot/9"))
+
+        result.rows("Ledger").forEach { assertTrue(it, it.contains(" | Other | ")) }
+    }
+
     // `gh pr list` (GraphQL) reports a GitHub App author as `app/<slug>`; the REST API as `<slug>[bot]`.
     @Test
     fun `counts a hive-forge-app PR as Hive even without a signature`() {
@@ -174,12 +192,25 @@ class AiAuditReportScriptTest {
     // `shift 2` with one argument left shifts nothing, so an unguarded parser loops on the same flag forever.
     @Test
     fun `rejects a missing, valueless or malformed --since`() {
-        for (args in listOf(emptyList(), listOf("--since"), listOf("--since", "1 Oct"), listOf("--days", "7"))) {
+        for (args in listOf(
+            emptyList(),
+            listOf("--since"),
+            listOf("--since", "1 Oct"),
+            listOf("--days", "7"),
+            listOf("--since", "2026-10-01", "stray"),
+        )) {
             val result = runScript("scripts/ai-audit-report.sh", *args.toTypedArray(), stdin = "[]")
 
             assertEquals(args.toString(), 2, result.exitCode)
             assertTrue(result.stderr, result.stderr.contains("usage:"))
         }
+    }
+
+    @Test
+    fun `accepts any digit in the --since date`() {
+        val result = runScript("scripts/ai-audit-report.sh", "--since", "1999-09-29", stdin = "[]")
+
+        assertEquals(result.stderr, 0, result.exitCode)
     }
 
     @Test

@@ -32,6 +32,7 @@ expect pass 'title without scope' 'docs: explain the build' "$body"
 expect pass 'title with breaking-change marker' 'feat(ui)!: drop touch mode' "$body"
 expect pass 'title with dotted/slashed scope' 'build(gradle/libs.versions): pin junit' "$body"
 expect pass 'title with digit, underscore and dash in scope' 'fix(api35_list-view): keep focus' "$body"
+expect pass 'title with a 9 in the scope' 'fix(api9): keep focus' "$body"
 for type in build chore ci docs feat fix perf refactor revert style test; do
   expect pass "title type '$type'" "$type: keep focus" "$body"
 done
@@ -56,6 +57,8 @@ expect pass 'body link after other text on the line' "$title" 'Part of the launc
 expect pass 'body link on a later line' "$title" $'## Summary\n\nWhat: x\n\nResolves #7'
 expect pass 'body link inside parentheses' "$title" '(Fixes #12)'
 expect pass 'body link with CRLF line endings' "$title" $'## Summary\r\n\r\nFixes #12\r\n'
+
+expect pass 'body linking an issue number made of a 9' "$title" 'Fixes #9'
 
 # Body: no issue linked.
 expect fail 'empty body' "$title" ''

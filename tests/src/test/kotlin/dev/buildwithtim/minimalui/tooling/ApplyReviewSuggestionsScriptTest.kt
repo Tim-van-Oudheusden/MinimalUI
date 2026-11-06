@@ -236,6 +236,27 @@ class ApplyReviewSuggestionsScriptTest {
     }
 
     @Test
+    fun `skips a range before the file or ending before it starts, and still applies the rest`() {
+        val a = file("a.kt", "one\ntwo\nthree\nfour\n")
+
+        val result =
+            apply(
+                comment(id = 1, path = "a.kt", line = 3, startLine = 4, body = suggestion("X\n")),
+                comment(id = 2, path = "a.kt", line = 2, body = suggestion("TWO\n")),
+                comment(id = 3, path = "a.kt", line = 1, startLine = 0, body = suggestion("Y\n")),
+            )
+
+        assertEquals(result.stderr, 0, result.exitCode)
+        assertEquals("one\nTWO\nthree\nfour\n", a.readText())
+        assertEquals(
+            "skipped: comment 1 on a.kt: lines 4-3 are not in the file\n" +
+                "applied: a.kt:2-2 (comment 2)\n" +
+                "skipped: comment 3 on a.kt: lines 0-1 are not in the file\n",
+            result.stdout,
+        )
+    }
+
+    @Test
     fun `applies a suggestion to the last line of a file without a trailing newline`() {
         val a = file("a.kt", "one\ntwo")
 
@@ -299,6 +320,16 @@ class ApplyReviewSuggestionsScriptTest {
             result.stdout.contains("skipped: comment 4 on a.kt: overlaps another applied suggestion"),
         )
         assertTrue(result.stdout, result.stdout.contains("applied: a.kt:4-5 (comment 2)"))
+    }
+
+    @Test
+    fun `does not take a two-backtick fence for a suggestion`() {
+        val a = file("a.kt", "one\n")
+
+        val result = apply(comment(path = "a.kt", line = 1, body = "``suggestion\nONE\n``\n"))
+
+        assertEquals("no suggestions to apply\n", result.stdout)
+        assertEquals("one\n", a.readText())
     }
 
     @Test

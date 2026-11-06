@@ -19,6 +19,7 @@ class PrReviewCheckScriptTest {
         val result = check("feat(launcher): add app search (#12)", "Fixes #12")
 
         assertEquals(result.stdout, 0, result.exitCode)
+        assertEquals("ok: title follows Conventional Commits\nok: body links a GitHub issue\n", result.stdout)
     }
 
     @Test
@@ -49,6 +50,7 @@ class PrReviewCheckScriptTest {
         val result = check("📖 docs(ci): point at the parser", "No issue here", author = "hive-forge-app[bot]")
 
         assertEquals(result.stdout, 0, result.exitCode)
+        assertEquals("ok: bot author, title and issue link not checked\n", result.stdout)
     }
 
     // The full case table (every closing keyword, CRLF, the colon form, the unfilled template) is a plain-bash script

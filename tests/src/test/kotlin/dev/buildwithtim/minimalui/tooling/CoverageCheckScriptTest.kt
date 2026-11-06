@@ -46,6 +46,17 @@ fun writeKoverReport(
     report.writeText(tags.joinToString(if (singleLine) "" else "\n", postfix = "\n"))
 }
 
+/** A Kover report for [module] under [root] whose `<report>` element holds exactly [body]. */
+fun writeKoverReportBody(
+    root: File,
+    module: String,
+    vararg body: String,
+) {
+    val report = root.resolve("$module/build/reports/kover/report.xml")
+    report.parentFile.mkdirs()
+    report.writeText((listOf("<report name=\"$module\">") + body + "</report>").joinToString("\n", postfix = "\n"))
+}
+
 class CoverageCheckScriptTest {
     private val root: File = Files.createTempDirectory("coverage-check").toFile()
 
@@ -157,6 +168,65 @@ class CoverageCheckScriptTest {
 
         assertEquals(2, result.exitCode)
         assertTrue(result.stderr, result.stderr.contains("no module-level METHOD counter"))
+    }
+
+    // Without these exits the missing counter's percentage is 100.00, so the module would pass any floor.
+    @Test
+    fun `fails when the report has only one of the two module-level counters`() {
+        for ((present, missing) in listOf("LINE" to "METHOD", "METHOD" to "LINE")) {
+            writeKoverReportBody(root, "core", """<counter type="$present" missed="9" covered="1"/>""")
+
+            val result = check("core", "100", "100")
+
+            assertEquals(missing, 2, result.exitCode)
+            assertTrue(result.stderr, result.stderr.contains("no module-level $missing counter"))
+        }
+    }
+
+    @Test
+    fun `reads the report-level counters even when nested ones come after them`() {
+        writeKoverReportBody(
+            root,
+            "core",
+            """<counter type="LINE" missed="1" covered="3"/>""",
+            """<counter type="METHOD" missed="3" covered="1"/>""",
+            """<package name="dev/example">""",
+            """<counter type="LINE" missed="0" covered="9"/>""",
+            """<counter type="METHOD" missed="0" covered="9"/>""",
+            """</package>""",
+        )
+
+        val result = check("core", "0", "0")
+
+        assertTrue(result.stdout, result.stdout.contains("functions 25.00% (floor 0%), lines 75.00% (floor 0%)"))
+    }
+
+    @Test
+    fun `rates nothing to cover as 100 percent and nothing covered as 0`() {
+        writeKoverReport(root, "core", methods = 0 to 0, lines = 1 to 0)
+
+        val result = check("core", "100", "0")
+
+        assertEquals(result.stderr, 0, result.exitCode)
+        assertTrue(result.stdout, result.stdout.contains("functions 100.00% (floor 100%), lines 0.00% (floor 0%)"))
+    }
+
+    @Test
+    fun `prints 50 percent when as much is missed as covered`() {
+        writeKoverReport(root, "core", methods = 5 to 5, lines = 5 to 5)
+
+        val result = check("core", "0", "0")
+
+        assertTrue(result.stdout, result.stdout.contains("functions 50.00% (floor 0%), lines 50.00% (floor 0%)"))
+    }
+
+    @Test
+    fun `accepts any digit after the point of a floor`() {
+        writeKoverReport(root, "core", methods = 0 to 7, lines = 0 to 21)
+
+        val result = check("core", "79.05", "79.9")
+
+        assertEquals(result.stderr, 0, result.exitCode)
     }
 
     @Test

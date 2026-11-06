@@ -99,6 +99,13 @@ class PrMetricsScriptTest {
     }
 
     @Test
+    fun `reads an agent branch from the prefix, not from a mention`() {
+        val result = report(pr(9, merged = true, branch = "fix/claude/9-crash"))
+
+        assertEquals("| Other | 1 | 1 | 0 | 100% |", result.row("Other"))
+    }
+
+    @Test
     fun `reports n-a rather than a rate when the window is empty`() {
         val result = report()
 
@@ -118,6 +125,27 @@ class PrMetricsScriptTest {
             val result = runScript("scripts/pr-metrics.sh", *args.toTypedArray(), stdin = "[]")
 
             assertEquals(args.last(), 2, result.exitCode)
+            assertTrue(result.stderr, result.stderr.contains("usage:"))
+        }
+    }
+
+    @Test
+    fun `takes its flags in either order`() {
+        val result = runScript("scripts/pr-metrics.sh", "--days", "28", "--since", "2026-09-14", stdin = "[]")
+
+        assertEquals(result.stderr, 0, result.exitCode)
+    }
+
+    @Test
+    fun `rejects a missing flag or a stray argument`() {
+        for (args in listOf(
+            listOf("--since", "2026-09-14"),
+            listOf("--days", "28"),
+            listOf("--since", "2026-09-14", "--days", "28", "stray"),
+        )) {
+            val result = runScript("scripts/pr-metrics.sh", *args.toTypedArray(), stdin = "[]")
+
+            assertEquals(args.toString(), 2, result.exitCode)
             assertTrue(result.stderr, result.stderr.contains("usage:"))
         }
     }
