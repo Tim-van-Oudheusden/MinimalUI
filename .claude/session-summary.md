@@ -9,13 +9,14 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 
 ## Latest session
 
-- **Date:** 2026-11-05
-- **Worked:** #369 → `fix/369-unused-import`. `LintConfigTest.kt` carried an unused `assertEquals` import that no gate
-  saw: detekt ships `UnusedImport` off and ktlint's rule needs an `.editorconfig` opt-in. `config/detekt/detekt.yml`
-  turns `UnusedImport` on and the import is gone. Confirmed first: with the rule on and the import present,
-  `:tests:detektTest` fails with exactly that one finding; plain `:tests:detekt` passes, as the rule needs type
-  analysis.
-- **Outcome:** PR open, `Fixes #369`.
+- **Date:** 2026-11-06
+- **Worked:** #373 → `fix/373-merge-queue-codeql-wake`. The queue picks only `CLEAN` PRs, and `CLEAN` also waits for
+  CodeQL, which starts no queue run when it is the last check to pass. New `merge-queue-sweep.yml` dispatches
+  `merge-queue.yml` every 30 minutes. It is a separate workflow, not a `schedule:` on `merge-queue.yml` as the issue
+  suggested: `AutoIssuesWorkflowTest` makes `auto-issues.yml` watch every scheduled workflow, and a PR failing the
+  queue's verification fails the queue run, so each rejection would open a `Merge queue fails on main` issue.
+  Confirmed first: the new `MergeQueueWorkflowTest` case failed with `Key merge-queue-sweep.yml is missing`.
+- **Outcome:** PR open, `Fixes #373`. Workflow change, high risk: the maintainer merges it.
 - **Open follow-ups:** none.
 - **Notes for next session:**
   - This host had a JDK at `~/.jdks/jdk-21.0.13+9` and the SDK at `~/Android/Sdk` (`platforms;android-37.0`): set

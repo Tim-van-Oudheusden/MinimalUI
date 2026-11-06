@@ -20,6 +20,7 @@ on:
       - CI
       - Coverage gate
       - E2E
+      - Merge queue sweep
       - Nightly compliance
       - PR metrics
       - Quality report
