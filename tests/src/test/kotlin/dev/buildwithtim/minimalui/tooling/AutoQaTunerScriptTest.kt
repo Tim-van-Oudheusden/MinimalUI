@@ -277,7 +277,7 @@ class AutoQaTunerScriptTest {
         assertTrue(result.stdout, result.stdout.contains("| core | lines | 90% | 96.03% | 94% ⬆️ |"))
     }
 
-    // `shift 2` with one argument left shifts nothing, so an unguarded parser loops on the same flag forever.
+    // Under set -u a missing $2 stops the script with bash's error and exit 1; only a guard gives usage and exit 2.
     @Test
     fun `rejects a trailing flag that has no value`() {
         for (flag in listOf("--config", "--report")) {

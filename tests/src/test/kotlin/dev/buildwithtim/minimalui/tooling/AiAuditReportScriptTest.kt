@@ -189,7 +189,7 @@ class AiAuditReportScriptTest {
         assertTrue(result.stdout, result.rows("Ledger").single().endsWith("| fix(a\\|b): keep \\| out |"))
     }
 
-    // `shift 2` with one argument left shifts nothing, so an unguarded parser loops on the same flag forever.
+    // Under set -u a missing $2 stops the script with bash's error and exit 1; only a guard gives usage and exit 2.
     @Test
     fun `rejects a missing, valueless or malformed --since`() {
         for (args in listOf(

@@ -20,7 +20,7 @@ since=""
 issues=""
 prs=""
 while [ "$#" -gt 0 ]; do
-  # A flag must have its value: `shift 2` with one argument left shifts nothing and the loop would never end.
+  # A flag must have its value: under set -u a missing $2 stops the script with bash's error, not usage and exit 2.
   case "$1" in
     --since) [ "$#" -ge 2 ] || usage; since="$2"; shift 2 ;;
     --issues) [ "$#" -ge 2 ] || usage; issues="$2"; shift 2 ;;
