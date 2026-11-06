@@ -10,13 +10,11 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 ## Latest session
 
 - **Date:** 2026-11-06
-- **Worked:** #373 → `fix/373-merge-queue-codeql-wake`. The queue picks only `CLEAN` PRs, and `CLEAN` also waits for
-  CodeQL, which starts no queue run when it is the last check to pass. New `merge-queue-sweep.yml` dispatches
-  `merge-queue.yml` every 30 minutes. It is a separate workflow, not a `schedule:` on `merge-queue.yml` as the issue
-  suggested: `AutoIssuesWorkflowTest` makes `auto-issues.yml` watch every scheduled workflow, and a PR failing the
-  queue's verification fails the queue run, so each rejection would open a `Merge queue fails on main` issue.
-  Confirmed first: the new `MergeQueueWorkflowTest` case failed with `Key merge-queue-sweep.yml is missing`.
-- **Outcome:** PR open, `Fixes #373`. Workflow change, high risk: the maintainer merges it.
+- **Worked:** #381 → `fix/381-export-truncate`. `SetupFiles.write` opened the picked file with
+  `openOutputStream(file)`, i.e. mode "w", which a provider need not truncate; it now asks for "wt". A fake provider
+  in `MainActivityTest` keeps a file's length on "w" and truncates only on "t", and the test exports over a longer
+  file. Not run locally.
+- **Outcome:** PR open, `Fixes #381`.
 - **Open follow-ups:** none.
 - **Notes for next session:**
   - This host had a JDK at `~/.jdks/jdk-21.0.13+9` and the SDK at `~/Android/Sdk` (`platforms;android-37.0`): set
