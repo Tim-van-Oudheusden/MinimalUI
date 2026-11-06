@@ -2,7 +2,7 @@ name: PR metrics
 
 # PR acceptance metric: of the pull requests closed in the reporting window,
 # how many were merged vs. closed without merging. Split by agent-authored
-# (claude/* head branch or the hive-worker-bee GitHub App, formerly hive-forge-app)
+# (the sources in scripts/lib/pr-source.jq)
 # vs. other PRs so agent work has its own feedback loop. Results land in the run's
 # job summary.
 
@@ -41,5 +41,5 @@ jobs:
           since="$(date -u -d "${DAYS} days ago" +%Y-%m-%d)"
           gh pr list --repo "$REPO" --state closed --limit 1000 \
             --search "closed:>=${since}" \
-            --json number,mergedAt,headRefName,author > prs.json
+            --json number,mergedAt,headRefName,author,body > prs.json
           scripts/pr-metrics.sh --since "$since" --days "$DAYS" < prs.json | tee -a "$GITHUB_STEP_SUMMARY"

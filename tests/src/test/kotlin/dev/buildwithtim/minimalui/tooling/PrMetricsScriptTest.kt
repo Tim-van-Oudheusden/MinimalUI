@@ -82,6 +82,14 @@ class PrMetricsScriptTest {
         assertEquals("| Other | 1 | 0 | 1 | 0% |", result.row("Other"))
     }
 
+    // pr-source.jq reads a missing body as empty, so without `body` signed runs land in Other and nothing fails.
+    @Test
+    fun `the workflow requests the PR body the source rule reads`() {
+        val workflow = Repo.read(".github/workflows/pr-metrics.yml")
+
+        assertTrue(Regex("""--json \S*\bbody\b""").containsMatchIn(workflow))
+    }
+
     @Test
     fun `leaves a Dependabot PR out of the agent row`() {
         val result = report(pr(11, merged = true, branch = "dependabot/gradle/junit", author = "dependabot[bot]"))
