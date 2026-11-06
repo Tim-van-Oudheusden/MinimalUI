@@ -121,7 +121,9 @@ fun runScript(
  * failure refers to the command.
  *
  * If the command runs past [timeout], or the wait fails any other way (an interrupt), the command and every process it
- * started are killed and waited for before the failure propagates: a hung script must not outlive the test (#357).
+ * started are killed and waited for before the failure propagates: a hung script must not outlive the test (#357). If
+ * the JVM itself is stopped (an outside timeout's SIGTERM), [Children] kills them instead, and the call fails rather
+ * than start a command once that has begun.
  */
 fun runProcess(
     command: List<String>,
@@ -137,14 +139,16 @@ fun runProcess(
     val err = File.createTempFile("process-err", ".txt")
     try {
         val process =
-            ProcessBuilder(command)
-                .directory(workDir)
-                .redirectInput(input)
-                .redirectOutput(out)
-                .apply {
-                    if (mergeStderr) redirectErrorStream(true) else redirectError(err)
-                    environment().putAll(env)
-                }.start()
+            Children.start(
+                ProcessBuilder(command)
+                    .directory(workDir)
+                    .redirectInput(input)
+                    .redirectOutput(out)
+                    .apply {
+                        if (mergeStderr) redirectErrorStream(true) else redirectError(err)
+                        environment().putAll(env)
+                    },
+            )
         try {
             check(process.waitFor(timeout.inWholeMilliseconds, TimeUnit.MILLISECONDS)) {
                 "$name did not finish within $timeout"
@@ -162,13 +166,40 @@ fun runProcess(
 }
 
 /**
+ * Starts the processes [runProcess] runs, and kills every process this JVM started when it shuts down. An outside
+ * timeout (`timeout 150 java ... JUnitCore`, a CI step's limit) stops the JVM with SIGTERM: the test waiting on a
+ * script never gets to [runProcess]'s cleanup, and when the shutdown kills that script the test goes on to start the
+ * next one while the JVM exits. Both ran on at 100 % CPU (#389). [start] and the kill share a lock, so nothing starts
+ * after the kill has listed what to kill.
+ */
+private object Children {
+    private var shuttingDown = false
+
+    init {
+        Runtime.getRuntime().addShutdownHook(Thread { killAll() })
+    }
+
+    @Synchronized
+    fun start(builder: ProcessBuilder): Process {
+        check(!shuttingDown) { "not starting ${builder.command()}: the JVM is shutting down" }
+        return builder.start()
+    }
+
+    @Synchronized
+    private fun killAll() {
+        shuttingDown = true
+        killAndWait(ProcessHandle.current().descendants().toList())
+    }
+}
+
+/**
  * Kills this process and every process it started (`quality-report.sh` runs Gradle, which starts daemons), and waits
  * for them all to exit. The tree is listed before the kill, while the children are still this process's.
  */
-private fun Process.killTree() {
-    val descendants = descendants().toList()
-    destroyForcibly()
-    descendants.forEach { it.destroyForcibly() }
-    waitFor()
-    descendants.forEach { it.onExit().get(10, TimeUnit.SECONDS) }
+private fun Process.killTree() = killAndWait(listOf(toHandle()) + descendants().toList())
+
+/** Kills [processes] and waits up to 10 seconds for each to exit. */
+private fun killAndWait(processes: List<ProcessHandle>) {
+    processes.forEach { it.destroyForcibly() }
+    processes.forEach { it.onExit().get(10, TimeUnit.SECONDS) }
 }
