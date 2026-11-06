@@ -19,9 +19,10 @@ class MergeQueueScriptTest {
     /**
      * Fake `gh` first on PATH. `pr list` and `pr view <number>` answer from the pull requests in [pulls], filtered
      * through `--jq` the way gh does; every other call is logged to [calls], its arguments tab-separated on one line.
-     * A `fail-pr-list` file in [dir] makes `pr list` fail; `fail-<workflow>` makes `workflow run <workflow>` fail
-     * every time, and `fail-once-<workflow>` once (the file is removed). A failing call is logged first. The fake
-     * `sleep` returns at once, so retries cost no time.
+     * A `fail-pr-list` file in [dir] makes `pr list` fail, `fail-merge-state` makes `pr view` fail when it asks for
+     * the merge state (and only then, so the other reads still pass); `fail-<workflow>` makes
+     * `workflow run <workflow>` fail every time, and `fail-once-<workflow>` once (the file is removed). A failing
+     * call is logged first. The fake `sleep` returns at once, so retries cost no time.
      */
     private val bin =
         dir.resolve("bin").apply {
@@ -36,14 +37,21 @@ class MergeQueueScriptTest {
                       shift 2
                       number=""
                       filter=.
+                      json=""
                       while [ ${'$'}# -gt 0 ]; do
                         case "${'$'}1" in
                           --jq) filter="${'$'}2"; shift 2 ;;
+                          --json) json="${'$'}2"; shift 2 ;;
                           --*) shift 2 ;;
                           *) number="${'$'}1"; shift ;;
                         esac
                       done
                       if [ "${'$'}sub" = list ] && [ -e "${dir.path}/fail-pr-list" ]; then
+                        echo "gh: HTTP 500" >&2
+                        exit 1
+                      fi
+                      if [ "${'$'}sub" = view ] && [ "${'$'}json" = mergeStateStatus ] &&
+                        [ -e "${dir.path}/fail-merge-state" ]; then
                         echo "gh: HTTP 500" >&2
                         exit 1
                       fi
@@ -454,6 +462,30 @@ class MergeQueueScriptTest {
 
         assertTrue(result.stderr, result.exitCode != 0)
         assertEquals(emptyMap<String, String>(), output())
+    }
+
+    // A failed read of the merge state must not pass for a pull request that is merely not ready.
+    @Test
+    fun `next fails and picks nothing when the merge state cannot be read`() {
+        setUp(mapOf("README.md" to "launcher\n"), Pull(4))
+        dir.resolve("fail-merge-state").writeText("")
+
+        val result = mergeQueue("next")
+
+        assertTrue(result.stderr, result.exitCode != 0)
+        assertEquals(emptyMap<String, String>(), output())
+    }
+
+    @Test
+    fun `land fails without merging or queueing a run when the merge state cannot be read`() {
+        val head = setUp(mapOf("README.md" to "launcher\n"), Pull(7)).getValue(7)
+        dir.resolve("fail-merge-state").writeText("")
+
+        val result = mergeQueue("land", "7", head, cloneHead())
+
+        assertTrue(result.stderr, result.exitCode != 0)
+        assertTrue(result.stdout, !result.stdout.contains("stopped being ready"))
+        assertEquals(emptyList<List<String>>(), calls())
     }
 
     @Test
