@@ -15,7 +15,9 @@ name: Merge queue
 # Land and reject start the next run, so the queue drains one PR at a time.
 # Runs whenever a workflow holding a required check succeeds, a draft is marked
 # ready, or `hold` or `sentinel-alert` comes off; workflow_dispatch drains it
-# on demand. See docs/multi-agent.md#merge-queue.
+# on demand, and merge-queue-sweep.yml dispatches it every 30 minutes for a PR
+# whose last check to pass is not a required one, such as CodeQL. See
+# docs/multi-agent.md#merge-queue.
 #
 # Security: no step with write access runs code from a PR; pick, land and
 # reject run main's scripts. verify runs the PR's code with a read-only token,

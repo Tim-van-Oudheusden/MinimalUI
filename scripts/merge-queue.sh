@@ -90,7 +90,7 @@ next() {
     state="$(merge_state "$number")"
     # Required checks pass here, so nothing else on the PR says why it waits.
     if [ "$state" = UNSTABLE ]; then
-      echo "::notice title=Merge queue::#${number} is UNSTABLE: a check that is not required is red or pending; it stays out of the queue until that check passes"
+      echo "::notice title=Merge queue::#${number} is UNSTABLE: a check that is not required is red or pending; it stays out of the queue until that check passes, and the next queue run after that picks it up"
     fi
     [ "$state" = CLEAN ] || continue
     git fetch --no-tags --quiet origin "refs/pull/${number}/head"

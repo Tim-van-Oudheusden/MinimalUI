@@ -103,6 +103,12 @@ merges it and the push starts the release. If the check fails, the pull request 
 run; fix it and remove `hold` to queue it again. Each run starts the next, so the queue merges one pull request at a
 time.
 
+[`merge-queue-sweep.yml`](../.github/workflows/merge-queue-sweep.yml) also starts it every 30 minutes. `CLEAN` waits for
+checks that are not required too, such as CodeQL, and none of them starts the queue; without the sweep, a pull request
+whose last check to pass is one of them would wait for an unrelated event or a person. The sweep runs apart from
+`merge-queue.yml` because a scheduled workflow is one `Auto issues` watches, and a pull request failing verification
+would then open a `fails on main` issue.
+
 To keep a pull request out of the queue, add `hold` or leave it a draft. To drain the queue by hand:
 `gh workflow run merge-queue.yml`. The logic lives in `scripts/merge-queue.sh`.
 

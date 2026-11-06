@@ -75,14 +75,15 @@ The merge queue (`merge-queue.yml`, logic in `scripts/merge-queue.sh`) only pick
    or has not run, or a review thread is unresolved. `BEHIND` and `DIRTY` mean the branch needs a rebase or a conflict
    fixed. `UNSTABLE` means every required check passed but another check, such as CodeQL, is red or pending, and the
    queue logs `#<N> is UNSTABLE` as a notice in its run. Re-run that check if it failed on infrastructure, otherwise
-   fix what it found.
+   fix what it found. Once it passes, `Merge queue sweep` starts the queue within 30 minutes.
 3. **High risk:** the queue leaves high-risk PRs for a maintainer and logs `#<N> is high risk` as a notice in its run.
    The tier comes from the rules in [`risk-tiers.md`](risk-tiers.md), and `.github/CODEOWNERS` has requested the
    maintainer's review on them.
 4. **Fork:** the queue never picks a PR from a fork.
 
-If the PR meets every condition and still sits there, no event has started the queue since it became ready. Drain the
-queue by hand with `gh workflow run merge-queue.yml`.
+If the PR meets every condition and still sits there, no event has started the queue since it became ready, and
+`Merge queue sweep` starts it within 30 minutes; check that its runs succeed (`gh run list --workflow
+merge-queue-sweep.yml`). Drain the queue by hand with `gh workflow run merge-queue.yml`.
 
 ### The merge queue put `hold` on a PR
 
@@ -134,7 +135,7 @@ To pause agent work, for example during an incident or while a bad instruction g
 | Stop | Command | Undo |
 | --- | --- | --- |
 | Claude Code in CI | `gh workflow disable claude.yml` | `gh workflow enable claude.yml` |
-| Automatic merges | `gh workflow disable merge-queue.yml` | `gh workflow enable merge-queue.yml`, then `gh workflow run merge-queue.yml` |
+| Automatic merges | `gh workflow disable merge-queue-sweep.yml`, then `gh workflow disable merge-queue.yml` (a sweep that cannot start the queue fails and opens a `fails on main` issue) | `gh workflow enable merge-queue.yml`, `gh workflow enable merge-queue-sweep.yml`, then `gh workflow run merge-queue.yml` |
 | One PR | `gh pr edit <N> --add-label hold` | `gh pr edit <N> --remove-label hold` |
 | Hive | Pause it in the Hive dashboard; it runs outside this repository | Resume it there |
 
