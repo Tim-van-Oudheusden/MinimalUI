@@ -37,10 +37,22 @@ UNHELD="all(.labels[]; $(printf '.name != "%s" and ' "${KEEP_OUT_LABELS[@]}")tru
 # merges such a change.
 MAIN_PUSH_WORKFLOWS=(ci.yml coverage-gate.yml e2e.yml quality-report.yml)
 
+# GitHub's workflow dispatch answers HTTP 500 now and then, so one failure is
+# not final. The last failure names the workflow and how to start it by hand.
+start_workflow() {
+  local attempt
+  for attempt in 1 2 3; do
+    gh workflow run "$1" --ref main && return 0
+    [ "$attempt" -lt 3 ] && sleep 10
+  done
+  echo "::error title=Merge queue::could not start $1; start it by hand: gh workflow run $1 --ref main"
+  return 1
+}
+
 # Picks up runs that land, reject or skip a pull request, so each merge is
 # verified against the main it lands on.
 queue_next_run() {
-  gh workflow run merge-queue.yml --ref main
+  start_workflow merge-queue.yml
 }
 
 # GitHub computes the merge state lazily and answers UNKNOWN until it has.
@@ -61,10 +73,20 @@ tier_of() {
 }
 
 next() {
-  local number head tier state
+  local number head tier state candidates
   # gh lists open pull requests by default; --jq runs gh's built-in jq, so the
-  # runner needs no jq.
+  # runner needs no jq. The listing is read into a variable first: a failed
+  # listing then fails the job under set -e, where a process substitution would
+  # let it pass for an empty queue.
+  candidates="$(gh pr list --base main --limit 100 \
+    --json number,headRefOid,isDraft,isCrossRepository,labels \
+    --jq "sort_by(.number) | .[]
+      | select((.isDraft or .isCrossRepository) | not)
+      | select(${UNHELD})
+      | \"\\(.number) \\(.headRefOid)\"")"
   while read -r number head; do
+    # An empty listing still reads one empty line.
+    [ -n "$number" ] || continue
     state="$(merge_state "$number")"
     # Required checks pass here, so nothing else on the PR says why it waits.
     if [ "$state" = UNSTABLE ]; then
@@ -85,16 +107,11 @@ next() {
       echo "main=$(git rev-parse HEAD)"
     } >> "$GITHUB_OUTPUT"
     return 0
-  done < <(gh pr list --base main --limit 100 \
-    --json number,headRefOid,isDraft,isCrossRepository,labels \
-    --jq "sort_by(.number) | .[]
-      | select((.isDraft or .isCrossRepository) | not)
-      | select(${UNHELD})
-      | \"\\(.number) \\(.headRefOid)\"")
+  done <<< "$candidates"
 }
 
 land() {
-  local number="$1" head="$2" verified_main="$3" main ready workflow
+  local number="$1" head="$2" verified_main="$3" main ready workflow failed=0
   main="$(git ls-remote origin refs/heads/main | cut -f1)"
   if [ "$main" != "$verified_main" ]; then
     echo "::notice title=Merge queue::main moved since #${number} was verified; verifying again"
@@ -111,10 +128,14 @@ land() {
 
   # --match-head-commit refuses the merge if the branch moved past what was verified.
   gh pr merge "$number" --merge --match-head-commit "$head"
+  # The merge has landed, so a workflow that will not start must not stop the
+  # others or the next run. The run still fails: a gate that never ran on main
+  # leaves no other trace.
   for workflow in "${MAIN_PUSH_WORKFLOWS[@]}"; do
-    gh workflow run "$workflow" --ref main
+    start_workflow "$workflow" || failed=1
   done
-  queue_next_run
+  queue_next_run || failed=1
+  return "$failed"
 }
 
 reject() {
