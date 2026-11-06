@@ -51,7 +51,8 @@ internal class SetupFiles(
         background.execute {
             val written =
                 attempt {
-                    val output = resolver.openOutputStream(file) ?: throw FileNotFoundException(file.toString())
+                    // "wt", not "w": the mode "w" does not promise to cut an existing, longer file to the new length.
+                    val output = resolver.openOutputStream(file, "wt") ?: throw FileNotFoundException(file.toString())
                     output.use { it.write(text.toByteArray()) }
                 } != null
             activity.mainExecutor.execute {

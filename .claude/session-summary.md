@@ -13,7 +13,9 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 - **Worked:** #377. `scripts/merge-queue.sh` gets `start_workflow` (three tries, 10 s apart);
   `land` keeps starting main's other gates and the next run after a failed dispatch, then fails the run with an
   `::error`. `next` reads the listing into a variable so a failed `gh pr list` fails the job.
-- **Outcome:** PR open, `Closes #377`. Tests and linters were not run locally; CI is the verdict.
+- **Outcome:** PR open, `Closes #377`. Confirmed locally after merging `main` in: 7 of the new `MergeQueueScriptTest`
+  cases fail against `main`'s script, and `MergeQueueScriptTest`, `MergeQueueWorkflowTest` and `DocsClaimsTest` pass
+  with the change.
 - **Open follow-ups:** none.
 - **Notes for next session:**
   - This host had a JDK at `~/.jdks/jdk-21.0.13+9` and the SDK at `~/Android/Sdk` (`platforms;android-37.0`): set
