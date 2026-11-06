@@ -52,6 +52,16 @@ class ReleaseVersionScriptTest {
     }
 
     @Test
+    fun `accepts any digit in each part of the version`() {
+        for (version in listOf("9.9.0", "1.0.9-0")) {
+            val result = releaseOf("        versionName = \"$version\"")
+
+            assertEquals(version, 0, result.exitCode)
+            assertEquals(version, outputs(result)["version"])
+        }
+    }
+
+    @Test
     fun `fails unless there is exactly one versionName`() {
         val none = releaseOf("        versionCode = 2")
         val two = releaseOf("        versionName = \"1.0.0\"", "        versionName = \"1.0.1\"")

@@ -17,7 +17,8 @@ class QualityReportScriptTest {
 
     /**
      * Fake `./gradlew`: logs each call, fails a task named in FAIL_TASKS, and for `:<module>:koverXmlReport` copies
-     * the module's fixture report into COVERAGE_ROOT, as Kover would write it.
+     * the module's fixture report into COVERAGE_ROOT, as Kover would write it, then fails if the task is named in
+     * FAIL_AFTER_REPORT.
      */
     private val gradle =
         dir.resolve("gradlew").apply {
@@ -33,6 +34,7 @@ class QualityReportScriptTest {
                   module="${'$'}{BASH_REMATCH[1]}"
                   mkdir -p "${coverageRoot.path}/${'$'}module"
                   cp -R "${fixtures.path}/${'$'}module/build" "${coverageRoot.path}/${'$'}module/"
+                  [ "${'$'}{FAIL_AFTER_REPORT:-}" = "${'$'}1" ] && exit 1
                 fi
                 exit 0
 
@@ -54,18 +56,21 @@ class QualityReportScriptTest {
         dir.deleteRecursively()
     }
 
-    private fun report(failTasks: String = "") =
-        runScript(
-            "scripts/quality-report.sh",
-            env =
-                mapOf(
-                    "GRADLE" to gradle.path,
-                    "COVERAGE_ROOT" to coverageRoot.path,
-                    "QA_TUNING_CONFIG" to config.path,
-                    "GITHUB_SHA" to "abc1234",
-                    "FAIL_TASKS" to failTasks,
-                ),
-        )
+    private fun report(
+        failTasks: String = "",
+        failAfterReport: String = "",
+    ) = runScript(
+        "scripts/quality-report.sh",
+        env =
+            mapOf(
+                "GRADLE" to gradle.path,
+                "COVERAGE_ROOT" to coverageRoot.path,
+                "QA_TUNING_CONFIG" to config.path,
+                "GITHUB_SHA" to "abc1234",
+                "FAIL_TASKS" to failTasks,
+                "FAIL_AFTER_REPORT" to failAfterReport,
+            ),
+    )
 
     @Test
     fun `reports every gate as passing and each module's coverage`() {
@@ -78,6 +83,35 @@ class QualityReportScriptTest {
         assertTrue(result.stdout, result.stdout.contains("| `./gradlew assembleDebug` | ✅ pass |"))
         assertTrue(result.stdout, result.stdout.contains("| app | 16.67% | 10.00% |"))
         assertTrue(result.stdout, result.stdout.contains("| core | 100.00% | 95.24% |"))
+    }
+
+    @Test
+    fun `prints the report with its headings and tables`() {
+        val result = report()
+
+        assertEquals(
+            """
+            # Quality report
+
+            Commit: `abc1234`
+
+            ## Quality gates
+
+            | Gate | Result |
+            | ---- | ------ |
+            | `./gradlew check` | ✅ pass |
+            | `./gradlew assembleDebug` | ✅ pass |
+
+            ## Unit-test coverage
+
+            | Module | Functions | Lines |
+            | ------ | --------- | ----- |
+            | app | 16.67% | 10.00% |
+            | core | 100.00% | 95.24% |
+
+            """.trimIndent(),
+            result.stdout,
+        )
     }
 
     @Test
@@ -111,6 +145,38 @@ class QualityReportScriptTest {
         assertEquals(1, result.exitCode)
         assertTrue(result.stdout, result.stdout.contains("| app | ❌ n/a | ❌ n/a |"))
         assertTrue(result.stdout, result.stdout.contains("| core | 100.00% | 95.24% |"))
+    }
+
+    @Test
+    fun `reports n-a when a coverage run fails after writing a report`() {
+        val result = report(failAfterReport = ":app:koverXmlReport")
+
+        assertEquals(1, result.exitCode)
+        assertTrue(result.stdout, result.stdout.contains("| app | ❌ n/a | ❌ n/a |"))
+        assertTrue(result.stdout, result.stdout.contains("| core | 100.00% | 95.24% |"))
+    }
+
+    @Test
+    fun `reports n-a when a coverage run passes but writes no report, ignoring a stale one`() {
+        writeKoverReport(coverageRoot, "app", methods = 0 to 1, lines = 0 to 1)
+        fixtures.resolve("app").deleteRecursively()
+
+        val result = report()
+
+        assertEquals(1, result.exitCode)
+        assertTrue(result.stdout, result.stdout.contains("| app | ❌ n/a | ❌ n/a |"))
+    }
+
+    @Test
+    fun `reports n-a when the report has only one of the two module-level counters`() {
+        for (present in listOf("LINE", "METHOD")) {
+            writeKoverReportBody(fixtures, "app", """<counter type="$present" missed="0" covered="1"/>""")
+
+            val result = report()
+
+            assertEquals(present, 1, result.exitCode)
+            assertTrue(result.stdout, result.stdout.contains("| app | ❌ n/a | ❌ n/a |"))
+        }
     }
 
     @Test

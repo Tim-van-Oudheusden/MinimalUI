@@ -97,6 +97,14 @@ class TierClassifyScriptTest {
     }
 
     @Test
+    fun `rates the paths after a blank line`() {
+        val result = classify("docs/a.md", "", "scripts/b.sh")
+
+        assertEquals(mapOf("docs/a.md" to "low", "scripts/b.sh" to "high"), result.tiers())
+        assertEquals("high", result.overall())
+    }
+
+    @Test
     fun `reports low for an empty change set`() {
         val result = classifyWith("high  *", paths = emptyList())
 
@@ -142,6 +150,8 @@ class TierClassifyScriptTest {
                 "high  scripts/*\nrules:\n  - low  docs/*\n" to ":1:",
                 "- high  scripts/*\nrules:\n" to ":1:",
                 "rules:\n  - high  scripts/*\nrules:\n" to ":3:",
+                "rules: inline\n  - high  scripts/*\n" to ":1:",
+                "stray\nrules:\n  - high  scripts/*\n" to ":1:",
             )
 
         for ((assessment, line) in badLine) {
@@ -251,8 +261,29 @@ class TierClassifyScriptTest {
     }
 
     @Test
+    fun `without -z, decodes every octal digit git writes`() {
+        val result = classify("\"scripts/a\\001b.sh\"", "\"docs/\\360\\237\\230\\200.md\"", "\"docs/a\\177.md\"")
+
+        assertEquals(result.stderr, 0, result.exitCode)
+        assertEquals(
+            mapOf("\$'scripts/a\\001b.sh'" to "high", "docs/\uD83D\uDE00.md" to "low", "\$'docs/a\\177.md'" to "low"),
+            result.tiers(),
+        )
+    }
+
+    @Test
     fun `without -z, matches a line that is not exactly C-quoted as written`() {
-        val lines = listOf("\"docs/a.md", "\"docs/a\\q.md\"", "\"docs/\"a\".md\"", "\"docs/a\\1.md\"", "x\"docs/a.md\"")
+        val lines =
+            listOf(
+                "\"docs/a.md",
+                "\"docs/a\\q.md\"",
+                "\"docs/\"a\".md\"",
+                "\"docs/a\\1.md\"",
+                "x\"docs/a.md\"",
+                "\"docs/a\\400.md\"",
+                "\"docs/a\\181.md\"",
+                "\"docs/a\\108.md\"",
+            )
 
         val result = classify(*lines.toTypedArray())
 

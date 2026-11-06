@@ -15,6 +15,7 @@ class MergeQueueScriptTest {
     private val pulls = dir.resolve("pulls.json")
     private val calls = dir.resolve("gh-calls.txt")
     private val githubOutput = dir.resolve("github-output")
+    private val sleeps = dir.resolve("sleeps.txt")
 
     /**
      * Fake `gh` first on PATH. `pr list` and `pr view <number>` answer from the pull requests in [pulls], filtered
@@ -185,6 +186,15 @@ class MergeQueueScriptTest {
         )
     }
 
+    /** Fake `sleep` first on PATH: logs its delay and, given [settlesTo], lets GitHub finish computing merge states. */
+    private fun fakeSleep(settlesTo: String? = null) {
+        val settle = settlesTo?.let { "sed -i 's/\"UNKNOWN\"/\"$it\"/' \"${pulls.path}\"" }.orEmpty()
+        bin.resolve("sleep").apply {
+            writeText("#!/usr/bin/env bash\necho \"\$1\" >> \"${sleeps.path}\"\n$settle\n")
+            setExecutable(true)
+        }
+    }
+
     private fun output(): Map<String, String> =
         githubOutput
             .readLines()
@@ -232,6 +242,44 @@ class MergeQueueScriptTest {
 
         assertEquals(result.stderr, 0, result.exitCode)
         assertEquals(emptyMap<String, String>(), output())
+    }
+
+    @Test
+    fun `next moves on from a pull request pushed to since it was listed`() {
+        setUp(
+            mapOf("README.md" to "launcher\n"),
+            Pull(4, listedHead = "0123456789abcdef0123456789abcdef01234567"),
+            Pull(5),
+        )
+
+        val result = mergeQueue("next")
+
+        assertEquals(result.stderr, 0, result.exitCode)
+        assertEquals("5", output()["number"])
+    }
+
+    @Test
+    fun `next waits for GitHub to finish computing a merge state`() {
+        setUp(mapOf("README.md" to "launcher\n"), Pull(4, mergeStateStatus = "UNKNOWN"))
+        fakeSleep(settlesTo = "CLEAN")
+
+        val result = mergeQueue("next")
+
+        assertEquals(result.stderr, 0, result.exitCode)
+        assertEquals("4", output()["number"])
+        assertEquals(listOf("5"), sleeps.readLines())
+    }
+
+    @Test
+    fun `next gives up on a merge state still unknown at the third look, without picking it`() {
+        setUp(mapOf("README.md" to "launcher\n"), Pull(4, mergeStateStatus = "UNKNOWN"))
+        fakeSleep()
+
+        val result = mergeQueue("next")
+
+        assertEquals(result.stderr, 0, result.exitCode)
+        assertEquals(emptyMap<String, String>(), output())
+        assertEquals(listOf("5", "5"), sleeps.readLines())
     }
 
     @Test
@@ -354,6 +402,7 @@ class MergeQueueScriptTest {
 
         assertEquals(result.stderr, 0, result.exitCode)
         assertEquals(listOf(nextRun), calls())
+        assertTrue(result.stdout, result.stdout.contains("::notice title=Merge queue::main moved since #7"))
     }
 
     private fun assertLandSkips(pull: Pull) {
@@ -363,6 +412,10 @@ class MergeQueueScriptTest {
 
         assertEquals(result.stderr, 0, result.exitCode)
         assertEquals(listOf(nextRun), calls())
+        assertTrue(
+            result.stdout,
+            result.stdout.contains("::notice title=Merge queue::#${pull.number} stopped being ready"),
+        )
     }
 
     @Test
@@ -389,11 +442,13 @@ class MergeQueueScriptTest {
     fun `land starts a workflow again when its first dispatch fails, and does not fail the run`() {
         val head = setUp(mapOf("README.md" to "launcher\n"), Pull(7)).getValue(7)
         dir.resolve("fail-once-e2e.yml").writeText("")
+        fakeSleep()
 
         val result = mergeQueue("land", "7", head, cloneHead())
 
         assertEquals(result.stderr, 0, result.exitCode)
         assertEquals(2, workflowRuns().count { it == "e2e.yml" })
+        assertEquals(listOf("10"), sleeps.readLines())
         assertTrue(result.stdout, !result.stdout.contains("::error"))
         assertEquals(nextRun, calls().last())
     }
@@ -402,12 +457,15 @@ class MergeQueueScriptTest {
     private fun assertLandReportsWorkflowThatWillNotStart(workflow: String) {
         val head = setUp(mapOf("README.md" to "launcher\n"), Pull(7)).getValue(7)
         dir.resolve("fail-$workflow").writeText("")
+        fakeSleep()
 
         val result = mergeQueue("land", "7", head, cloneHead())
 
         assertEquals(result.stderr, 1, result.exitCode)
         val runs = workflowRuns()
         assertEquals(3, runs.count { it == workflow })
+        // A wait between tries, and none after the last.
+        assertEquals(listOf("10", "10"), sleeps.readLines())
         assertTrue(
             result.stdout,
             result.stdout.contains(
@@ -497,6 +555,16 @@ class MergeQueueScriptTest {
         assertEquals(result.stderr, 0, result.exitCode)
         assertEquals(emptyMap<String, String>(), output())
         assertEquals(emptyList<List<String>>(), calls())
+    }
+
+    @Test
+    fun `fails with a usage line on an unknown command`() {
+        setUp(mapOf("README.md" to "launcher\n"))
+
+        val result = mergeQueue("merge")
+
+        assertEquals(2, result.exitCode)
+        assertTrue(result.stderr, result.stderr.contains("usage:"))
     }
 
     @Test

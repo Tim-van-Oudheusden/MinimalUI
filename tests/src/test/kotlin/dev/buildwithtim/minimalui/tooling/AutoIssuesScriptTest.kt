@@ -120,9 +120,16 @@ class AutoIssuesScriptTest {
         assertEquals("owner/minimalui", create.option("--repo"))
         assertEquals("CI fails on main", create.option("--title"))
         assertEquals("ci", create.option("--label"))
+        assertEquals("-", create.option("--body-file"))
         val text = body.readText()
         assertTrue(text, text.contains(runUrl))
         assertTrue(text, text.contains(sha))
+        assertTrue(text, text.startsWith("The **CI** workflow failed on `main` (`failure`).\n"))
+        assertTrue(text, text.endsWith("the next\nsuccessful run on `main` closes this issue.\n"))
+        assertEquals(
+            "CI failed on main: opened https://github.com/owner/minimalui/issues/99.\n",
+            result.stdout,
+        )
     }
 
     @Test
@@ -133,6 +140,7 @@ class AutoIssuesScriptTest {
         val comment = changes().single()
         assertEquals(listOf("issue", "comment", "7"), comment.take(3))
         assertTrue(comment.toString(), comment.option("--body").contains(runUrl))
+        assertEquals("CI failed again on main: commented on #7.\n", result.stdout)
     }
 
     @Test
@@ -160,6 +168,17 @@ class AutoIssuesScriptTest {
         val close = changes().single()
         assertEquals(listOf("issue", "close", "7"), close.take(3))
         assertTrue(close.toString(), close.option("--comment").contains(runUrl))
+        assertEquals("CI passes again on main: closed #7.\n", result.stdout)
+    }
+
+    @Test
+    fun `compares a failing commit recorded more than once only once`() {
+        val view =
+            """{"body": "- Commit: $failedSha\n", "comments": [{"body": "Failed again: [run](u) on $failedSha."}]}"""
+
+        autoIssues("success", open = "[${issue(7, "CI fails on main")}]", view = view)
+
+        assertEquals(1, calls().count { it[0] == "api" })
     }
 
     // Runs on quick successive pushes finish out of order: a green on an older commit says nothing about the newer red.
@@ -288,6 +307,7 @@ class AutoIssuesScriptTest {
 
         assertEquals(result.stderr, 0, result.exitCode)
         assertEquals(emptyList<List<String>>(), changes())
+        assertEquals("CI passes on main: no open issue.\n", result.stdout)
     }
 
     // A cancelled run (superseded by a newer push, or stopped by hand) says nothing about main.
@@ -297,6 +317,7 @@ class AutoIssuesScriptTest {
 
         assertEquals(result.stderr, 0, result.exitCode)
         assertEquals(emptyList<List<String>>(), changes())
+        assertEquals("CI concluded 'cancelled' on main: no issue change.\n", result.stdout)
     }
 
     @Test

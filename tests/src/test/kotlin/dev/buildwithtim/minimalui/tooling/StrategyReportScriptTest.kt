@@ -108,6 +108,13 @@ class StrategyReportScriptTest {
     }
 
     @Test
+    fun `counts only a label that starts with stage-slash as a stage`() {
+        val result = report(listOf(issue(1, labels = listOf("not-stage/010-actionable"))))
+
+        assertEquals(listOf("| No stage | 1 |"), result.rows("Backlog by stage"))
+    }
+
+    @Test
     fun `tallies the ACMM gap issues per level and names the ones still open`() {
         val acmm = listOf("acmm")
         val result =
@@ -166,12 +173,31 @@ class StrategyReportScriptTest {
     fun `rejects a missing or valueless flag with a usage line`() {
         for (args in listOf(
             listOf("--since", "2026-10-01", "--issues", "a.json"),
+            listOf("--since", "2026-10-01", "--prs", "a.json"),
+            listOf("--issues", "a.json", "--prs", "a.json"),
             listOf("--issues", "a.json", "--prs"),
+            listOf("--prs", "a.json", "--issues"),
+            listOf("--issues", "a.json", "--since"),
+            listOf("--since", "2026-10-01", "--issues", "a.json", "--prs", "a.json", "stray"),
         )) {
             val result = runScript("scripts/strategy-report.sh", *args.toTypedArray())
 
             assertEquals(args.toString(), 2, result.exitCode)
             assertTrue(result.stderr, result.stderr.contains("usage:"))
+        }
+    }
+
+    @Test
+    fun `takes its flags in any order`() {
+        val empty = temp.newFile("empty.json").apply { writeText("[]") }.path
+        val flags = listOf(listOf("--since", "2026-10-01"), listOf("--issues", empty), listOf("--prs", empty))
+
+        for (last in flags) {
+            val ordered = (flags - setOf(last) + setOf(last)).flatten()
+
+            val result = runScript("scripts/strategy-report.sh", *ordered.toTypedArray())
+
+            assertEquals(last.first(), 0, result.exitCode)
         }
     }
 }
