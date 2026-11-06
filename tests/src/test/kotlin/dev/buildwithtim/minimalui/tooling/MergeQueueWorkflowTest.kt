@@ -41,6 +41,24 @@ class MergeQueueWorkflowTest {
         )
     }
 
+    // pick needs merge state CLEAN, which also waits for checks that are not required, such as CodeQL. When one of
+    // those is the last check to pass, no watched workflow finishes after it, so a ready pull request would wait for
+    // an unrelated event or a person (#373). A schedule starts the queue so it looks again.
+    @Test
+    fun `is started on a schedule, for a pull request whose last check to pass is not required`() {
+        val sweep = workflows.getValue("merge-queue-sweep.yml")
+        val runs =
+            sweep
+                .jobs()
+                .values
+                .flatMap { it.steps() }
+                .mapNotNull { it["run"]?.toString()?.trim() }
+
+        assertEquals(setOf("schedule"), sweep.triggers())
+        assertEquals(listOf("gh workflow run merge-queue.yml --ref main"), runs)
+        assertTrue("merge-queue.yml accepts workflow_dispatch", "workflow_dispatch" in queue.triggers())
+    }
+
     // GitHub expressions cannot read the script's KEEP_OUT_LABELS, so the workflow restates them twice. Removing a
     // label the script keeps out but `pick` does not know starts no run; a concurrency group that disagrees with `pick`
     // lets a run that picks nothing replace a pending one that would merge, or lets two picking runs overlap.

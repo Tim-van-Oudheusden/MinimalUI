@@ -67,6 +67,12 @@ workflows:
       contents: read
       pull-requests: write
 
+  merge-queue-sweep.yml:
+    jobs:
+      # Starts a merge queue run on main.
+      start:
+        actions: write
+
   merge-queue.yml:
     jobs:
       # Lists open PRs and reads their merge state.

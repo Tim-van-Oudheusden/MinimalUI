@@ -1,0 +1,34 @@
+name: Merge queue sweep
+
+# Starts a merge queue run every 30 minutes. The queue picks only a pull request
+# whose merge state is CLEAN, and CLEAN also waits for checks that are not
+# required, such as CodeQL. merge-queue.yml wakes when a workflow holding a
+# required check finishes, so when another check is the last to pass nothing
+# starts it and a ready pull request waits (#373). Each queue run looks at every
+# open pull request, so the sweep needs no logic of its own.
+#
+# It lives apart from merge-queue.yml because a scheduled workflow is one
+# auto-issues.yml watches: a pull request failing the queue's verification
+# fails that run, and would open a "fails on main" issue. A failure here is
+# only this dispatch failing. See docs/multi-agent.md#merge-queue.
+
+on:
+  schedule:
+    - cron: '13,43 * * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  start:
+    name: Start the merge queue
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: write
+    steps:
+      - name: Start a merge queue run on main
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: gh workflow run merge-queue.yml --ref main
