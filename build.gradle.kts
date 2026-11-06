@@ -71,9 +71,11 @@ subprojects {
     }
 }
 
-// Java compilation one task at a time (#339): CodeQL's autobuild intermittently fails a JavaCompile task with no
-// compiler output. Whether concurrent javac runs are the cause is a hypothesis, which this tests. Only generated
-// BuildConfig is compiled, so serializing costs next to nothing. The service holds no state; it exists to be limited.
+// Java compilation one task at a time (#339): CodeQL's autobuild intermittently failed a JavaCompile task with no
+// compiler output, 3 hits in 35 runs on CodeQL CLI 2.27.4. With this limit, 41 runs on the same CLI had none. If the
+// failure returns, concurrency was not the cause; build CodeQL manually on JDK 21 (advanced setup) instead. Only
+// generated BuildConfig is compiled, so serializing costs next to nothing. The service holds no state; it exists to be
+// limited.
 abstract class JavacLimit : BuildService<BuildServiceParameters.None>
 
 val javacLimit =
