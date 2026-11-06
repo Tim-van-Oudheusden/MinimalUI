@@ -4,6 +4,8 @@ import android.app.Activity
 import android.app.ActivityOptions
 import android.app.Application
 import android.content.ComponentName
+import android.content.ContentProvider
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ActivityInfo
@@ -12,6 +14,7 @@ import android.content.pm.LauncherActivityInfo
 import android.content.pm.LauncherApps
 import android.content.pm.LauncherUserInfo
 import android.content.pm.PackageInfo
+import android.database.Cursor
 import android.graphics.Paint
 import android.graphics.Rect
 import android.net.ConnectivityManager
@@ -20,6 +23,7 @@ import android.net.Uri
 import android.os.BatteryManager
 import android.os.Bundle
 import android.os.Looper
+import android.os.ParcelFileDescriptor
 import android.os.UserHandle
 import android.os.UserManager
 import android.provider.Settings
@@ -89,6 +93,7 @@ import org.robolectric.util.ReflectionHelpers
 import org.robolectric.util.ReflectionHelpers.ClassParameter
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
+import java.io.File
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
@@ -1673,6 +1678,22 @@ class MainActivityTest {
     }
 
     @Test
+    fun `Export setup leaves nothing of a longer file it replaces, even when a plain write keeps its length`() {
+        Robolectric.setupContentProvider(KeepsLengthOnPlainWrite::class.java, requireNotNull(pickedFile.authority))
+        val existing = File(application.cacheDir, "minimalui-setup.json")
+        existing.writeText("x".repeat(10_000))
+        val activity = launch()
+        openSettings()
+
+        chooseRow("Export setup")
+        pick(activity, pickedFile)
+
+        awaitToast("Setup exported")
+        val written = LauncherSetup.imported(existing.readText())
+        assertTrue("The file holds a setup and nothing else, but was $written", written is SetupImport.Read)
+    }
+
+    @Test
     fun `Import setup replaces the setup only once the user confirms, and keeps it after a restart`() {
         install("Alarm", "com.example.alarm")
         install("Bell", "com.example.bell")
@@ -2784,3 +2805,48 @@ private const val PER_USER_RANGE = 100_000
 // The app-clone profile's (#201), created after the work profile.
 private const val CLONE_USER = 11
 private const val CLONE_SERIAL = 11L
+
+/**
+ * A document provider that does what the ContentResolver documentation allows: mode "w" opens a file for writing and
+ * keeps its length, so only a mode with "t" cuts it to nothing first. Its documents are files in the cache directory.
+ */
+class KeepsLengthOnPlainWrite : ContentProvider() {
+    override fun openFile(
+        uri: Uri,
+        mode: String,
+    ): ParcelFileDescriptor {
+        val truncate = if ('t' in mode) ParcelFileDescriptor.MODE_TRUNCATE else 0
+        val file = File(requireNotNull(context).cacheDir, requireNotNull(uri.lastPathSegment))
+        return ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_WRITE_ONLY or truncate)
+    }
+
+    override fun onCreate() = true
+
+    override fun getType(uri: Uri): String? = null
+
+    override fun query(
+        uri: Uri,
+        projection: Array<String>?,
+        selection: String?,
+        selectionArgs: Array<String>?,
+        sortOrder: String?,
+    ): Cursor? = null
+
+    override fun insert(
+        uri: Uri,
+        values: ContentValues?,
+    ): Uri? = null
+
+    override fun update(
+        uri: Uri,
+        values: ContentValues?,
+        selection: String?,
+        selectionArgs: Array<String>?,
+    ) = 0
+
+    override fun delete(
+        uri: Uri,
+        selection: String?,
+        selectionArgs: Array<String>?,
+    ) = 0
+}
