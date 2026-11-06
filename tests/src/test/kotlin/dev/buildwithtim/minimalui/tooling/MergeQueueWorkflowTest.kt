@@ -130,4 +130,18 @@ class MergeQueueWorkflowTest {
         )
         setupJava.forEach { assertEquals(null, it["with"]?.asMap()?.get("cache")) }
     }
+
+    // The queue takes only merge state CLEAN, which any red check blocks. A failed API call on a convenience label
+    // would keep a ready pull request out of the queue until someone re-runs the check.
+    @Test
+    fun `is not blocked by a failed labeler step`() {
+        val steps =
+            workflows
+                .getValue("labeler.yml")
+                .jobs()
+                .getValue("label")
+                .steps()
+
+        assertEquals(listOf(true), steps.map { it["continue-on-error"] })
+    }
 }
