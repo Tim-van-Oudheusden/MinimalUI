@@ -19,6 +19,9 @@ class MergeQueueScriptTest {
     /**
      * Fake `gh` first on PATH. `pr list` and `pr view <number>` answer from the pull requests in [pulls], filtered
      * through `--jq` the way gh does; every other call is logged to [calls], its arguments tab-separated on one line.
+     * A `fail-pr-list` file in [dir] makes `pr list` fail; `fail-<workflow>` makes `workflow run <workflow>` fail
+     * every time, and `fail-once-<workflow>` once (the file is removed). A failing call is logged first. The fake
+     * `sleep` returns at once, so retries cost no time.
      */
     private val bin =
         dir.resolve("bin").apply {
@@ -40,6 +43,10 @@ class MergeQueueScriptTest {
                           *) number="${'$'}1"; shift ;;
                         esac
                       done
+                      if [ "${'$'}sub" = list ] && [ -e "${dir.path}/fail-pr-list" ]; then
+                        echo "gh: HTTP 500" >&2
+                        exit 1
+                      fi
                       if [ "${'$'}sub" = view ]; then
                         jq -r --argjson n "${'$'}number" ".[] | select(.number == \${'$'}n) | ${'$'}filter" "${pulls.path}"
                       else
@@ -48,9 +55,22 @@ class MergeQueueScriptTest {
                       exit 0
                     fi
                     (IFS=${'$'}'\t'; printf '%s\n' "${'$'}*") >> "${calls.path}"
+                    if [ "${'$'}1" = workflow ] && [ "${'$'}2" = run ]; then
+                      if [ -e "${dir.path}/fail-${'$'}3" ]; then
+                        exit 1
+                      fi
+                      if [ -e "${dir.path}/fail-once-${'$'}3" ]; then
+                        rm "${dir.path}/fail-once-${'$'}3"
+                        exit 1
+                      fi
+                    fi
 
                     """.trimIndent(),
                 )
+                setExecutable(true)
+            }
+            resolve("sleep").apply {
+                writeText("#!/usr/bin/env bash\nexit 0\n")
                 setExecutable(true)
             }
         }
@@ -169,6 +189,10 @@ class MergeQueueScriptTest {
     private fun cloneHead() = git(clone, "rev-parse", "HEAD")
 
     private val nextRun = listOf("workflow", "run", "merge-queue.yml", "--ref", "main")
+
+    private val pushWorkflows = listOf("ci.yml", "coverage-gate.yml", "e2e.yml", "quality-report.yml")
+
+    private fun workflowRuns(): List<String> = calls().filter { it.take(2) == listOf("workflow", "run") }.map { it[2] }
 
     // sentinel-alert: Hive flagged a sensitive change, and a maintainer removes the label once they have reviewed it.
     @Test
@@ -351,6 +375,96 @@ class MergeQueueScriptTest {
     @Test
     fun `land does not merge a pull request whose required checks stopped passing during verification`() {
         assertLandSkips(Pull(7, mergeStateStatus = "BLOCKED"))
+    }
+
+    @Test
+    fun `land starts a workflow again when its first dispatch fails, and does not fail the run`() {
+        val head = setUp(mapOf("README.md" to "launcher\n"), Pull(7)).getValue(7)
+        dir.resolve("fail-once-e2e.yml").writeText("")
+
+        val result = mergeQueue("land", "7", head, cloneHead())
+
+        assertEquals(result.stderr, 0, result.exitCode)
+        assertEquals(2, workflowRuns().count { it == "e2e.yml" })
+        assertTrue(result.stdout, !result.stdout.contains("::error"))
+        assertEquals(nextRun, calls().last())
+    }
+
+    // The merge has landed by then, so the other gates on main and the next run must still start.
+    private fun assertLandReportsWorkflowThatWillNotStart(workflow: String) {
+        val head = setUp(mapOf("README.md" to "launcher\n"), Pull(7)).getValue(7)
+        dir.resolve("fail-$workflow").writeText("")
+
+        val result = mergeQueue("land", "7", head, cloneHead())
+
+        assertEquals(result.stderr, 1, result.exitCode)
+        val runs = workflowRuns()
+        assertEquals(3, runs.count { it == workflow })
+        assertTrue(
+            result.stdout,
+            result.stdout.contains(
+                "::error title=Merge queue::could not start $workflow; start it by hand: " +
+                    "gh workflow run $workflow --ref main",
+            ),
+        )
+        assertEquals((pushWorkflows + "merge-queue.yml").toSet(), runs.toSet())
+        assertEquals(nextRun, calls().last())
+    }
+
+    @Test
+    fun `land starts the rest and fails the run when ci cannot be started`() {
+        assertLandReportsWorkflowThatWillNotStart("ci.yml")
+    }
+
+    @Test
+    fun `land starts the rest and fails the run when the coverage gate cannot be started`() {
+        assertLandReportsWorkflowThatWillNotStart("coverage-gate.yml")
+    }
+
+    @Test
+    fun `land starts the rest and fails the run when e2e cannot be started`() {
+        assertLandReportsWorkflowThatWillNotStart("e2e.yml")
+    }
+
+    @Test
+    fun `land starts the rest and fails the run when the quality report cannot be started`() {
+        assertLandReportsWorkflowThatWillNotStart("quality-report.yml")
+    }
+
+    @Test
+    fun `land fails the run when the next queue run cannot be started after a merge`() {
+        val head = setUp(mapOf("README.md" to "launcher\n"), Pull(7)).getValue(7)
+        dir.resolve("fail-merge-queue.yml").writeText("")
+
+        val result = mergeQueue("land", "7", head, cloneHead())
+
+        assertEquals(result.stderr, 1, result.exitCode)
+        assertEquals(3, workflowRuns().count { it == "merge-queue.yml" })
+        assertEquals(pushWorkflows, workflowRuns().filter { it != "merge-queue.yml" })
+        assertTrue(result.stdout, result.stdout.contains("::error title=Merge queue::could not start merge-queue.yml"))
+    }
+
+    // A failed listing must not pass for an empty queue.
+    @Test
+    fun `next fails and picks nothing when the pull request listing fails`() {
+        setUp(mapOf("README.md" to "launcher\n"), Pull(4))
+        dir.resolve("fail-pr-list").writeText("")
+
+        val result = mergeQueue("next")
+
+        assertTrue(result.stderr, result.exitCode != 0)
+        assertEquals(emptyMap<String, String>(), output())
+    }
+
+    @Test
+    fun `next picks nothing when no pull request is open`() {
+        setUp(mapOf("README.md" to "launcher\n"))
+
+        val result = mergeQueue("next")
+
+        assertEquals(result.stderr, 0, result.exitCode)
+        assertEquals(emptyMap<String, String>(), output())
+        assertEquals(emptyList<List<String>>(), calls())
     }
 
     @Test
