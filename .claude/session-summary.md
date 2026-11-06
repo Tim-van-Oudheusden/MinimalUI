@@ -10,11 +10,10 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 ## Latest session
 
 - **Date:** 2026-11-06
-- **Worked:** #379 → `ci/379-labeler-continue-on-error`. The labeler step gets `continue-on-error: true`: a failed
-  GitHub API call there turned `Label by changed paths` red, which makes a ready PR `UNSTABLE`, and the queue takes
-  only `CLEAN`. The path labels gate nothing. Confirmed first: the new `MergeQueueWorkflowTest` case failed without
-  the workflow edit.
-- **Outcome:** PR open, `Fixes #379`. Workflow change, high risk: the maintainer merges it.
+- **Worked:** #380 → `ci/380-pr-metrics-body`. `pr-metrics.yml` now asks `gh pr list` for `body`: `pr-source.jq`
+  reads a missing body as empty, so in CI Hive-signed PRs under the maintainer's account landed in `Other` (the half
+  of #342 that #344 left undone). Confirmed first: the new `PrMetricsScriptTest` case failed without the workflow edit.
+- **Outcome:** PR open, `Fixes #380`. Workflow change, high risk: the maintainer merges it.
 - **Open follow-ups:** none.
 - **Notes for next session:**
   - This host had a JDK at `~/.jdks/jdk-21.0.13+9` and the SDK at `~/Android/Sdk` (`platforms;android-37.0`): set
