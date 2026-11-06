@@ -70,7 +70,7 @@ class StatusPillTest {
     }
 
     @Test
-    fun `Wi-Fi and the battery are left out when absent, the clock always shows`() {
+    fun `with Wi-Fi and the battery absent, the clock still shows`() {
         val pill = StatusPill(wifi = false, battery = null, clock = "9:41 AM")
 
         assertFalse(pill.wifi)
