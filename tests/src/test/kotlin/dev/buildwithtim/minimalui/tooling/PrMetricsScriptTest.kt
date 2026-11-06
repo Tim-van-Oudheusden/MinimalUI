@@ -118,7 +118,7 @@ class PrMetricsScriptTest {
         assertTrue(report().stdout.contains("PRs closed since 2026-09-14 (last 28 days)."))
     }
 
-    // `shift 2` with one argument left shifts nothing, so an unguarded parser loops on the same flag forever.
+    // Under set -u a missing $2 stops the script with bash's error and exit 1; only a guard gives usage and exit 2.
     @Test
     fun `rejects a trailing flag that has no value`() {
         for (args in listOf(listOf("--days", "28", "--since"), listOf("--since", "2026-09-14", "--days"))) {

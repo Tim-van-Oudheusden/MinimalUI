@@ -168,7 +168,7 @@ class StrategyReportScriptTest {
         assertTrue(result.exitCode != 0)
     }
 
-    // `shift 2` with one argument left shifts nothing, so an unguarded parser loops on the same flag forever.
+    // Under set -u a missing $2 stops the script with bash's error and exit 1; only a guard gives usage and exit 2.
     @Test
     fun `rejects a missing or valueless flag with a usage line`() {
         for (args in listOf(
