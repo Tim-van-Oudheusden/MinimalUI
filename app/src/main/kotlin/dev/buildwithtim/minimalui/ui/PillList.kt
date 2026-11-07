@@ -98,7 +98,8 @@ class PillListState {
  * sits at its right end. A row's [suffix], when it has one (what tells apart apps of the same name, #72), follows its
  * label on the same line, smaller and dim, and is cut off first when the row is too narrow for both. Up/Down move one
  * row and wrap around at the ends, except while held. Left/Right turn a page, stopping at the ends. Enter, Space, D-pad
- * centre or a tap confirms a row; a disabled row is drawn dim and confirms nothing.
+ * centre or a tap confirms a row, and a pressed row takes the selection first; a disabled row is drawn dim and confirms
+ * nothing.
  * A [dim] row is drawn dim too, selected or not, yet works as any other (a hidden app that type-to-filter found).
  * An item that is not [selectable] is an empty row (the root list's blank row): it takes a row on every page, and the
  * selection skips it. Holding Enter, Space or D-pad centre until it repeats, or a touch long-press, calls [onLongPress]
@@ -172,6 +173,7 @@ internal fun <T> PillList(
                     height = rowHeight,
                     enabled = enabled(item),
                     dim = dim(item),
+                    onPress = { state.onRowPress(index, count, rowsPerPage, blank) },
                     onConfirm = { onConfirm(item) },
                     onLongPress = onLongPress?.let { { it(item) } },
                     // Focus that moves some other way (Tab, say) moves the selection with it.
@@ -226,6 +228,17 @@ private fun PillListState.onMoveKey(
     select(now.moved(move, event.held, count, rowsPerPage, blank))
     return true
 }
+
+/**
+ * Selects the pressed [row]: a press doesn't focus it, and touch scrolling doesn't move [PillListState.position], which
+ * is what a list that comes back goes by.
+ */
+private fun PillListState.onRowPress(
+    row: Int,
+    count: Int,
+    rowsPerPage: Int,
+    blank: (Int) -> Boolean,
+) = select(ListPosition(row, scroll.firstVisibleItemIndex).selecting(count, rowsPerPage, blank))
 
 /**
  * A list screen that takes the app list's place for a while: the [status] pill on top, the [title] in a dark-grey
@@ -305,6 +318,7 @@ private fun PillRow(
     height: Dp,
     enabled: Boolean,
     dim: Boolean,
+    onPress: () -> Unit,
     onConfirm: () -> Unit,
     onLongPress: (() -> Unit)?,
     onFocused: () -> Unit,
@@ -341,8 +355,19 @@ private fun PillRow(
                 .combinedClickable(
                     interactionSource = null,
                     indication = null,
-                    onLongClick = onLongPress,
-                    onClick = { if (enabled) onConfirm() },
+                    onLongClick =
+                        onLongPress?.let {
+                            {
+                                onPress()
+                                it()
+                            }
+                        },
+                    onClick = {
+                        if (enabled) {
+                            onPress()
+                            onConfirm()
+                        }
+                    },
                 ).semantics { if (!enabled) disabled() }
                 .padding(horizontal = RowMetrics.ListPaddingHorizontal),
     ) {

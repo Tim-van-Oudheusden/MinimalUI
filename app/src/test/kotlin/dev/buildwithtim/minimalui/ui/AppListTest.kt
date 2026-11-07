@@ -15,11 +15,13 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.assertIsNotFocused
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -30,6 +32,7 @@ import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performKeyPress
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.pressKey
+import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.dp
 import dev.buildwithtim.minimalui.core.Battery
@@ -125,11 +128,15 @@ class AppListTest {
         send(AndroidKeyEvent.ACTION_UP, keyCode)
     }
 
-    /** Labels of the rows on screen, top to bottom, after checking that each one is drawn whole. */
+    /**
+     * Labels of the rows on screen, top to bottom, after checking that each one is drawn whole. A row off the screen
+     * doesn't count, though the list keeps the focused row composed when touch scrolling takes it away.
+     */
     private fun rowsOnScreen(): List<String> {
         val list = rule.onNode(hasScrollAction()).getUnclippedBoundsInRoot()
         val rows = rule.onAllNodes(hasClickAction() and hasAnyAncestor(hasScrollAction()))
         return List(rows.fetchSemanticsNodes().size) { rows[it] }
+            .filter { it.isDisplayed() }
             .map {
                 it.fetchSemanticsNode().config[SemanticsProperties.Text].joinToString() to
                     it.getUnclippedBoundsInRoot()
@@ -221,6 +228,48 @@ class AppListTest {
 
         rule.onNodeWithText(rowLabel(rows + 1)).assertIsFocused()
         assertEquals(page, rowsOnScreen())
+    }
+
+    @Test
+    @Config(qualifiers = "w360dp-h360dp")
+    fun `a list closed over a touch long-pressed row comes back on that row`() {
+        show(manyApps)
+        rule.onNode(hasScrollAction()).performTouchInput { swipeUp() }
+        rule.waitForIdle()
+        val page = rowsOnScreen()
+        assertTrue(page.first() != rowLabel(0))
+
+        rule.onNodeWithText(page[1]).performTouchInput { longClick() }
+        assertEquals(listOf(page[1]), menus.map { it.label })
+
+        listShown = false
+        rule.onNodeWithText(page[1]).assertDoesNotExist()
+        listShown = true
+
+        rule.onNodeWithText(page[1]).assertIsFocused()
+        assertEquals(page, rowsOnScreen())
+    }
+
+    @Test
+    @Config(qualifiers = "w360dp-h360dp")
+    fun `a list closed over a touch tapped row comes back on that row`() {
+        show(manyApps)
+        rule.onNode(hasScrollAction()).performTouchInput { swipeUp() }
+        rule.waitForIdle()
+        val page = rowsOnScreen()
+        assertTrue(page.first() != rowLabel(0))
+
+        rule.onNodeWithText(page[1]).performTouchInput { click() }
+        assertEquals(listOf(page[1]), opened.map { it.label })
+
+        listShown = false
+        rule.onNodeWithText(page[1]).assertDoesNotExist()
+        listShown = true
+
+        rule.onNodeWithText(page[1]).assertIsFocused()
+        assertEquals(page, rowsOnScreen())
+        press(Key.DirectionDown)
+        rule.onNodeWithText(page[2]).assertIsFocused()
     }
 
     @Test
