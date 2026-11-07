@@ -89,9 +89,9 @@ Agent changes go through the same gates as human ones, with no shortcuts:
     and runs only `actions/labeler`.
   - `.claude/settings.json`, `AGENTS.md`, `CLAUDE.md`, `prompts/`, and this file: any change that loosens agent
     boundaries needs explicit maintainer approval.
-  - `app/src/main/AndroidManifest.xml`: new permissions, exported components, or intent filters change what other apps
+  - `app/src/*/AndroidManifest.xml`: new permissions, exported components, or intent filters change what other apps
     and the system can do with the launcher.
-  - `gradle/` and `*.gradle.kts`: new repositories, plugins, or dependencies.
+  - `gradle/`, `*.gradle.kts`, `*.gradle` and `buildSrc/`: new repositories, plugins, dependencies, or build code.
 
 ## Reporting
 

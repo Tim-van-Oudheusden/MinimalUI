@@ -46,8 +46,9 @@ behave. A mistake here can bypass every other check or ship to every device.
 | `.github/*`                                                                          | CI gates, review rubric, rulesets, the risk rules    |
 | `scripts/*`, `tests/*`                                                               | Gate tooling and the tests that pin the workflows    |
 | `config/*`, `.editorconfig`                                                          | What detekt and ktlint enforce in `check`            |
-| `gradle/*`, `*.gradle.kts`, `gradle.properties`, `gradlew`, `gradlew.bat`            | Build, version catalog, wrapper (supply chain)       |
-| `app/src/main/AndroidManifest.xml`                                                   | App permissions and the HOME intent filter           |
+| `gradle/*`, `*.gradle.kts`, `*.gradle`, `buildSrc/*`                                 | Build scripts and version catalog (supply chain)     |
+| `gradle.properties`, `gradlew`, `gradlew.bat`                                        | Build settings and wrapper (supply chain)            |
+| `app/src/*/AndroidManifest.xml`                                                      | App permissions and the HOME intent filter           |
 | `AGENTS.md`, `CLAUDE.md`, `.claude/*`, `.cursor/*`, `.beads/*`, `prompts/*`          | Agent instructions and governance                    |
 | `.gitattributes`                                                                     | Line endings, binary handling, diff/merge drivers    |
 | `.devcontainer/*`, `Dockerfile*`, `*/Dockerfile`, `.dockerignore`                    | Development container and image configuration        |
