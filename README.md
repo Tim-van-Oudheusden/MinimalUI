@@ -25,9 +25,9 @@
 
 Early development: the [latest release](https://github.com/Tim-van-Oudheusden/MinimalUI/releases/latest) is a 0.x
 version. No phone is listed as supported until it has been tested on one: [`DEVICES.md`](DEVICES.md) lists the phones
-reported so far and how to report yours. Today the launcher shows every installed app in one alphabetical list and
-opens the one you pick. It hides Android's status bar and shows its own pill in the top-right corner instead: Wi-Fi
-(when connected), battery level and the time.
+reported so far and how to report yours. Today the launcher shows your favourites, the apps you opened last and then
+every app in alphabetical order, with collections of your own and groups by category. It hides Android's status bar
+and shows its own pill in the top-right corner instead: Wi-Fi (when connected), battery level and the time.
 
 ## About
 
@@ -71,6 +71,25 @@ Pick one:
 - **Build from source.** Follow [Getting started](CONTRIBUTING.md#getting-started) in `CONTRIBUTING.md`, then run
   `./gradlew installDebug` with the phone connected. No phone at hand? [Running it in an emulator on
   Linux](CONTRIBUTING.md#running-it-in-an-emulator-on-linux) sets one up.
+
+**Keeping up to date.** The app has no internet permission, so it can't tell you about a new release. To find out,
+watch the repository on GitHub (**Watch**, then **Custom**, then **Releases**; this needs a GitHub account), or follow
+the [releases feed](https://github.com/Tim-van-Oudheusden/MinimalUI/releases.atom) in a feed reader (no account
+needed). To update, install the new release over the old one.
+
+**Check the download.** Every release so far is signed with the same certificate, whose SHA-256 digest is:
+
+```text
+8c6a340f653f3e481059c2a84b53462735bbf1c659b9ed2ccd45935839306fb2
+```
+
+To check an APK against it, use `apksigner` from the Android SDK build-tools:
+
+```bash
+apksigner verify --print-certs minimalui-v<version>.apk | grep 'certificate SHA-256'
+```
+
+The [release key runbook](docs/runbooks/release-key.md) says more about the key.
 
 ## Making it your home screen
 
