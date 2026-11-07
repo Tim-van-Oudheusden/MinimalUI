@@ -6,10 +6,8 @@ import androidx.compose.runtime.Stable
 import androidx.compose.ui.input.key.Key
 import dev.buildwithtim.minimalui.core.HintedScreen
 import dev.buildwithtim.minimalui.core.LauncherApp
-import dev.buildwithtim.minimalui.core.ListPosition
 import dev.buildwithtim.minimalui.core.StatusPill
 import dev.buildwithtim.minimalui.core.component
-import dev.buildwithtim.minimalui.core.selecting
 
 /**
  * The user's collections (#68), opened from the root's Collections row, or the groups (#69), from its Groups row: their
@@ -92,8 +90,7 @@ internal fun CollectionApps(
                     ?.let { app -> apps.indexOfFirst { it.component == app.component } }
                     ?: return@LaunchedEffect
             if (row >= 0 && row != selected) {
-                val position = ListPosition(row, state.list.scroll.firstVisibleItemIndex)
-                state.list.select(position.selecting(apps.size, rowsPerPage))
+                state.list.select(state.list.positionAt(row, apps.size, rowsPerPage))
             }
         }
         PillList(
