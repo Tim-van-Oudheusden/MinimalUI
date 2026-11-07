@@ -31,7 +31,6 @@ import dev.buildwithtim.minimalui.core.StatusPill
 import dev.buildwithtim.minimalui.core.TopCause
 import dev.buildwithtim.minimalui.core.buttonHints
 import dev.buildwithtim.minimalui.core.listRhythm
-import dev.buildwithtim.minimalui.core.selecting
 import dev.buildwithtim.minimalui.core.selectionMove
 
 /**
@@ -170,8 +169,7 @@ private fun AppListState.select(
     entries: List<RootEntry>,
     rowsPerPage: Int,
 ) {
-    val position = ListPosition(row, list.scroll.firstVisibleItemIndex)
-    list.select(position.selecting(entries.size, rowsPerPage) { !entries[it].selectable })
+    list.select(list.positionAt(row, entries.size, rowsPerPage) { !entries[it].selectable })
 }
 
 /** What the app list keeps while another screen takes its place: [AppList] comes back as it was. */

@@ -16,10 +16,8 @@ import androidx.compose.ui.res.stringResource
 import dev.buildwithtim.minimalui.R
 import dev.buildwithtim.minimalui.core.HintedScreen
 import dev.buildwithtim.minimalui.core.LauncherApp
-import dev.buildwithtim.minimalui.core.ListPosition
 import dev.buildwithtim.minimalui.core.StatusPill
 import dev.buildwithtim.minimalui.core.component
-import dev.buildwithtim.minimalui.core.selecting
 
 /**
  * The Hidden apps list (#71), opened from the settings: the hidden [apps] under the [title] pill, Enter or a tap
@@ -56,8 +54,7 @@ internal fun HiddenAppsList(
             LaunchedEffect(apps) {
                 val row = unhiddenRow.value ?: return@LaunchedEffect
                 unhiddenRow.value = null
-                val position = ListPosition(minOf(row, apps.lastIndex), state.scroll.firstVisibleItemIndex)
-                state.select(position.selecting(apps.size, rowsPerPage))
+                state.select(state.positionAt(minOf(row, apps.lastIndex), apps.size, rowsPerPage))
             }
             PillList(
                 state = state,

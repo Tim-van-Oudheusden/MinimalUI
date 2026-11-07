@@ -273,6 +273,25 @@ class AppListTest {
     }
 
     @Test
+    @Config(qualifiers = "w360dp-h360dp")
+    fun `a list closed over a row that Tab reached comes back on that row`() {
+        show(manyApps)
+        val rows = rowsOnScreen().size
+        val row = rowLabel(rows + 2)
+
+        repeat(rows + 2) { press(Key.Tab) }
+        rule.onNodeWithText(row).assertIsFocused().assertIsDisplayed()
+        val page = rowsOnScreen()
+
+        listShown = false
+        rule.onNodeWithText(row).assertDoesNotExist()
+        listShown = true
+
+        rule.onNodeWithText(row).assertIsFocused()
+        assertEquals(page, rowsOnScreen())
+    }
+
+    @Test
     @Config(qualifiers = "w360dp-h640dp")
     fun `the selected row stays on screen when the screen gets shorter`() {
         var screenHeight by mutableStateOf(640.dp)

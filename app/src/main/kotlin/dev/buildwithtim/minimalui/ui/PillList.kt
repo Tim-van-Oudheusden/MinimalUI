@@ -90,6 +90,17 @@ class PillListState {
         position = next
         moves++
     }
+
+    /**
+     * Where the list is with [row] selected (or the next row that is not [blank]), keeping the screen if the row is on
+     * it.
+     */
+    internal fun positionAt(
+        row: Int,
+        count: Int,
+        rowsPerPage: Int,
+        blank: (Int) -> Boolean = { false },
+    ) = ListPosition(row, scroll.firstVisibleItemIndex).selecting(count, rowsPerPage, blank)
 }
 
 /**
@@ -176,10 +187,7 @@ internal fun <T> PillList(
                     onPress = { state.onRowPress(index, count, rowsPerPage, blank) },
                     onConfirm = { onConfirm(item) },
                     onLongPress = onLongPress?.let { { it(item) } },
-                    // Focus that moves some other way (Tab, say) moves the selection with it.
-                    onFocused = {
-                        if (state.position.selected != index) state.position = state.position.copy(selected = index)
-                    },
+                    onFocused = { state.onRowFocused(index, count, rowsPerPage, blank) },
                     focusRequest = if (index == state.position.selected) state.moves else null,
                     isSelected = { index == state.position.selected },
                 )
@@ -238,7 +246,20 @@ private fun PillListState.onRowPress(
     count: Int,
     rowsPerPage: Int,
     blank: (Int) -> Boolean,
-) = select(ListPosition(row, scroll.firstVisibleItemIndex).selecting(count, rowsPerPage, blank))
+) = select(positionAt(row, count, rowsPerPage, blank))
+
+/**
+ * Focus that moves some other way (Tab, say) moves the selection with it, and the first row with that, as a list that
+ * comes back scrolls to it. Not a [PillListState.select]: the row already has focus, so nothing needs to re-request it.
+ */
+private fun PillListState.onRowFocused(
+    row: Int,
+    count: Int,
+    rowsPerPage: Int,
+    blank: (Int) -> Boolean,
+) {
+    if (position.selected != row) position = positionAt(row, count, rowsPerPage, blank)
+}
 
 /**
  * A list screen that takes the app list's place for a while: the [status] pill on top, the [title] in a dark-grey
