@@ -1893,6 +1893,35 @@ class MainActivityTest {
     }
 
     @Test
+    fun `Rename in a group moves the app to its new sort place there, and the selection moves with it`() {
+        install("Alarm", "com.example.alarm")
+        install("Bell", "com.example.bell")
+        install("Clock", "com.example.clock")
+        val activity = launch()
+        awaitListed("Clock")
+        addToGroup(activity, "Work", new = true)
+        press(Key.DirectionDown)
+        addToGroup(activity, "Work", new = false)
+        press(Key.DirectionDown)
+        addToGroup(activity, "Work", new = false)
+        press(Key.DirectionUp)
+        press(Key.DirectionUp)
+        rule.onNodeWithText("Alarm").assertIsFocused()
+        openGroups()
+        rule.onNodeWithText("Work").assertIsFocused()
+        press(Key.Enter)
+        awaitListed("Other", listed = false)
+        assertEquals(listOf("Alarm", "Bell", "Clock"), shownRows())
+        rule.onNodeWithText("Alarm").assertIsFocused()
+
+        rename(activity, current = "Alarm", name = "Zoo")
+
+        awaitListed("Zoo")
+        assertEquals(listOf("Bell", "Clock", "Zoo"), shownRows())
+        rule.onNodeWithText("Zoo").assertIsFocused()
+    }
+
+    @Test
     fun `Esc or Back in the editor cancels, back on the Rename row, and the name stays`() {
         install("Alarm", "com.example.alarm")
         install("Bell", "com.example.bell")

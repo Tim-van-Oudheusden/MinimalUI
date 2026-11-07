@@ -85,7 +85,12 @@ internal fun CollectionApps(
             val before = state.shown
             state.shown = apps
             val selected = state.list.position.selected
-            val row = before.getOrNull(selected)?.let(apps::indexOf) ?: return@LaunchedEffect
+            // By component: a rename changes the label, so the renamed app no longer equals its old self.
+            val row =
+                before
+                    .getOrNull(selected)
+                    ?.let { app -> apps.indexOfFirst { it.component == app.component } }
+                    ?: return@LaunchedEffect
             if (row >= 0 && row != selected) {
                 val position = ListPosition(row, state.list.scroll.firstVisibleItemIndex)
                 state.list.select(position.selecting(apps.size, rowsPerPage))
