@@ -7,9 +7,10 @@ import org.junit.Test
 /**
  * Facts the docs state about this repository, read from the docs and from the file that decides them. A doc names the
  * release APK, the required checks, the labels that keep a pull request out of the merge queue, the workflows that
- * start the queue or that it starts, and the untranslated group and suffix names; a later pull request changes one of
- * them, and until now nothing failed (#329, after #175, #185 and #209). Each test extracts both sides with a Regex and
- * fails when either stops matching, so rewording a doc cannot make a claim pass by finding nothing to compare.
+ * start the queue or that it starts, the untranslated group and suffix names, and the release certificate digest; a
+ * later pull request changes one of them, and until now nothing failed (#329, after #175, #185 and #209). Each test
+ * extracts both sides with a Regex and fails when either stops matching, so rewording a doc cannot make a claim pass
+ * by finding nothing to compare.
  *
  * It covers facts a file records. A claim about code behaviour or about how Hive behaves at run time is out of scope.
  */
@@ -184,6 +185,18 @@ class DocsClaimsTest {
         assertTrue("suffix is `Work` and an app clone's `Clone` in BRANDING.md", suffixes != null)
 
         assertEquals(listOf(work, clone, work, clone), listOf(docWork, docClone) + suffixes!!)
+    }
+
+    // The certificate digest is stated in the release-key runbook and again in the README's install section.
+    @Test
+    fun `the README and the release key runbook state the same certificate digest`() {
+        val digest = Regex("""\b[0-9a-f]{64}\b""")
+        val inRunbook = digest.findAll(Repo.read("docs/runbooks/release-key.md")).map { it.value }.toSet()
+        val inReadme = digest.findAll(Repo.read("README.md")).map { it.value }.toSet()
+        assertTrue("a 64-digit hex digest in docs/runbooks/release-key.md", inRunbook.isNotEmpty())
+        assertTrue("a 64-digit hex digest in README.md", inReadme.isNotEmpty())
+
+        assertEquals(inRunbook, inReadme)
     }
 
     /** The string [name] is assigned to in the Kotlin source [path]. */
