@@ -98,7 +98,8 @@ class PillListState {
  * sits at its right end. A row's [suffix], when it has one (what tells apart apps of the same name, #72), follows its
  * label on the same line, smaller and dim, and is cut off first when the row is too narrow for both. Up/Down move one
  * row and wrap around at the ends, except while held. Left/Right turn a page, stopping at the ends. Enter, Space, D-pad
- * centre or a tap confirms a row; a disabled row is drawn dim and confirms nothing.
+ * centre or a tap confirms a row, and a pressed row takes the selection first; a disabled row is drawn dim and confirms
+ * nothing.
  * A [dim] row is drawn dim too, selected or not, yet works as any other (a hidden app that type-to-filter found).
  * An item that is not [selectable] is an empty row (the root list's blank row): it takes a row on every page, and the
  * selection skips it. Holding Enter, Space or D-pad centre until it repeats, or a touch long-press, calls [onLongPress]
@@ -165,6 +166,11 @@ internal fun <T> PillList(
             if (!selectable(item)) {
                 Spacer(Modifier.fillMaxWidth().height(rowHeight))
             } else {
+                // A press doesn't focus the row and touch scrolling doesn't move `position`, so select the row here.
+                val press = {
+                    val pressed = ListPosition(index, state.scroll.firstVisibleItemIndex)
+                    state.select(pressed.selecting(count, rowsPerPage, blank))
+                }
                 PillRow(
                     label = label(item),
                     suffix = suffix(item),
@@ -172,8 +178,17 @@ internal fun <T> PillList(
                     height = rowHeight,
                     enabled = enabled(item),
                     dim = dim(item),
-                    onConfirm = { onConfirm(item) },
-                    onLongPress = onLongPress?.let { { it(item) } },
+                    onConfirm = {
+                        press()
+                        onConfirm(item)
+                    },
+                    onLongPress =
+                        onLongPress?.let {
+                            {
+                                press()
+                                it(item)
+                            }
+                        },
                     // Focus that moves some other way (Tab, say) moves the selection with it.
                     onFocused = {
                         if (state.position.selected != index) state.position = state.position.copy(selected = index)
