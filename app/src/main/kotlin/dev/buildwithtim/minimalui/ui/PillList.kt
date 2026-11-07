@@ -166,11 +166,6 @@ internal fun <T> PillList(
             if (!selectable(item)) {
                 Spacer(Modifier.fillMaxWidth().height(rowHeight))
             } else {
-                // A press doesn't focus the row and touch scrolling doesn't move `position`, so select the row here.
-                val press = {
-                    val pressed = ListPosition(index, state.scroll.firstVisibleItemIndex)
-                    state.select(pressed.selecting(count, rowsPerPage, blank))
-                }
                 PillRow(
                     label = label(item),
                     suffix = suffix(item),
@@ -178,17 +173,9 @@ internal fun <T> PillList(
                     height = rowHeight,
                     enabled = enabled(item),
                     dim = dim(item),
-                    onConfirm = {
-                        press()
-                        onConfirm(item)
-                    },
-                    onLongPress =
-                        onLongPress?.let {
-                            {
-                                press()
-                                it(item)
-                            }
-                        },
+                    onPress = { state.onRowPress(index, count, rowsPerPage, blank) },
+                    onConfirm = { onConfirm(item) },
+                    onLongPress = onLongPress?.let { { it(item) } },
                     // Focus that moves some other way (Tab, say) moves the selection with it.
                     onFocused = {
                         if (state.position.selected != index) state.position = state.position.copy(selected = index)
@@ -241,6 +228,17 @@ private fun PillListState.onMoveKey(
     select(now.moved(move, event.held, count, rowsPerPage, blank))
     return true
 }
+
+/**
+ * Selects the pressed [row]: a press doesn't focus it, and touch scrolling doesn't move [PillListState.position], which
+ * is what a list that comes back goes by.
+ */
+private fun PillListState.onRowPress(
+    row: Int,
+    count: Int,
+    rowsPerPage: Int,
+    blank: (Int) -> Boolean,
+) = select(ListPosition(row, scroll.firstVisibleItemIndex).selecting(count, rowsPerPage, blank))
 
 /**
  * A list screen that takes the app list's place for a while: the [status] pill on top, the [title] in a dark-grey
@@ -320,6 +318,7 @@ private fun PillRow(
     height: Dp,
     enabled: Boolean,
     dim: Boolean,
+    onPress: () -> Unit,
     onConfirm: () -> Unit,
     onLongPress: (() -> Unit)?,
     onFocused: () -> Unit,
@@ -356,8 +355,19 @@ private fun PillRow(
                 .combinedClickable(
                     interactionSource = null,
                     indication = null,
-                    onLongClick = onLongPress,
-                    onClick = { if (enabled) onConfirm() },
+                    onLongClick =
+                        onLongPress?.let {
+                            {
+                                onPress()
+                                it()
+                            }
+                        },
+                    onClick = {
+                        if (enabled) {
+                            onPress()
+                            onConfirm()
+                        }
+                    },
                 ).semantics { if (!enabled) disabled() }
                 .padding(horizontal = RowMetrics.ListPaddingHorizontal),
     ) {

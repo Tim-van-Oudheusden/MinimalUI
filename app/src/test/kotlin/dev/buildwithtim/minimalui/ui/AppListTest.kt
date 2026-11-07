@@ -21,6 +21,7 @@ import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -127,11 +128,15 @@ class AppListTest {
         send(AndroidKeyEvent.ACTION_UP, keyCode)
     }
 
-    /** Labels of the rows on screen, top to bottom, after checking that each one is drawn whole. */
+    /**
+     * Labels of the rows on screen, top to bottom, after checking that each one is drawn whole. A row off the screen
+     * doesn't count, though the list keeps the focused row composed when touch scrolling takes it away.
+     */
     private fun rowsOnScreen(): List<String> {
         val list = rule.onNode(hasScrollAction()).getUnclippedBoundsInRoot()
         val rows = rule.onAllNodes(hasClickAction() and hasAnyAncestor(hasScrollAction()))
         return List(rows.fetchSemanticsNodes().size) { rows[it] }
+            .filter { it.isDisplayed() }
             .map {
                 it.fetchSemanticsNode().config[SemanticsProperties.Text].joinToString() to
                     it.getUnclippedBoundsInRoot()
