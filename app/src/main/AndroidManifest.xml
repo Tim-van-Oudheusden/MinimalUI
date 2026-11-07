@@ -30,10 +30,15 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.MinimalUI">
 
+        <!--
+          The list of configChanges is every change the launcher handles by recomposing: no resource here varies by
+          them, and a recreate would drop the open list, the selection and the return-to-app state, which live in
+          memory. Not locale or layoutDirection, so the strings still reload with a language change.
+        -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:configChanges="keyboard|keyboardHidden|navigation"
+            android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|smallestScreenSize|screenLayout|uiMode|density|fontScale"
             android:launchMode="singleTask">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

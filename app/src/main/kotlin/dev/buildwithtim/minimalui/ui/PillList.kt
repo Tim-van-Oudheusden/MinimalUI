@@ -132,6 +132,13 @@ internal fun <T> PillList(
         // Scrolling composes the selected row if it was off screen; the row then takes focus itself.
         state.scroll.scrollToItem(state.position.first)
     }
+    LaunchedEffect(rowsPerPage) {
+        // A screen that gets shorter in place (rotation, split screen) keeps its scroll, which may now end above the
+        // selected row; scroll just enough to show it. Nothing moves while the selection is already on the screen.
+        val now = state.position.copy(first = state.scroll.firstVisibleItemIndex)
+        val next = now.selecting(count, rowsPerPage, blank)
+        if (next.first != now.first) state.select(next)
+    }
     LaunchedEffect(count) {
         // A row removed under the selection (an uninstalled app, say) hands it to the row now last.
         if (state.position.selected >= count) state.select(state.position.selecting(count, rowsPerPage, blank))

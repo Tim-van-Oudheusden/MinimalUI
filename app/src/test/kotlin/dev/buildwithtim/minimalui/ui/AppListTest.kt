@@ -1,9 +1,12 @@
 package dev.buildwithtim.minimalui.ui
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -218,6 +221,34 @@ class AppListTest {
 
         rule.onNodeWithText(rowLabel(rows + 1)).assertIsFocused()
         assertEquals(page, rowsOnScreen())
+    }
+
+    @Test
+    @Config(qualifiers = "w360dp-h640dp")
+    fun `the selected row stays on screen when the screen gets shorter`() {
+        var screenHeight by mutableStateOf(640.dp)
+        rule.setContent {
+            val state = rememberAppListState()
+            MinimalTheme {
+                Box(Modifier.height(screenHeight)) {
+                    AppList(
+                        content = ListContent.Apps(manyApps.map { RootEntry.App(it) }),
+                        query = "",
+                        homePresses = 0,
+                        onOpen = {},
+                        state = state,
+                    )
+                }
+            }
+        }
+        val rows = rowsOnScreen().size
+        repeat(rows - 1) { press(Key.DirectionDown) }
+        rule.onNodeWithText(rowLabel(rows - 1)).assertIsFocused()
+
+        screenHeight = 320.dp
+
+        assertTrue(rowsOnScreen().size < rows)
+        rule.onNodeWithText(rowLabel(rows - 1)).assertIsFocused().assertIsDisplayed()
     }
 
     @Test
