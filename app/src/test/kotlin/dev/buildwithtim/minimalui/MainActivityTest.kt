@@ -2335,6 +2335,27 @@ class MainActivityTest {
     }
 
     @Test
+    fun `Rename inside a group moves the app to its new sort place there, still selected`() {
+        install("Alarm", "com.example.alarm")
+        install("Chess", "com.example.chess", ApplicationInfo.CATEGORY_GAME)
+        install("Go", "com.example.go", ApplicationInfo.CATEGORY_GAME)
+        install("Mahjong", "com.example.mahjong", ApplicationInfo.CATEGORY_GAME)
+        val activity = launch()
+        awaitListed("Go")
+        openGroups()
+        press(Key.Enter)
+        awaitListed("Other", listed = false)
+        assertEquals(listOf("Chess", "Go", "Mahjong"), shownRows())
+        rule.onNodeWithText("Chess").assertIsFocused()
+
+        rename(activity, current = "Chess", name = "Zoo")
+
+        awaitListed("Zoo")
+        assertEquals(listOf("Go", "Mahjong", "Zoo"), shownRows())
+        rule.onNodeWithText("Zoo").assertIsFocused()
+    }
+
+    @Test
     fun `uninstalling an automatic group's only app closes its list, back on the groups`() {
         install("Alarm", "com.example.alarm")
         install("Chess", "com.example.chess", ApplicationInfo.CATEGORY_GAME)

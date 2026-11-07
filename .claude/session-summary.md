@@ -9,13 +9,13 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 
 ## Latest session
 
-- **Date:** 2026-11-06
-- **Worked:** #389 → `fix/389-kill-children-on-jvm-exit`. `runProcess` starts its processes through `Children`,
-  whose shutdown hook kills every process the test JVM started and refuses new starts: the mutant sweep's
-  `timeout 150` SIGTERM left 3 bash orphans at 100 % CPU for ~1h45m, which #357's in-JVM timeout path never reached.
-  Confirmed first: the new `RunProcessTest` case failed with `pid … still running` without the `Repo.kt` change.
-- **Outcome:** PR open, `Fixes #389`. Test-only change.
-- **Open follow-ups:** none in this repository; a SIGKILLed JVM still needs the outside harness to kill its group.
+- **Date:** 2026-11-07
+- **Worked:** #393 → `fix/393-collection-follow-by-component`. `CollectionApps` follows the selected app across a list
+  change by `component`, not by `LauncherApp` equality: a rename inside a group changed the label and the sort place,
+  so `indexOf` missed and the selection stayed on the old row, now another app. Confirmed first: the new
+  `MainActivityTest` group-rename case failed with `Zoo` not focused without the `Collections.kt` change.
+- **Outcome:** PR open, `Fixes #393`.
+- **Open follow-ups:** none.
 - **Notes for next session:**
   - This host had a JDK at `~/.jdks/jdk-21.0.13+9` and the SDK at `~/Android/Sdk` (`platforms;android-37.0`): set
     `JAVA_HOME` and `sdk.dir=/home/dev/Android/Sdk` in `local.properties`, no container needed.
