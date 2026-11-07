@@ -14,6 +14,7 @@ import android.content.pm.LauncherActivityInfo
 import android.content.pm.LauncherApps
 import android.content.pm.LauncherUserInfo
 import android.content.pm.PackageInfo
+import android.content.res.Configuration
 import android.database.Cursor
 import android.graphics.Paint
 import android.graphics.Rect
@@ -265,6 +266,53 @@ class MainActivityTest {
         press(Key.Enter)
 
         leaveAndComeBack(activity)
+
+        rule.onNodeWithText("z_").assertExists()
+        rule.onNodeWithText("Zoo").assertIsFocused()
+    }
+
+    /** The device is turned or its theme switched: the activity gets [change] as its new configuration. */
+    private fun changeConfiguration(
+        activity: ActivityController<MainActivity>,
+        change: Configuration.() -> Unit,
+    ) {
+        activity.configurationChange(Configuration(activity.get().resources.configuration).apply(change))
+        rule.waitForIdle()
+    }
+
+    private fun filterToZ(): ActivityController<MainActivity> {
+        install("Alarm", "com.example.alarm")
+        install("Zebra", "com.example.zebra")
+        install("Zoo", "com.example.zoo")
+        val activity = launch()
+        awaitListed("Zoo")
+        type(activity, KeyEvent.KEYCODE_Z)
+        awaitListed("Alarm", listed = false)
+        press(Key.DirectionDown)
+        rule.onNodeWithText("Zoo").assertIsFocused()
+        return activity
+    }
+
+    @Test
+    fun `turning the device keeps the filter and the selection`() {
+        val activity = filterToZ()
+
+        changeConfiguration(activity) {
+            orientation = Configuration.ORIENTATION_LANDSCAPE
+            screenWidthDp = screenHeightDp.also { screenHeightDp = screenWidthDp }
+        }
+
+        rule.onNodeWithText("z_").assertExists()
+        rule.onNodeWithText("Zoo").assertIsFocused()
+    }
+
+    @Test
+    fun `switching to the light theme keeps the filter and the selection`() {
+        val activity = filterToZ()
+
+        changeConfiguration(activity) {
+            uiMode = (uiMode and Configuration.UI_MODE_NIGHT_MASK.inv()) or Configuration.UI_MODE_NIGHT_NO
+        }
 
         rule.onNodeWithText("z_").assertExists()
         rule.onNodeWithText("Zoo").assertIsFocused()
