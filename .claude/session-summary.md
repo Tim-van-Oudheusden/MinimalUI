@@ -9,13 +9,13 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 
 ## Latest session
 
-- **Date:** 2026-11-06
-- **Worked:** #389 → `fix/389-kill-children-on-jvm-exit`. `runProcess` starts its processes through `Children`,
-  whose shutdown hook kills every process the test JVM started and refuses new starts: the mutant sweep's
-  `timeout 150` SIGTERM left 3 bash orphans at 100 % CPU for ~1h45m, which #357's in-JVM timeout path never reached.
-  Confirmed first: the new `RunProcessTest` case failed with `pid … still running` without the `Repo.kt` change.
-- **Outcome:** PR open, `Fixes #389`. Test-only change.
-- **Open follow-ups:** none in this repository; a SIGKILLed JVM still needs the outside harness to kill its group.
+- **Date:** 2026-11-07
+- **Worked:** #398 → `sec/fix-tier-groovy-gradle`. `.github/risk-assessment.yml` rated only `*.gradle.kts` high, yet
+  Gradle prefers a Groovy script beside it and runs `buildSrc/` unreferenced, so such a file merged as medium and ran
+  in `release.yml`. It now rates `*.gradle`, `buildSrc/*` and every `app/src/*/AndroidManifest.xml` high, with
+  `labeler.yml` and `CODEOWNERS` in step. Confirmed first: the new `TierClassifyScriptTest` paths failed before it.
+- **Outcome:** PR open, `Fixes #398`. No workflow or app change.
+- **Open follow-ups:** none.
 - **Notes for next session:**
   - This host had a JDK at `~/.jdks/jdk-21.0.13+9` and the SDK at `~/Android/Sdk` (`platforms;android-37.0`): set
     `JAVA_HOME` and `sdk.dir=/home/dev/Android/Sdk` in `local.properties`, no container needed.

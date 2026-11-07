@@ -30,14 +30,20 @@ rules:
   - high    .editorconfig
 
   # Build and dependencies (supply chain): version catalog, wrapper, build scripts.
+  # Gradle prefers a Groovy script to the Kotlin one beside it and builds buildSrc
+  # with no reference to it, so a new file in either form replaces or joins the
+  # build that runs with the release key.
   - high    gradle/*
   - high    *.gradle.kts
+  - high    *.gradle
+  - high    buildSrc/*
   - high    gradle.properties
   - high    gradlew
   - high    gradlew.bat
 
-  # App permissions and the HOME intent filter.
-  - high    app/src/main/AndroidManifest.xml
+  # App permissions and the HOME intent filter. A build type's manifest
+  # (app/src/release/) merges over main's into the same APK.
+  - high    app/src/*/AndroidManifest.xml
 
   # Line endings, text/binary handling and diff/merge drivers for every file.
   - high    .gitattributes

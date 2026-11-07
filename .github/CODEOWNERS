@@ -24,12 +24,14 @@
 # Build and dependencies (supply chain): version catalog, wrapper, build scripts.
 /gradle/                            @Tim-van-Oudheusden
 *.gradle.kts                        @Tim-van-Oudheusden
+*.gradle                            @Tim-van-Oudheusden
+/buildSrc/                          @Tim-van-Oudheusden
 /gradle.properties                  @Tim-van-Oudheusden
 /gradlew                            @Tim-van-Oudheusden
 /gradlew.bat                        @Tim-van-Oudheusden
 
 # App permissions and the HOME intent filter.
-/app/src/main/AndroidManifest.xml   @Tim-van-Oudheusden
+/app/src/*/AndroidManifest.xml      @Tim-van-Oudheusden
 
 # Line endings, text/binary handling and diff/merge drivers for every file.
 /.gitattributes                     @Tim-van-Oudheusden
