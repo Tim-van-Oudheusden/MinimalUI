@@ -307,11 +307,46 @@ class MainActivityTest {
     }
 
     @Test
+    @Config(qualifiers = "night")
     fun `switching to the light theme keeps the filter and the selection`() {
         val activity = filterToZ()
 
         changeConfiguration(activity) {
             uiMode = (uiMode and Configuration.UI_MODE_NIGHT_MASK.inv()) or Configuration.UI_MODE_NIGHT_NO
+        }
+
+        rule.onNodeWithText("z_").assertExists()
+        rule.onNodeWithText("Zoo").assertIsFocused()
+    }
+
+    @Test
+    fun `a larger font size keeps the filter and the selection`() {
+        val activity = filterToZ()
+
+        changeConfiguration(activity) { fontScale *= 1.3f }
+
+        rule.onNodeWithText("z_").assertExists()
+        rule.onNodeWithText("Zoo").assertIsFocused()
+    }
+
+    @Test
+    fun `a larger display size keeps the filter and the selection`() {
+        val activity = filterToZ()
+
+        changeConfiguration(activity) { densityDpi = densityDpi * 5 / 4 }
+
+        rule.onNodeWithText("z_").assertExists()
+        rule.onNodeWithText("Zoo").assertIsFocused()
+    }
+
+    @Test
+    fun `unfolding the device keeps the filter and the selection`() {
+        val activity = filterToZ()
+
+        changeConfiguration(activity) {
+            smallestScreenWidthDp = 720
+            screenLayout =
+                (screenLayout and Configuration.SCREENLAYOUT_SIZE_MASK.inv()) or Configuration.SCREENLAYOUT_SIZE_XLARGE
         }
 
         rule.onNodeWithText("z_").assertExists()
