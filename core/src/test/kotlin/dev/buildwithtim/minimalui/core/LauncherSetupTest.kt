@@ -3,6 +3,18 @@ package dev.buildwithtim.minimalui.core
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
+/** The parts of [setup] still at the empty setup's value, by name: none, for a fixture that covers every store. */
+internal fun partsLeftEmpty(setup: LauncherSetup): List<String> {
+    val empty = LauncherSetup()
+    return LauncherSetup::class.java.declaredFields
+        .filterNot {
+            java.lang.reflect.Modifier
+                .isStatic(it.modifiers) || it.isSynthetic
+        }.onEach { it.isAccessible = true }
+        .filter { it.get(setup) == it.get(empty) }
+        .map { it.name }
+}
+
 class LauncherSetupTest {
     // A setup with something in every store, and names that need escaping in JSON.
     private val full =
@@ -25,6 +37,11 @@ class LauncherSetupTest {
     @Test
     fun `an exported setup imports as it was, every store included`() {
         assertEquals(SetupImport.Read(full), LauncherSetup.imported(full.exported()))
+    }
+
+    @Test
+    fun `the full setup the round trip uses sets every part, so a new store is covered or fails here`() {
+        assertEquals(emptyList<String>(), partsLeftEmpty(full))
     }
 
     @Test

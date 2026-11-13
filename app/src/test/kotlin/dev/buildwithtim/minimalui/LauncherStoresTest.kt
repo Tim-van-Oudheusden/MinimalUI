@@ -117,6 +117,8 @@ class LauncherStoresTest {
                 userGroups = UserGroups(mapOf("Work" to setOf(WORK_MAIL))),
             )
 
+        assertEquals(emptyList<String>(), partsLeftEmpty(imported))
+
         stores.replaceWith(imported)
 
         assertEquals(imported, stores.setup)
@@ -176,4 +178,19 @@ class LauncherStoresTest {
         // An app of a work profile, its profile's serial number before the component (#78).
         const val WORK_MAIL = "10:com.example.mail/com.example.mail.MainActivity"
     }
+}
+
+/**
+ * The parts of [setup] still at the empty setup's value, by name: none, for a fixture that covers every store. A copy
+ * of the helper in core's `LauncherSetupTest`, whose test sources the app tests cannot see.
+ */
+internal fun partsLeftEmpty(setup: LauncherSetup): List<String> {
+    val empty = LauncherSetup()
+    return LauncherSetup::class.java.declaredFields
+        .filterNot {
+            java.lang.reflect.Modifier
+                .isStatic(it.modifiers) || it.isSynthetic
+        }.onEach { it.isAccessible = true }
+        .filter { it.get(setup) == it.get(empty) }
+        .map { it.name }
 }
