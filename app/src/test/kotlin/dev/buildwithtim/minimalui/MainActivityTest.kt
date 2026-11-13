@@ -1927,6 +1927,26 @@ class MainActivityTest {
         assertEquals("setup file failed: IOException", logs.single().msg)
     }
 
+    // A provider refuses a file it no longer lets us use (its grant revoked, or the file moved behind a permission)
+    // with a SecurityException as it opens the file, not an IOException.
+    @Test
+    fun `a file the launcher may no longer open says so and logs one warning with the exception class`() {
+        val activity = launch()
+        openSettings()
+        shadowOf(application.contentResolver).registerInputStreamSupplier(pickedFile) {
+            throw SecurityException("Permission Denial")
+        }
+
+        chooseRow("Import setup")
+        pick(activity, pickedFile)
+        awaitToast("Could not read the file")
+
+        val logs = ShadowLog.getLogsForTag("MinimalUI")
+        assertEquals(1, logs.size)
+        assertEquals(Log.WARN, logs.single().type)
+        assertEquals("setup file failed: SecurityException", logs.single().msg)
+    }
+
     @Test
     fun `hidden apps stay hidden when the launcher starts again, and are listed under Hidden apps`() {
         install("Alarm", "com.example.alarm")
