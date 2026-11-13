@@ -181,8 +181,8 @@ class LauncherStoresTest {
 }
 
 /**
- * The parts of [setup] still at the empty setup's value, by name: none, for a fixture that covers every store. A copy of
- * the helper in core's `LauncherSetupTest`, whose test sources the app tests cannot see.
+ * The parts of [setup] still at the empty setup's value, by name: none, for a fixture that covers every store. A copy
+ * of the helper in core's `LauncherSetupTest`, whose test sources the app tests cannot see.
  */
 internal fun partsLeftEmpty(setup: LauncherSetup): List<String> {
     val empty = LauncherSetup()
