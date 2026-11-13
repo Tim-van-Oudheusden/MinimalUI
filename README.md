@@ -47,7 +47,7 @@ Watch the [introduction video](https://youtu.be/pnP0TemZbZI) on YouTube.
 - **Your names, your list.** Rename or hide any app; hidden apps stay findable by typing their name.
 - **Less on screen.** Black and white, no icons, no transition animations. A small pill replaces Android's status bar
   with Wi-Fi, battery and the time.
-- **Offline.** No internet permission, and no permission that needs your approval.
+- **Offline.** No internet permission, and no permission that needs your approval. If a press or an import fails, `adb logcat -s MinimalUI` shows why; the log stays on the device.
 
 ## Requirements
 

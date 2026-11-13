@@ -10,8 +10,11 @@ import android.graphics.Rect
 import android.os.Bundle
 import android.os.UserHandle
 import android.os.UserManager
+import android.util.Log
 import dev.buildwithtim.minimalui.core.LauncherApp
 import dev.buildwithtim.minimalui.core.isOtherProfile
+
+private const val LOG_TAG = "MinimalUI"
 
 /**
  * Starts apps and Android's screens for them from [activity], without crashing the launcher when one cannot start:
@@ -75,11 +78,13 @@ internal class AppStarter(
         try {
             start()
             true
-        } catch (_: ActivityNotFoundException) {
+        } catch (e: ActivityNotFoundException) {
+            Log.w(LOG_TAG, "start failed: ${e.javaClass.simpleName}")
             // Uninstalled or disabled while the list was on screen: drop it rather than crash the launcher.
             refresh()
             false
-        } catch (_: SecurityException) {
+        } catch (e: SecurityException) {
+            Log.w(LOG_TAG, "start failed: ${e.javaClass.simpleName}")
             // Listed but not startable by us (not exported, or guarded by a permission we lack): ignore the press
             // rather than crash the launcher; a refresh would list it again.
             false

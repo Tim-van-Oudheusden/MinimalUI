@@ -28,6 +28,7 @@ import android.os.ParcelFileDescriptor
 import android.os.UserHandle
 import android.os.UserManager
 import android.provider.Settings
+import android.util.Log
 import android.view.KeyEvent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
@@ -85,6 +86,7 @@ import org.robolectric.annotation.Implementation
 import org.robolectric.annotation.Implements
 import org.robolectric.shadows.ShadowActivity
 import org.robolectric.shadows.ShadowLauncherApps
+import org.robolectric.shadows.ShadowLog
 import org.robolectric.shadows.ShadowNetwork
 import org.robolectric.shadows.ShadowNetworkCapabilities
 import org.robolectric.shadows.ShadowPaint
@@ -401,6 +403,22 @@ class MainActivityTest {
         assertStillHome(activity)
         rule.onNodeWithText("Alarm").assertIsFocused()
         assertNull(shadowOf(application).nextStartedActivity)
+    }
+
+    @Test
+    @Config(shadows = [StartActivityDenied::class])
+    fun `a refused app start logs one warning with the exception class and nothing else`() {
+        install("Alarm", "com.example.alarm")
+        launch()
+        awaitListed("Alarm")
+
+        press(Key.Enter)
+        rule.waitForIdle()
+
+        val logs = ShadowLog.getLogsForTag("MinimalUI")
+        assertEquals(1, logs.size)
+        assertEquals(Log.WARN, logs.single().type)
+        assertEquals("start failed: SecurityException", logs.single().msg)
     }
 
     @Test
@@ -1887,6 +1905,26 @@ class MainActivityTest {
         pick(activity, pickedFile)
         awaitToast("Could not read the file")
         rule.onNodeWithText("Import setup").assertIsFocused()
+    }
+
+    @Test
+    fun `a file that cannot be read logs one warning with the exception class and nothing else`() {
+        val activity = launch()
+        openSettings()
+        shadowOf(application.contentResolver).registerInputStreamSupplier(pickedFile) {
+            object : InputStream() {
+                override fun read(): Int = throw IOException("provider gone")
+            }
+        }
+
+        chooseRow("Import setup")
+        pick(activity, pickedFile)
+        awaitToast("Could not read the file")
+
+        val logs = ShadowLog.getLogsForTag("MinimalUI")
+        assertEquals(1, logs.size)
+        assertEquals(Log.WARN, logs.single().type)
+        assertEquals("setup file failed: IOException", logs.single().msg)
     }
 
     @Test
