@@ -1,6 +1,7 @@
 package dev.buildwithtim.minimalui
 
 import android.net.Uri
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
@@ -12,6 +13,8 @@ import java.io.FileNotFoundException
 import java.io.IOException
 import java.io.InputStream
 import java.util.concurrent.Executor
+
+private const val LOG_TAG = "MinimalUI"
 
 /**
  * Export setup and Import setup (#208): the whole setup in [state] to and from a file the user picks in Android's file
@@ -100,9 +103,11 @@ internal class SetupFiles(
         fun <T : Any> attempt(work: () -> T): T? =
             try {
                 work()
-            } catch (_: IOException) {
+            } catch (e: IOException) {
+                Log.w(LOG_TAG, "setup file failed: ${e.javaClass.simpleName}")
                 null
-            } catch (_: SecurityException) {
+            } catch (e: SecurityException) {
+                Log.w(LOG_TAG, "setup file failed: ${e.javaClass.simpleName}")
                 null
             }
 
