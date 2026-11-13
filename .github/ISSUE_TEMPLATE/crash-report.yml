@@ -1,0 +1,57 @@
+name: Crash or broken release
+description: MinimalUI crashes, will not start, or a release broke something that worked before
+title: "fix(app): "
+labels: ["type::bug", "app"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Stuck on a crashing home screen?** You can get your phone back without MinimalUI:
+
+        1. Boot into **Safe Mode**: on most phones, long-press Power, then long-press "Power off" until
+           "Reboot to safe mode" appears (some phones: hold Volume Down while it starts). Safe Mode turns MinimalUI off.
+        2. Open **Settings → Apps → Default apps → Home app** and choose another home app, or uninstall MinimalUI with
+           **Settings → Apps → MinimalUI → Uninstall**.
+        3. Restart the phone normally.
+
+        If MinimalUI still opens, use **MinimalUI settings → Export setup** before you uninstall or reinstall it, so
+        **Import setup** brings your favourites, collections and renames back afterwards.
+  - type: input
+    id: version
+    attributes:
+      label: Installed version
+      description: >-
+        MinimalUI settings → About shows the version and commit. If MinimalUI will not open, give the name of the APK
+        you installed, or say it is a debug build from a CI run.
+      placeholder: e.g. Version 0.3.0, commit d71710d; or minimalui-v0.3.0.apk
+    validations:
+      required: true
+  - type: input
+    id: phone
+    attributes:
+      label: Phone and Android version
+      placeholder: e.g. Unihertz Titan 2, Android 11
+    validations:
+      required: true
+  - type: dropdown
+    id: home
+    attributes:
+      label: Does the MinimalUI home list still appear?
+      options:
+        - "No: it crashes or closes as soon as it starts"
+        - "Yes, but one part crashes or misbehaves"
+    validations:
+      required: true
+  - type: input
+    id: last-good
+    attributes:
+      label: Last version that worked
+      description: Leave empty if this is your first install.
+      placeholder: e.g. 0.2.1
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
