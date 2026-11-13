@@ -187,8 +187,10 @@ class LauncherStoresTest {
 internal fun partsLeftEmpty(setup: LauncherSetup): List<String> {
     val empty = LauncherSetup()
     return LauncherSetup::class.java.declaredFields
-        .filterNot { java.lang.reflect.Modifier.isStatic(it.modifiers) || it.isSynthetic }
-        .onEach { it.isAccessible = true }
+        .filterNot {
+            java.lang.reflect.Modifier
+                .isStatic(it.modifiers) || it.isSynthetic
+        }.onEach { it.isAccessible = true }
         .filter { it.get(setup) == it.get(empty) }
         .map { it.name }
 }
