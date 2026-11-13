@@ -14,7 +14,7 @@ The coordination rules behind it are in [`../multi-agent.md`](../multi-agent.md)
 | Branch | `<type>/<N>-<slug>` for local agents; `claude/*` for Claude Code in CI (`claude/issue-<N>-…` when it starts from an issue); Hive uses `<type>/<N>-<slug>` or `<agent>/<slug>` | `docs/246-multi-agent` | Convention |
 | Commit | `(#<N>)` at the end of the Conventional Commits subject | `docs(agents): document multi-agent orchestration (#246)` | Convention |
 | Pull request | `Fixes #<N>` in the body (or `Closes`, `Resolves`, `Refs`); Hive's PRs also end with `— hive: agent=<name> … model=<model> …` | #248 | `PR review rubric` check (`scripts/pr-review-check.sh`), required on `main` |
-| Merge | Merge commit `Merge pull request #<PR> from <owner>/<branch>`, made by the merge queue, Hive's merge sweep or a maintainer | `9af64d1` | `main` only changes through merged PRs (`.github/rulesets/main.json`) |
+| Merge | Merge commit `Merge pull request #<PR> from <owner>/<branch>`, made by the merge queue or a maintainer; or a squash commit `<commit subject> (#<PR>)`, made by Hive's merge sweep | `9af64d1` | `main` only changes through merged PRs (`.github/rulesets/main.json`), by merge commit or squash |
 | Close | The merge closes the issue through `Fixes #<N>` | #246 closed by #248 | GitHub |
 
 The required rubric check is what guarantees the chain: a pull request into `main` from a person cannot merge without an
@@ -41,7 +41,7 @@ From a line of code back to its issue:
 
 ```bash
 git blame -L <line>,<line> <file>              # the commit
-git log -1 --format=%s <commit>                # its subject ends in (#<N>)
+git log -1 --format=%s <commit>                # its subject carries (#<N>); a squash commit appends (#<PR>)
 gh pr list --state merged --search "<commit>"  # the PR, whose body links the issue
 ```
 

@@ -72,7 +72,8 @@ flowchart LR
    `Build, lint, test`, `Unit-test coverage floors`, `Static checks`, `End-to-end tests`) and get a
    [risk tier](risk-tiers.md).
 5. **The merge queue, Hive or a person merges.** The [merge queue](#merge-queue) merges a low- or medium-risk pull
-   request once its required checks pass, and Hive's merge sweep may do the same. A maintainer merges high-risk ones and
+   request once its required checks pass, with a merge commit, and Hive's merge sweep may do the same with a squash
+   merge (the `main` ruleset allows both methods, not rebase). A maintainer merges high-risk ones and
    any labelled `hold` (Hive's hold-gated mode puts it on every Hive pull request) or `sentinel-alert`.
    `.claude/settings.json` asks before `gh pr merge`.
 

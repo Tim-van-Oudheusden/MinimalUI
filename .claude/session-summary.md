@@ -9,14 +9,17 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 
 ## Latest session
 
-- **Date:** 2026-11-07
-- **Worked:** #398 → `sec/fix-tier-groovy-gradle`. `.github/risk-assessment.yml` rated only `*.gradle.kts` high, yet
-  Gradle prefers a Groovy script beside it and runs `buildSrc/` unreferenced, so such a file merged as medium and ran
-  in `release.yml`. It now rates `*.gradle`, `buildSrc/*` and every `app/src/*/AndroidManifest.xml` high, with
-  `labeler.yml` and `CODEOWNERS` in step. Confirmed first: the new `TierClassifyScriptTest` paths failed before it.
-- **Outcome:** PR open, `Fixes #398`. No workflow or app change.
-- **Open follow-ups:** none.
+- **Date:** 2026-11-13
+- **Worked:** #423 → `chore/423-allow-squash-merge`. Hive's merge sweep squash-merges, but the `main` ruleset allowed
+  only `merge` and the repository had `allow_squash_merge` off. The ruleset now allows `merge` and `squash`;
+  `CONTRIBUTING.md`, `AGENTS.md`, `docs/multi-agent.md` and `docs/agent-tasks/README.md` say so, and
+  `DocsClaimsTest` pins CONTRIBUTING's list to the ruleset. Confirmed first: the new test failed on the old ruleset.
+- **Outcome:** PR open, `Fixes #423`. The merge queue still makes merge commits.
+- **Open follow-ups:** after merge, a maintainer applies the ruleset (`rulesets/24941495`) and sets
+  `allow_squash_merge=true` on the repository; until both, Hive's squash merges still fail.
 - **Notes for next session:**
+  - This host had no JDK and no sandbox image: `podman build -f Dockerfile.sandbox -t localhost/minimalui-sandbox .`
+    (about 4 min), then the debug keystore as `docs/testing.md` shows, and `scripts/sandbox-gradlew.sh` worked.
   - This host had a JDK at `~/.jdks/jdk-21.0.13+9` and the SDK at `~/Android/Sdk` (`platforms;android-37.0`): set
     `JAVA_HOME` and `sdk.dir=/home/dev/Android/Sdk` in `local.properties`, no container needed.
   - No JDK on this host, but the `localhost/minimalui-android:jq` image has JDK 21, the SDK at `/opt/android-sdk` and

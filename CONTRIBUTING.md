@@ -183,10 +183,14 @@ renamed workflow that runs on `main` must be added there (`AutoIssuesWorkflowTes
 
 `main` is protected by the ruleset in [`.github/rulesets/main.json`](.github/rulesets/main.json): no direct pushes,
 force-pushes or deletion; changes land only through pull requests whose `PR review rubric`, `Build, lint, test`,
-`Unit-test coverage floors`, `Static checks` and `End-to-end tests` checks pass. Pull requests merge with a merge commit
-only (no squash or rebase), so each issue's single commit lands on `main` unchanged, and the head branch is deleted on
-merge. The file is the source of truth: a change to it lands by PR, then a maintainer applies it with
-`gh api -X PUT repos/Tim-van-Oudheusden/MinimalUI/rulesets/<id> --input .github/rulesets/main.json`.
+`Unit-test coverage floors`, `Static checks` and `End-to-end tests` checks pass. The ruleset allows the merge methods
+`merge` and `squash`, not rebase: the merge queue makes a merge commit, so each issue's single commit lands on `main`
+unchanged, and Hive's merge sweep squash-merges, which lands the pull request as one commit titled after its commit (or
+its title, when it has several) with ` (#<PR>)` appended. The head branch is deleted on merge. The file is the source
+of truth: a change to it lands by PR, then a maintainer applies it with
+`gh api -X PUT repos/Tim-van-Oudheusden/MinimalUI/rulesets/<id> --input .github/rulesets/main.json`. The repository's
+own merge settings must allow the same methods (`allow_merge_commit` and `allow_squash_merge` on, `allow_rebase_merge`
+off): `gh api -X PATCH repos/Tim-van-Oudheusden/MinimalUI -F allow_squash_merge=true`.
 
 Once its checks pass, the [merge queue](docs/multi-agent.md#merge-queue) re-runs `./gradlew check assembleDebug` on the
 pull request merged with the latest `main` and merges it. Hive's merge sweep may also merge a low- or medium-risk pull

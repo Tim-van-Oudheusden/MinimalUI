@@ -85,7 +85,9 @@ Never push to `main`, never force-push, and never say "ready to push when you ar
 - Bead data lives in the Dolt database (`.beads/embeddeddolt/`, gitignored), synced with `bd dolt push` / `bd dolt pull`.
   `.beads/issues.jsonl` is only an optional export — do not commit it as a sync step.
 - The ruleset in `.github/rulesets/main.json` is the source of truth for branch protection; change it by PR, then apply
-  it with `gh api -X PUT repos/Tim-van-Oudheusden/MinimalUI/rulesets/<id> --input .github/rulesets/main.json`.
+  it with `gh api -X PUT repos/Tim-van-Oudheusden/MinimalUI/rulesets/<id> --input .github/rulesets/main.json`. It
+  allows merge commits (the merge queue) and squash merges (Hive's merge sweep), not rebase; the repository's
+  `allow_squash_merge` setting must stay on as well.
 
 ## Testing
 

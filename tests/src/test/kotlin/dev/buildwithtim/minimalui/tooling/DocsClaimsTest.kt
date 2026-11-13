@@ -72,6 +72,24 @@ class DocsClaimsTest {
         }
     }
 
+    // Hive's merge sweep squash-merges (#423), the merge queue makes a merge commit; the ruleset rejects any other
+    // method, and CONTRIBUTING.md names the ones it allows.
+    @Test
+    fun `the docs name the merge methods the main ruleset allows`() {
+        val allowed =
+            Regex(""""allowed_merge_methods":\s*\[([^\]]*)]""")
+                .find(Repo.read(".github/rulesets/main.json"))
+                ?.groupValues
+                ?.get(1)
+                ?.let { Regex(""""([^"]+)"""").findAll(it).map { m -> m.groupValues[1] }.toSet() }
+                .orEmpty()
+        val inDoc = namesAfter("allows the merge methods", "CONTRIBUTING.md")
+        assertTrue("a list of merge methods after \"allows the merge methods\" in CONTRIBUTING.md", inDoc.isNotEmpty())
+
+        assertEquals("merge methods the ruleset allows", setOf("merge", "squash"), allowed)
+        assertEquals("merge methods CONTRIBUTING.md names, then the ruleset's", inDoc, allowed)
+    }
+
     // The queue's rule in docs/multi-agent.md is "has neither a `hold` nor a `sentinel-alert` label".
     @Test
     fun `the docs name the labels the merge queue script keeps out`() {
