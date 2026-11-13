@@ -7,7 +7,10 @@ A release published by `.github/workflows/release.yml` (see
 be pulled back after users have already installed it. There is no crash reporting and no analytics
 ([`docs/metrics/README.md`](../metrics/README.md): "nothing is collected from the launcher or its users"), so the
 first signal is almost always a user-filed GitHub issue or a device report in [`DEVICES.md`](../../DEVICES.md), not
-an automated alert.
+an automated alert. The **Crash or broken release** issue form
+([`crash-report.yml`](../../.github/ISSUE_TEMPLATE/crash-report.yml)) asks for the installed version, the phone, and
+whether the home list still loads. It opens with the way out of a HOME-app lockout below, so a locked-out user sees it
+before anyone replies.
 
 ## Why this app is different
 
@@ -59,7 +62,8 @@ Android recovery path does not depend on MinimalUI working:
    exported before the broken release imports again with **Import setup**; without one, it starts empty.
 
 Put this sequence (Safe Mode → switch default app or uninstall) directly in the response to any issue reporting a
-startup crash; don't assume the reporter already knows it.
+startup crash; don't assume the reporter already knows it. The crash report form shows the same steps; when you
+change them here, change them there too (`DocsClaimsTest` fails if a Settings path above is missing from the form).
 
 ### Maintainer-side: pulling back the release
 

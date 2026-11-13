@@ -7,10 +7,10 @@ import org.junit.Test
 /**
  * Facts the docs state about this repository, read from the docs and from the file that decides them. A doc names the
  * release APK, the required checks, the labels that keep a pull request out of the merge queue, the workflows that
- * start the queue or that it starts, the untranslated group and suffix names, and the release certificate digest; a
- * later pull request changes one of them, and until now nothing failed (#329, after #175, #185 and #209). Each test
- * extracts both sides with a Regex and fails when either stops matching, so rewording a doc cannot make a claim pass
- * by finding nothing to compare.
+ * start the queue or that it starts, the untranslated group and suffix names, the release certificate digest, and the
+ * way out of a HOME-app lockout that the crash report form shows; a later pull request changes one of them, and until
+ * now nothing failed (#329, after #175, #185 and #209). Each test extracts both sides with a Regex and fails when
+ * either stops matching, so rewording a doc cannot make a claim pass by finding nothing to compare.
  *
  * It covers facts a file records. A claim about code behaviour or about how Hive behaves at run time is out of scope.
  */
@@ -197,6 +197,33 @@ class DocsClaimsTest {
         assertTrue("a 64-digit hex digest in README.md", inReadme.isNotEmpty())
 
         assertEquals(inRunbook, inReadme)
+    }
+
+    // The rollback runbook's first signal is a user's issue, and a user locked out by a crash-looping HOME app needs
+    // the way out before anyone answers it, so the crash report form shows the Settings paths of the runbook's lockout
+    // steps (#416).
+    @Test
+    fun `the crash report form gives the rollback runbook's way out of a HOME-app lockout`() {
+        val form = ".github/ISSUE_TEMPLATE/crash-report.yml"
+        val runbook = Repo.read("docs/runbooks/bad-release-rollback.md")
+        val lockout = Regex("""(?s)### HOME-app lockout.*?(?=\n### )""").find(runbook)?.value.orEmpty()
+        val paths = Regex("""\*\*(Settings → [^*]+)\*\*""").findAll(lockout).map { it.groupValues[1] }.toSet()
+        assertTrue("**Settings → ...** under ### HOME-app lockout in bad-release-rollback.md", paths.isNotEmpty())
+        assertTrue("bad-release-rollback.md links ../../$form", "../../$form" in runbook)
+        val wayOut =
+            Yaml
+                .parse(Repo.read(form))
+                .asMap()
+                .getValue("body")
+                .asList()
+                .first()
+                .asMap()
+                .getValue("attributes")
+                .asMap()
+                .getValue("value")
+                .toString()
+
+        assertEquals(paths, paths.filter { "**$it**" in wayOut }.toSet())
     }
 
     /** The string [name] is assigned to in the Kotlin source [path]. */
