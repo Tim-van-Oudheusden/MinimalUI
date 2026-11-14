@@ -227,6 +227,35 @@ scripts/coverage-check.sh core 100 100
 
 `./gradlew :core:koverHtmlReport` writes a browsable report to `core/build/reports/kover/html/`.
 
+## Mutation testing
+
+Line coverage shows that a line ran, not that a test would notice it changing. Four times a line a fix relied on could
+be changed or removed with every test green (#213, #327, #408, #411), so the Kotlin modules have a mutation run (#412).
+[PIT](https://pitest.org) changes the compiled code one mutant at a time (a flipped condition, a removed call, a
+different return value) and runs the unit tests against each. A mutant no test fails on *survives*; one no test even
+reaches has *no coverage*. Both are lines nothing asserts.
+
+`core` applies `info.solidsoft.pitest`: `./gradlew :core:pitest` writes `core/build/reports/pitest/mutations.xml` and a
+browsable `index.html` next to it. The task is not part of `check`; it is meant for a weekly scheduled run, not every
+PR. `app` has no mutation run yet: its Robolectric tests run once per mutant, which the Android port of the plugin
+does not yet do in a usable time.
+
+Not every survivor is worth a test. PIT mutates bytecode, so Kotlin's generated code (null checks, `copy`, `when`
+tables) gives mutants no test can kill, and some survivors are equivalent to the original code. The accepted ones live
+in a reviewed baseline per module, `config/mutation/<module>.txt`, one line per survivor: class, method and descriptor,
+mutator and PIT's description, without the line number, so an edit elsewhere in a file does not invalidate it.
+`scripts/mutation-check.sh <mutations.xml> <baseline>` exits 1 on a survivor the baseline does not list and 2 when the
+report is missing or holds no mutations. It lists the baseline entries that no longer survive, so the baseline can
+shrink. `--write` replaces the baseline with the report's survivors; review the diff before committing it.
+
+```bash
+./gradlew :core:pitest
+scripts/mutation-check.sh core/build/reports/pitest/mutations.xml config/mutation/core.txt
+```
+
+A new survivor gets a test that fails on it. Add it to the baseline only when no test can kill it, and say why in the
+PR. PIT cannot mutate the manifest or resources, so a case like #408's `android:configChanges` still needs a hand check.
+
 ## Quality report
 
 `.github/workflows/quality-report.yml` (job **Quality report**: every push to `main`, weekly on Monday at 06:17 UTC,
