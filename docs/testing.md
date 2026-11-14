@@ -257,3 +257,31 @@ the config untouched.
 
 The quality report workflow runs it with `--write` and uploads the tuned file as the `auto-qa-tuning` artifact. Nothing
 is committed automatically: to adopt the proposal, download the artifact, review the diff and commit it in a PR.
+
+## Mutation testing
+
+Line coverage shows that a line ran, not that a test would notice it change. Four fixes relied on lines that could be
+changed or deleted with every test still passing (#412). [PIT](https://pitest.org) changes the compiled classes one
+mutant at a time (a negated condition, a removed call, a boundary moved by one) and runs the tests that cover each
+change. A mutant that no test fails is a survivor.
+
+| Module | Plugin                    | Command                      | Report                            |
+| ------ | ------------------------- | ---------------------------- | --------------------------------- |
+| `core` | `info.solidsoft.pitest`   | `./gradlew :core:pitest`     | `core/build/reports/pitest/`      |
+| `app`  | `pl.droidsonroids.pitest` | `./gradlew :app:pitestDebug` | `app/build/reports/pitest/debug/` |
+
+`./gradlew pitest` runs both. `app`'s run uses the Robolectric unit tests of `testDebugUnitTest`, offline like the test
+task, and leaves out `StoreScreenshots`, which asserts nothing. `tests` has no main code to mutate. Each report is HTML
+(`index.html`) and XML (`mutations.xml`), written to the same directory every run.
+
+It is not part of `check`, and no PR runs it: Robolectric and Compose tests are slow under PIT. It is meant to run from
+a weekly scheduled workflow that can also be started by hand; that workflow is not added yet. Until a baseline file is
+reviewed and committed, the run only reports and fails on nothing. After that, it fails on any survivor that is not in
+the baseline.
+
+What it cannot do:
+
+- PIT mutates bytecode, so Kotlin's generated code (null checks, `copy`, `when` tables, Compose's lambdas) gives
+  mutants no test can kill. Each one is reviewed into the baseline; the paid Kotlin plugin is not used.
+- The manifest and resources are not bytecode and are not mutated. A case like the `android:configChanges` entries of
+  #408 still needs a hand-made table, like the one #388 made for the scripts.

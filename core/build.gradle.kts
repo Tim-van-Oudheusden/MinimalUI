@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.kover)
     alias(libs.plugins.android.lint)
+    alias(libs.plugins.pitest.jvm)
 }
 
 java {
@@ -28,4 +29,18 @@ lint {
 
 dependencies {
     testImplementation(libs.junit)
+}
+
+// Mutation testing (#412): `./gradlew :core:pitest` changes core's compiled classes one mutant at a time and runs the
+// tests against each, writing the survivors to build/reports/pitest/. Weekly and report-only for now
+// (docs/testing.md#mutation-testing), so `check` leaves it out.
+pitest {
+    pitestVersion.set(libs.versions.pitest.get())
+    targetClasses.set(setOf("dev.buildwithtim.minimalui.core.*"))
+    // GitHub's standard Linux runner has 4 CPUs.
+    threads.set(4)
+    outputFormats.set(setOf("XML", "HTML"))
+    // One report directory per module, replaced by each run, so CI uploads a fixed path.
+    timestampedReports.set(false)
+    failWhenNoMutations.set(false)
 }

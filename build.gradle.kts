@@ -23,6 +23,10 @@ plugins {
     alias(libs.plugins.kotlin.compose) apply false
     alias(libs.plugins.kover) apply false
     alias(libs.plugins.detekt) apply false
+    alias(libs.plugins.pitest.jvm) apply false
+    // Here with AGP, not only in :app: the plugin depends on AGP 8.5.1, which resolves to the catalog's AGP on this
+    // classpath instead of loading a second AGP for one module.
+    alias(libs.plugins.pitest.android) apply false
     alias(libs.plugins.spotless)
 }
 

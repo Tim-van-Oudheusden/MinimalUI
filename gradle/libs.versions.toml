@@ -28,6 +28,14 @@ ktlint = "1.8.0"
 # Floor for the lifecycle-runtime the Compose BOM brings (2.9.4): its lint.jar calls a Kotlin PSI API that AGP 9.5's
 # Lint no longer has, so lint reports ObsoleteLintCustomCheck, an error here. Applied in app/build.gradle.kts.
 lifecycleRuntime = "2.11.0"
+# PIT, the mutation tester both pitest plugins run (#412). Newer than their 1.22.1 default for the filters added since
+# that drop junk mutants in Kotlin bytecode (enum `when` default branches, unmodifiable collections). JUnit 4 support
+# is built in, so no test plugin is added.
+pitest = "1.30.2"
+# Mutation testing for the app module over testDebugUnitTest (#412); 0.3.0 is the first release that supports AGP 9.
+pitestAndroid = "0.3.0"
+# Mutation testing for the plain Kotlin/JVM modules (#412).
+pitestJvm = "1.19.0"
 robolectric = "4.17"
 # The android-all jars Robolectric runs the app tests on, one per SDK they use (robolectric.properties and @Config).
 # Each is the build Robolectric's DefaultSdkProvider names for that SDK: change them together with robolectric (#279).
@@ -51,6 +59,9 @@ junit = { group = "junit", name = "junit", version.ref = "junit" }
 # Never a dependency: Spotless loads ktlint itself. Listed so Dependabot proposes ktlint updates.
 ktlint-cli = { group = "com.pinterest.ktlint", name = "ktlint-cli", version.ref = "ktlint" }
 robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
+# Never a dependency: the pitest plugins add PIT themselves, at the pitest version. Listed so Dependabot proposes PIT
+# updates.
+pitest-command-line = { group = "org.pitest", name = "pitest-command-line", version.ref = "pitest" }
 # Never on a classpath: app/build.gradle.kts copies them into the directory Robolectric reads offline (#279).
 robolectric-android-all-28 = { group = "org.robolectric", name = "android-all-instrumented", version.ref = "robolectricAndroidAll28" }
 robolectric-android-all-35 = { group = "org.robolectric", name = "android-all-instrumented", version.ref = "robolectricAndroidAll35" }
@@ -96,4 +107,7 @@ kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 detekt = { id = "dev.detekt", version.ref = "detekt" }
 kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
+# Mutation testing (#412): upstream for the Kotlin/JVM modules, its Android fork for the app.
+pitest-jvm = { id = "info.solidsoft.pitest", version.ref = "pitestJvm" }
+pitest-android = { id = "pl.droidsonroids.pitest", version.ref = "pitestAndroid" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
