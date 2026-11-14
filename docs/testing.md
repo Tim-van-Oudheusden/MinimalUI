@@ -236,9 +236,12 @@ different return value) and runs the unit tests against each. A mutant no test f
 reaches has *no coverage*. Both are lines nothing asserts.
 
 `core` applies `info.solidsoft.pitest`: `./gradlew :core:pitest` writes `core/build/reports/pitest/mutations.xml` and a
-browsable `index.html` next to it. The task is not part of `check`; it is meant for a weekly scheduled run, not every
-PR. `app` has no mutation run yet: its Robolectric tests run once per mutant, which the Android port of the plugin
-does not yet do in a usable time.
+browsable `index.html` next to it. The task is not part of `check` and runs on no PR. `.github/workflows/mutation.yml`
+(job **Mutation survivors**, one per module: weekly on Monday at 05:41 UTC and on demand) runs it, checks the report
+against the module's baseline below and uploads the report as the `mutation-report-<module>` artifact. The check is
+report-only (`continue-on-error`) until two runs there match the baseline built locally; then it fails on a new
+survivor, and `auto-issues.yml` opens a `Mutation testing fails on main` issue. `app` has no mutation run yet: its
+Robolectric tests run once per mutant, which the Android port of the plugin does not yet do in a usable time.
 
 Not every survivor is worth a test. PIT mutates bytecode, so Kotlin's generated code (null checks, `copy`, `when`
 tables) gives mutants no test can kill, and some survivors are equivalent to the original code. The accepted ones live

@@ -21,6 +21,7 @@ on:
       - Coverage gate
       - E2E
       - Merge queue sweep
+      - Mutation testing
       - Nightly compliance
       - PR metrics
       - Quality report

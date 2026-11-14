@@ -1,0 +1,58 @@
+name: Mutation testing
+
+# Weekly PIT run over the Kotlin modules (#412; docs/testing.md#mutation-testing): fails on a survivor that the module's
+# reviewed baseline in config/mutation/ does not list. Weekly and on demand, not per PR. A module joins with a matrix
+# entry once it has a pitest task and a baseline.
+
+on:
+  schedule:
+    - cron: "41 5 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  mutation:
+    name: Mutation survivors (${{ matrix.module }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - module: core
+            task: ":core:pitest"
+            report: core/build/reports/pitest/mutations.xml
+    env:
+      MODULE: ${{ matrix.module }}
+      TASK: ${{ matrix.task }}
+      REPORT: ${{ matrix.report }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Setup JDK
+        uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+      - name: Mutation run
+        run: ./gradlew "$TASK"
+      - name: Check survivors against the baseline
+        # Report-only until two runs here match the baseline built locally (#412); then delete this line.
+        continue-on-error: true
+        run: scripts/mutation-check.sh "$REPORT" "config/mutation/$MODULE.txt"
+      - name: Upload mutation report
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: mutation-report-${{ matrix.module }}
+          path: ${{ matrix.module }}/build/reports/pitest/
+          retention-days: 14
