@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.kover)
     alias(libs.plugins.android.lint)
+    alias(libs.plugins.pitest)
 }
 
 java {
@@ -28,4 +29,17 @@ lint {
 
 dependencies {
     testImplementation(libs.junit)
+}
+
+// Mutation testing (#412): `./gradlew :core:pitest` changes the compiled code one mutant at a time and runs the unit
+// tests against each, writing build/reports/pitest/mutations.xml. A mutant the tests let through is a line nothing
+// asserts; scripts/mutation-check.sh fails on one that config/mutation/core.txt does not list. Not part of `check`: it
+// is meant for a weekly scheduled run (docs/testing.md#mutation-testing).
+pitest {
+    pitestVersion.set(libs.versions.pitest)
+    targetClasses.set(listOf("dev.buildwithtim.minimalui.core.*"))
+    threads.set(Runtime.getRuntime().availableProcessors())
+    outputFormats.set(listOf("XML", "HTML"))
+    // One fixed report directory, the path the check script reads.
+    timestampedReports.set(false)
 }

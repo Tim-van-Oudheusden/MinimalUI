@@ -197,6 +197,7 @@ cd MinimalUI
 | `./gradlew :e2e:atdApi35DebugAndroidTest` | End-to-end tests on an emulator Gradle starts itself; needs KVM ([End-to-end tests](docs/testing.md#end-to-end-tests)) |
 | `./gradlew lint` | Android lint, with warnings as errors |
 | `./gradlew :core:koverXmlReport` | Coverage report the coverage gate checks (also `:app:koverXmlReport`) |
+| `./gradlew :core:pitest` | Mutation report the mutation check reads ([Mutation testing](docs/testing.md#mutation-testing)) |
 | `./gradlew :app:testDebugUnitTest -PstoreScreenshots` | Regenerates the screenshots above, without a phone or emulator |
 | `./gradlew assembleRelease` | Release APK, signed only when the release key is passed in ([Releasing](CONTRIBUTING.md#releasing)) |
 
