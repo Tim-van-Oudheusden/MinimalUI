@@ -1,0 +1,1 @@
+The launcher now keeps the open list and the highlighted app when you rotate the phone or switch between light and dark. A list you leave and come back to returns on the row you last touched or tabbed to. Renaming an app in a group keeps that app selected. Exporting your setup over an existing file no longer leaves old data at its end that could stop it importing.
