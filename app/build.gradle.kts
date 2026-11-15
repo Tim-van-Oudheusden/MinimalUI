@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kover)
+    alias(libs.plugins.pitest.android)
 }
 
 // The commit the APK was built from, shown in Settings > About (#73). "unknown" where git or the repository is
@@ -176,5 +177,73 @@ tasks.withType<Test>().configureEach {
         outputs.upToDateWhen { false }
     } else {
         filter.excludeTestsMatching("dev.buildwithtim.minimalui.StoreScreenshots")
+    }
+}
+
+// Mutation testing (#412): `./gradlew :app:pitestDebug` mutates the app's compiled code one mutant at a time and runs the
+// Robolectric unit tests against each, writing build/reports/pitest/debug/mutations.xml for scripts/mutation-check.sh
+// and config/mutation/app.txt. Not part of `check`: it is meant for the weekly run (docs/testing.md#mutation-testing).
+// The test JVMs start through scripts/pitest-minion-java.sh, which gives each a temp directory of its own: Robolectric
+// unpacks 200 MB into it per JVM and PIT's kills leave that behind.
+val pitestMinionTmp = layout.buildDirectory.dir("tmp/pitest-minions")
+
+pitest {
+    pitestVersion.set(libs.versions.pitest)
+    targetClasses.set(listOf("dev.buildwithtim.minimalui.*"))
+    excludedClasses.set(listOf("dev.buildwithtim.minimalui.BuildConfig"))
+    // Renders screenshots and asserts nothing, as in the unit test runs above.
+    excludedTestClasses.set(listOf("dev.buildwithtim.minimalui.StoreScreenshots"))
+    // Each test JVM holds a Robolectric sandbox in up to 2 GB of heap: four fit GitHub's 16 GB runner, and its 4 CPUs.
+    threads.set(4)
+    outputFormats.set(listOf("XML", "HTML"))
+    // One fixed report directory, the path the check script reads.
+    timestampedReports.set(false)
+    // PIT starts a new test JVM after each timeout, and Robolectric's start in a cold JVM takes longer than PIT's default
+    // allowance (4 s past the tests' measured time), so with the default every mutant timed out and the next JVM did too.
+    timeoutConstInMillis.set(60_000)
+    jvmPath.set(rootProject.layout.projectDirectory.file("scripts/pitest-minion-java.sh"))
+    jvmArgs.set(
+        listOf(
+            "-Xmx2g",
+            // PIT ends a test JVM as out of memory once any memory pool is 90 % full, the JIT's small non-method code heap
+            // (7 MB) too, which these JVMs filled within minutes; one undivided code cache leaves room.
+            "-XX:-SegmentedCodeCache",
+            // What the unit test task gives its JVM, which PIT's test JVMs do not inherit: the java.io access AGP grants
+            // unit tests (Robolectric's file descriptor shadow needs it), and Robolectric offline from the same jars.
+            "--add-opens=java.base/java.io=ALL-UNNAMED",
+            "-Drobolectric.offline=true",
+            "-Drobolectric.dependency.dir=${robolectricJarsDir.get().asFile.absolutePath}",
+        ),
+    )
+}
+
+// The plugin was written for an older AGP and builds PIT's classpath from what that AGP produced, which leaves two
+// things out on this one, so every Robolectric test failed before the first mutant: what the tests only need at run
+// time (Espresso, under Compose's test rule), and the test_config.properties that tells Robolectric where the app's
+// merged resources are (the plugin looks for it in a directory AGP no longer writes). This adds both, after the
+// plugin's own afterEvaluate has set the task's classpath, which would otherwise replace them.
+afterEvaluate {
+    tasks.withType<pl.droidsonroids.gradle.pitest.PitestTask>().configureEach {
+        dependsOn(robolectricJars)
+        additionalClasspath.from(
+            tasks.named("generateDebugUnitTestConfig").map { it.outputs.files },
+            configurations
+                .getByName("debugUnitTestRuntimeClasspath")
+                .incoming
+                .artifactView {
+                    attributes.attribute(Attribute.of("artifactType", String::class.java), "android-classes-jar")
+                }.files,
+        )
+        val minionTmp = pitestMinionTmp.get().asFile
+        environment("PITEST_MINION_TMP", minionTmp.absolutePath)
+        environment(
+            "PITEST_MINION_JAVA",
+            javaLauncher
+                .get()
+                .executablePath.asFile.absolutePath,
+        )
+        // What the last test JVMs leave, and what a killed run left.
+        doFirst { minionTmp.deleteRecursively() }
+        doLast { minionTmp.deleteRecursively() }
     }
 }
