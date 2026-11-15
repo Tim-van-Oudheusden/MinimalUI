@@ -245,21 +245,27 @@ demand) runs them, checks each report against the module's baseline below and up
 baseline built locally; then it fails on a new survivor, and `auto-issues.yml` opens a `Mutation testing fails on main`
 issue.
 
-`app`'s run is slow: each mutant reruns the Robolectric tests that cover it, 45 minutes for 4,684 mutants with 4 test
-JVMs on a 16-core machine. Its baseline began as that first run's 3,309 survivors, taken whole: about 60 % are Compose
-plumbing (below), and the rest are lines no test asserts yet. The check keeps that number from growing, and each entry
-a new test kills comes out of the baseline. The plugin was written for an older AGP, so `app/build.gradle.kts` adds
-what PIT's test JVMs miss on AGP 9 (the runtime classpath, Robolectric's `test_config.properties`, the unit test task's
-JVM flags) and starts them through `scripts/pitest-minion-java.sh`. Robolectric unpacks 200 MB of native runtime into
-each JVM's temp directory and only a clean exit deletes it, which a JVM PIT kills never has, so the script gives each
-JVM a directory of its own and deletes those of JVMs that have exited. It needs bash, so the task does not run on
-Windows.
+`app`'s run is slow: each mutant reruns the Robolectric tests that cover it, 2,266 mutants in 49 minutes on GitHub's
+runner (19 on a 16-core machine). Most of the code the Compose compiler adds to a composable gives mutants no test
+can kill: the bit operations on its `$changed` and `$dirty` masks, and calls into the runtime's bookkeeping (groups,
+remembered values, `sourceInformation`, tracing). They doubled the mutants, took about 60 % of the test runs and
+caused the timeouts, so `pitest-compose`, a PIT plugin on `app`'s PIT classpath, leaves them out inside composables.
+Bit operations outside composables, and calls the app writes (`LaunchedEffect`, state writes), are still mutated.
+`app`'s baseline began as that first run's 1,271 survivors, taken whole, so it holds lines no test asserts yet. The
+check keeps that number from growing, and each entry a new test kills comes out of the baseline. A few mutants differ
+from run to run (3 of 2,266 between the run that wrote the baseline and the first one on GitHub's runner).
+
+The plugin was written for an older AGP, so `app/build.gradle.kts` adds what PIT's test JVMs miss on AGP 9 (the runtime
+classpath, Robolectric's `test_config.properties`, the unit test task's JVM flags) and starts them through
+`scripts/pitest-minion-java.sh`. Robolectric unpacks 200 MB of native runtime into each JVM's temp directory and only a
+clean exit deletes it, which a JVM PIT kills never has, so the script gives each JVM a directory of its own and deletes
+those of JVMs that have exited. It needs bash, so the task does not run on Windows.
 
 Not every survivor is worth a test. PIT mutates bytecode, so Kotlin's generated code (null checks, `copy`, `when`
-tables) and, in `app`, the Compose compiler's (the `$changed` bit masks, `sourceInformation` and trace calls, skipping)
-gives mutants no test can kill, and some survivors are equivalent to the original code. The accepted ones live
-in a reviewed baseline per module, `config/mutation/<module>.txt`, one line per survivor: class, method and descriptor,
-mutator and PIT's description, without the line number, so an edit elsewhere in a file does not invalidate it.
+tables) and the Compose compiler's skipping checks give mutants no test can kill, and some survivors are equivalent to
+the original code. The accepted ones live in a reviewed baseline per module, `config/mutation/<module>.txt`, one line
+per survivor: class, method and descriptor, mutator and PIT's description, without the line number, so an edit
+elsewhere in a file does not invalidate it.
 `scripts/mutation-check.sh <mutations.xml> <baseline>` exits 1 on a survivor the baseline does not list and 2 when the
 report is missing or holds no mutations. It lists the baseline entries that no longer survive, so the baseline can
 shrink. `--write` replaces the baseline with the report's survivors and exits 2 when it cannot write the file; review

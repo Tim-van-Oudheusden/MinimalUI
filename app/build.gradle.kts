@@ -163,6 +163,8 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     // Slack's Compose rules (modifier parameters, state hoisting, naming), run by Android Lint.
     lintChecks(libs.compose.lint.checks)
+    // PIT's own classpath: leaves out the mutants of the Compose compiler's code (pitest-compose, #412).
+    "pitest"(project(":pitest-compose"))
 }
 
 // Store and README screenshots (#120). StoreScreenshots renders them instead of asserting anything, so unit test runs

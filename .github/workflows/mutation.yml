@@ -20,7 +20,7 @@ jobs:
   mutation:
     name: Mutation survivors (${{ matrix.module }})
     runs-on: ubuntu-latest
-    # app's run took 45 minutes on 16 cores with 4 test JVMs; the runner's 4 CPUs are slower.
+    # app's run takes 49 minutes here with Compose's mutants filtered (#435); unfiltered it outlasted 120.
     timeout-minutes: 120
     strategy:
       fail-fast: false
