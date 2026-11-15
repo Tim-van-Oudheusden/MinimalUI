@@ -364,9 +364,11 @@ path), `RELEASE_KEYSTORE_PASSWORD`, `RELEASE_KEY_ALIAS` and `RELEASE_KEY_PASSWOR
 ### Cutting a release
 
 1. Open a pull request that raises `versionName` (Settings → About shows it) and `versionCode` in
-   `app/build.gradle.kts`. Android refuses to install an update with a lower `versionCode`. In the same pull request,
-   add `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt`: what changed for users, in at most 500
-   characters. `./gradlew test` fails without it (`FastlaneMetadataTest`).
+   `app/build.gradle.kts`. Android refuses to install an update with a lower `versionCode`, and updaters such as F-Droid
+   and Obtainium skip an equal one. In the same pull request, add
+   `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt`: what changed for users, in at most 500 characters.
+   `./gradlew test` fails without it, or when a changelog is numbered above `versionCode` (`FastlaneMetadataTest`), and
+   the `Release` workflow refuses to publish unless `versionCode` is higher than the last release's.
 2. Merge it. The `Release` workflow under **Actions** publishes the release, which then appears under **Releases**.
 
 A merge that leaves `versionName` alone, or sets one that is already released, publishes nothing. To retry a failed

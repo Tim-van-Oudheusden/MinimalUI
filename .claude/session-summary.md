@@ -10,15 +10,17 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 ## Latest session
 
 - **Date:** 2026-11-15
-- **Worked:** #431 → `fix/431-mutation-baseline-write-failure` (maintainer chose option A). `mutation-check.sh
-  --write` printed `Wrote ...` and exited 0 when the baseline could not be written; it now chains every write and
-  exits 2 with `Could not write the baseline to <path>`. `MutationCheckScriptTest` writes to a missing directory, a
-  directory and `/dev/full`; all three failed first. CONTRIBUTING ("Tests for CI and scripts") and
-  `prompts/code-review.md` now require such a failure-injection test for scripts that report a write or act on a
-  command's result.
-- **Outcome:** PR open, `Fixes #431`.
+- **Worked:** #437 → `fix/437-version-code-rises`. Nothing checked that `versionCode` rises between releases.
+  `scripts/release-version.sh` now also prints `version_code` (exactly one, numeric) and, given the last release's
+  build file as a second argument, exits 1 unless `versionCode` is higher. The `Release` workflow's `plan` job fetches
+  that file from the newest non-draft release's tag, only when it will publish. `FastlaneMetadataTest` fails when a
+  changelog is numbered above `versionCode`. New tests in `ReleaseVersionScriptTest`, `ReleaseWorkflowTest` (the
+  step run with a fake `gh`) and `FastlaneMetadataTest` failed first.
+- **Outcome:** PR open, `Fixes #437`.
 - **Open follow-ups:** none.
 - **Notes for next session:**
+  - No JDK on this host again: a Temurin 21 tarball from `api.adoptium.net` into `~/.local/jdk` was enough for
+    `:tests:test` and `spotlessCheck`.
   - This host had no JDK and no sandbox image: `podman build -f Dockerfile.sandbox -t localhost/minimalui-sandbox .`
     (about 4 min), then the debug keystore as `docs/testing.md` shows, and `scripts/sandbox-gradlew.sh` worked.
   - This host had a JDK at `~/.jdks/jdk-21.0.13+9` and the SDK at `~/Android/Sdk` (`platforms;android-37.0`): set

@@ -8,8 +8,9 @@ import javax.imageio.ImageIO
 
 /**
  * The store listing in `fastlane/metadata/android/` (#120), which F-Droid, IzzyOnDroid and Google Play (fastlane
- * `supply`) read. A text over its store limit is cut off or rejected there, and a release without a changelog for its
- * `versionCode` ships with an empty "What's new", so both fail here instead.
+ * `supply`) read. A text over its store limit is cut off or rejected there, a release without a changelog for its
+ * `versionCode` ships with an empty "What's new", and a `versionCode` below an earlier release's changelog cannot
+ * install over that release, so all three fail here instead.
  */
 class FastlaneMetadataTest {
     private val locales: List<File> =
@@ -68,6 +69,30 @@ class FastlaneMetadataTest {
             assertTrue(
                 "${changelog.path} has ${text.length} characters, over the limit of $changelogLimit",
                 text.length <= changelogLimit,
+            )
+        }
+    }
+
+    // Every release leaves its changelog behind, so one numbered above versionCode means versionCode went down: Android
+    // refuses to install that APK over the release a user has (#437).
+    @Test
+    fun `no changelog is numbered above the current versionCode`() {
+        val changelogs =
+            locales.flatMap {
+                it
+                    .resolve("changelogs")
+                    .listFiles()
+                    .orEmpty()
+                    .toList()
+            }
+
+        assertTrue("no changelogs found", changelogs.isNotEmpty())
+        for (changelog in changelogs) {
+            val code = changelog.name.removeSuffix(".txt").toIntOrNull()
+            assertTrue("${changelog.path} is not named <versionCode>.txt", code != null)
+            assertTrue(
+                "${changelog.path} is above versionCode $versionCode in app/build.gradle.kts: raise versionCode",
+                checkNotNull(code) <= versionCode,
             )
         }
     }
