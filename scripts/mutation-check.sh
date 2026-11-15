@@ -14,7 +14,8 @@
 # committing it.
 #
 # Exit status: 0 when every survivor is in the baseline (entries that no longer survive are listed, so the baseline can
-# shrink), 1 when one is not, 2 for bad arguments or a missing, unreadable or empty report or a missing baseline.
+# shrink), 1 when one is not, 2 for bad arguments, a missing, unreadable or empty report, a missing baseline, or a
+# baseline --write could not write.
 set -uo pipefail
 
 write=0
@@ -64,11 +65,17 @@ if [ "$status" -ne 0 ]; then
 fi
 
 if [ "$write" -eq 1 ]; then
+  # Every write is chained, so a failed one (a full disk) fails the group before the success line, and so does a
+  # redirect that cannot open the file (a missing directory, a directory). `||` and not `if !`: bash does not negate a
+  # failed redirect, so `if ! { ...; } >file` takes the success branch when the file cannot be opened.
   {
-    echo "# PIT survivors (#412) reviewed as accepted: class method(descriptor) mutator description, one per survivor."
-    echo "# Regenerate with scripts/mutation-check.sh --write <mutations.xml> <this file>, and review the diff."
-    if [ -n "$found" ]; then printf '%s\n' "$found"; fi
-  } >"$baseline"
+    echo "# PIT survivors (#412) reviewed as accepted: class method(descriptor) mutator description, one per survivor." &&
+      echo "# Regenerate with scripts/mutation-check.sh --write <mutations.xml> <this file>, and review the diff." &&
+      { [ -z "$found" ] || printf '%s\n' "$found"; }
+  } >"$baseline" || {
+    echo "Could not write the baseline to $baseline" >&2
+    exit 2
+  }
   echo "Wrote $(grep -c . <<<"$found") survivor(s) to $baseline"
   exit 0
 fi
