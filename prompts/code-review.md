@@ -14,6 +14,10 @@ Check two axes and report them separately:
   `app` stays a thin shell.
 - No test weakened, deleted or skipped (`@Ignore`) to make CI pass; no
   `@Suppress` added to silence failures or lint.
+- Shell scripts: a script that reports a successful write or acts on another
+  command's result has a test that makes the write or command fail and asserts
+  a nonzero exit and no success message (`CONTRIBUTING.md`, "Tests for CI and
+  scripts").
 - No new dependency or plugin without approval; every version in
   `gradle/libs.versions.toml`, never inline in a build file.
 - Keyboard first: every changed screen is fully usable with a hardware keyboard

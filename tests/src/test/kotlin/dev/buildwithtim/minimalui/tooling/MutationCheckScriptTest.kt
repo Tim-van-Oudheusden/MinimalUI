@@ -139,6 +139,36 @@ class MutationCheckScriptTest {
     }
 
     @Test
+    fun `write to a baseline in a missing directory fails without claiming success`() {
+        writeReport(pitMutation("SURVIVED"))
+
+        assertWriteFails(root.resolve("absent/baseline.txt").path)
+    }
+
+    @Test
+    fun `write to a directory fails without claiming success`() {
+        writeReport(pitMutation("SURVIVED"))
+
+        assertWriteFails(root.path)
+    }
+
+    @Test
+    fun `write that runs out of space fails without claiming success`() {
+        // No survivors, so the header lines are all that is written: a failed header write must still fail the run.
+        writeReport(pitMutation("KILLED"))
+
+        assertWriteFails("/dev/full")
+    }
+
+    private fun assertWriteFails(destination: String) {
+        val result = check("--write", report.path, destination)
+
+        assertEquals(result.stdout, 2, result.exitCode)
+        assertFalse(result.stdout, result.stdout.contains("Wrote"))
+        assertTrue(result.stderr, result.stderr.contains(destination))
+    }
+
+    @Test
     fun `a missing report is a usage error, not a pass`() {
         baseline.writeText("")
 

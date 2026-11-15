@@ -249,7 +249,8 @@ in a reviewed baseline per module, `config/mutation/<module>.txt`, one line per 
 mutator and PIT's description, without the line number, so an edit elsewhere in a file does not invalidate it.
 `scripts/mutation-check.sh <mutations.xml> <baseline>` exits 1 on a survivor the baseline does not list and 2 when the
 report is missing or holds no mutations. It lists the baseline entries that no longer survive, so the baseline can
-shrink. `--write` replaces the baseline with the report's survivors; review the diff before committing it.
+shrink. `--write` replaces the baseline with the report's survivors and exits 2 when it cannot write the file; review
+the diff before committing it.
 
 ```bash
 ./gradlew :core:pitest

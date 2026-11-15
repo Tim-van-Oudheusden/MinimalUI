@@ -9,14 +9,15 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 
 ## Latest session
 
-- **Date:** 2026-11-13
-- **Worked:** #423 → `chore/423-allow-squash-merge`. Hive's merge sweep squash-merges, but the `main` ruleset allowed
-  only `merge` and the repository had `allow_squash_merge` off. The ruleset now allows `merge` and `squash`;
-  `CONTRIBUTING.md`, `AGENTS.md`, `docs/multi-agent.md` and `docs/agent-tasks/README.md` say so, and
-  `DocsClaimsTest` pins CONTRIBUTING's list to the ruleset. Confirmed first: the new test failed on the old ruleset.
-- **Outcome:** PR open, `Fixes #423`. The merge queue still makes merge commits.
-- **Open follow-ups:** after merge, a maintainer applies the ruleset (`rulesets/24941495`) and sets
-  `allow_squash_merge=true` on the repository; until both, Hive's squash merges still fail.
+- **Date:** 2026-11-15
+- **Worked:** #431 → `fix/431-mutation-baseline-write-failure` (maintainer chose option A). `mutation-check.sh
+  --write` printed `Wrote ...` and exited 0 when the baseline could not be written; it now chains every write and
+  exits 2 with `Could not write the baseline to <path>`. `MutationCheckScriptTest` writes to a missing directory, a
+  directory and `/dev/full`; all three failed first. CONTRIBUTING ("Tests for CI and scripts") and
+  `prompts/code-review.md` now require such a failure-injection test for scripts that report a write or act on a
+  command's result.
+- **Outcome:** PR open, `Fixes #431`.
+- **Open follow-ups:** none.
 - **Notes for next session:**
   - This host had no JDK and no sandbox image: `podman build -f Dockerfile.sandbox -t localhost/minimalui-sandbox .`
     (about 4 min), then the debug keystore as `docs/testing.md` shows, and `scripts/sandbox-gradlew.sh` worked.
