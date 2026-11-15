@@ -117,6 +117,7 @@ e2e/                        end-to-end tests: UiAutomator drives the installed d
 fastlane/metadata/android/  store listing: title, descriptions, changelogs, icon, feature graphic, screenshots
 gradle/libs.versions.toml   every dependency and plugin version
 gradle/wrapper/             Gradle wrapper (pinned version and checksum)
+pitest-compose/             PIT plugin for app's mutation run: filters the Compose compiler's mutants (#412)
 prompts/                    reusable agent prompts (code review, PR body)
 scripts/                    CI helper scripts
 tests/                      JUnit tests over .github/, scripts/ and fastlane/ (workflow invariants, CI scripts, listing)
