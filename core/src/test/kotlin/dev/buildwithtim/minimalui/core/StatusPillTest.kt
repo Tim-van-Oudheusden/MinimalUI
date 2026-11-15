@@ -15,9 +15,15 @@ class StatusPillTest {
     }
 
     @Test
+    fun `an empty battery shows 0 percent rather than no battery`() {
+        assertEquals(Battery(percent = 0, charging = false), battery(level = 0, scale = 100, charging = false))
+    }
+
+    @Test
     fun `no battery item shows when the level or scale is unknown`() {
         assertNull(battery(level = -1, scale = 100, charging = false))
         assertNull(battery(level = 50, scale = 0, charging = false))
+        assertNull(battery(level = 0, scale = 0, charging = false))
         assertNull(battery(level = 101, scale = 100, charging = false))
     }
 
