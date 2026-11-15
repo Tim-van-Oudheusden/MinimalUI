@@ -227,6 +227,24 @@ class RootEntriesTest {
     }
 
     @Test
+    fun `the selection follows its entry up to the first row`() {
+        val before = rootEntries(apps, opened("Easel"), Settings(), collections = games)
+        val now = rootEntries(apps, RecentApps(), Settings(), collections = games)
+
+        assertEquals(RootEntry.Collections, before[1])
+        assertEquals(0, followedRow(before, 1, now))
+    }
+
+    @Test
+    fun `a recent dropped from the block follows its app up to the first row`() {
+        val before = rootEntries(apps, opened("Alarm", "Bell"), Settings())
+        val now = rootEntries(apps, RecentApps(), Settings())
+
+        assertEquals(recent("Alarm"), before[1])
+        assertEquals(0, followedRow(before, 1, now))
+    }
+
+    @Test
     fun `an entry gone from the list leaves the selection on the same row number`() {
         val before = rootEntries(apps, RecentApps(), Settings())
 

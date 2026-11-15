@@ -69,6 +69,16 @@ class ScreenStackTest {
     }
 
     @Test
+    fun `closing past the screen opened from the root shows the root again`() {
+        val stack = ScreenStack(root).pushed(Screen("menu")).pushed(Screen("name"))
+
+        val back = stack.poppedPast { it.name == "menu" }
+
+        assertSame(root, back.top)
+        assertTrue(back.isRoot)
+    }
+
+    @Test
     fun `closing past a screen stops at the one nearest the top`() {
         val lower = Screen("menu")
         val stack = ScreenStack(root).pushed(lower).pushed(Screen("menu")).pushed(Screen("name"))
