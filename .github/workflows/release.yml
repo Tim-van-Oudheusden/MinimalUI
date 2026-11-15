@@ -68,6 +68,23 @@ jobs:
             fi
           fi
           echo "publish=true" >> "$GITHUB_OUTPUT"
+      # A build-file push that keeps versionName (a dependency bump) keeps the last release's versionCode too, so this
+      # runs only for a version that will be published.
+      - name: Check versionCode rose since the last release
+        if: steps.released.outputs.publish == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          # Android refuses a lower versionCode and updaters skip an equal one, so a release must raise it (#437).
+          previous=$(gh api "repos/$GH_REPO/releases?per_page=100" --jq '[.[] | select(.draft | not)][0].tag_name // empty')
+          if [ -z "$previous" ]; then
+            echo "No earlier release; nothing to compare versionCode with."
+            exit 0
+          fi
+          gh api -H "Accept: application/vnd.github.raw" \
+            "repos/$GH_REPO/contents/app/build.gradle.kts?ref=$previous" > "$RUNNER_TEMP/previous.gradle.kts"
+          scripts/release-version.sh app/build.gradle.kts "$RUNNER_TEMP/previous.gradle.kts"
 
   release:
     name: Build and publish release

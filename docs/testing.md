@@ -185,8 +185,9 @@ The `storeScreenshots` property makes the unit-test task run only `StoreScreensh
 `fastlane/metadata/android/en-US/images/phoneScreenshots/`; without it, every test task leaves the class out, so
 `./gradlew test` and CI never run it. The status pill shows the time of the run, so regenerated files differ even
 when the UI has not changed: regenerate them when the look of a captured screen changes, and commit the result.
-`FastlaneMetadataTest` in `tests` checks that the screenshots exist and fit the stores' size rules, and that the
-listing texts and the changelog for the current `versionCode` exist within the stores' length limits.
+`FastlaneMetadataTest` in `tests` checks that the screenshots exist and fit the stores' size rules, that the listing
+texts and the changelog for the current `versionCode` exist within the stores' length limits, and that no changelog is
+numbered above `versionCode`, which would mean it went down since that release.
 
 ## Coverage floors
 
