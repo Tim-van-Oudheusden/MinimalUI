@@ -236,15 +236,28 @@ different return value) and runs the unit tests against each. A mutant no test f
 reaches has *no coverage*. Both are lines nothing asserts.
 
 `core` applies `info.solidsoft.pitest`: `./gradlew :core:pitest` writes `core/build/reports/pitest/mutations.xml` and a
-browsable `index.html` next to it. The task is not part of `check` and runs on no PR. `.github/workflows/mutation.yml`
-(job **Mutation survivors**, one per module: weekly on Monday at 05:41 UTC and on demand) runs it, checks the report
-against the module's baseline below and uploads the report as the `mutation-report-<module>` artifact. The check is
-report-only (`continue-on-error`) until two runs there match the baseline built locally; then it fails on a new
-survivor, and `auto-issues.yml` opens a `Mutation testing fails on main` issue. `app` has no mutation run yet: its
-Robolectric tests run once per mutant, which the Android port of the plugin does not yet do in a usable time.
+browsable `index.html` next to it. `app` applies its Android port, `pl.droidsonroids.pitest`: `./gradlew :app:pitestDebug`
+runs the Robolectric unit tests of `testDebugUnitTest` (without `StoreScreenshots`) and writes
+`app/build/reports/pitest/debug/mutations.xml`. Neither task is part of `check` or runs on a PR.
+`.github/workflows/mutation.yml` (job **Mutation survivors**, one per module: weekly on Monday at 05:41 UTC and on
+demand) runs them, checks each report against the module's baseline below and uploads it as the
+`mutation-report-<module>` artifact. The check is report-only (`continue-on-error`) until two runs there match the
+baseline built locally; then it fails on a new survivor, and `auto-issues.yml` opens a `Mutation testing fails on main`
+issue.
+
+`app`'s run is slow: each mutant reruns the Robolectric tests that cover it, 45 minutes for 4,684 mutants with 4 test
+JVMs on a 16-core machine. Its baseline began as that first run's 3,309 survivors, taken whole: about 60 % are Compose
+plumbing (below), and the rest are lines no test asserts yet. The check keeps that number from growing, and each entry
+a new test kills comes out of the baseline. The plugin was written for an older AGP, so `app/build.gradle.kts` adds
+what PIT's test JVMs miss on AGP 9 (the runtime classpath, Robolectric's `test_config.properties`, the unit test task's
+JVM flags) and starts them through `scripts/pitest-minion-java.sh`. Robolectric unpacks 200 MB of native runtime into
+each JVM's temp directory and only a clean exit deletes it, which a JVM PIT kills never has, so the script gives each
+JVM a directory of its own and deletes those of JVMs that have exited. It needs bash, so the task does not run on
+Windows.
 
 Not every survivor is worth a test. PIT mutates bytecode, so Kotlin's generated code (null checks, `copy`, `when`
-tables) gives mutants no test can kill, and some survivors are equivalent to the original code. The accepted ones live
+tables) and, in `app`, the Compose compiler's (the `$changed` bit masks, `sourceInformation` and trace calls, skipping)
+gives mutants no test can kill, and some survivors are equivalent to the original code. The accepted ones live
 in a reviewed baseline per module, `config/mutation/<module>.txt`, one line per survivor: class, method and descriptor,
 mutator and PIT's description, without the line number, so an edit elsewhere in a file does not invalidate it.
 `scripts/mutation-check.sh <mutations.xml> <baseline>` exits 1 on a survivor the baseline does not list and 2 when the
@@ -255,6 +268,8 @@ the diff before committing it.
 ```bash
 ./gradlew :core:pitest
 scripts/mutation-check.sh core/build/reports/pitest/mutations.xml config/mutation/core.txt
+./gradlew :app:pitestDebug
+scripts/mutation-check.sh app/build/reports/pitest/debug/mutations.xml config/mutation/app.txt
 ```
 
 A new survivor gets a test that fails on it. Add it to the baseline only when no test can kill it, and say why in the

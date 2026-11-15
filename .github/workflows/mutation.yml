@@ -20,7 +20,8 @@ jobs:
   mutation:
     name: Mutation survivors (${{ matrix.module }})
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # app's run took 45 minutes on 16 cores with 4 test JVMs; the runner's 4 CPUs are slower.
+    timeout-minutes: 120
     strategy:
       fail-fast: false
       matrix:
@@ -28,6 +29,9 @@ jobs:
           - module: core
             task: ":core:pitest"
             report: core/build/reports/pitest/mutations.xml
+          - module: app
+            task: ":app:pitestDebug"
+            report: app/build/reports/pitest/debug/mutations.xml
     env:
       MODULE: ${{ matrix.module }}
       TASK: ${{ matrix.task }}

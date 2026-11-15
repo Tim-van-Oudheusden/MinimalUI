@@ -28,9 +28,11 @@ ktlint = "1.8.0"
 # Floor for the lifecycle-runtime the Compose BOM brings (2.9.4): its lint.jar calls a Kotlin PSI API that AGP 9.5's
 # Lint no longer has, so lint reports ObsoleteLintCustomCheck, an error here. Applied in app/build.gradle.kts.
 lifecycleRuntime = "2.11.0"
-# PIT, the mutation tester for the Kotlin modules (#412), and gradle-pitest-plugin, which runs it on core. The plugin
-# brings an older PIT by default, so pitest pins the engine it runs.
+# PIT, the mutation tester for the Kotlin modules (#412). gradle-pitest-plugin runs it on core, and its Android port on
+# app's Robolectric tests; both bring an older PIT by default, so pitest pins the engine they run. pitestAndroid 0.3.0 is
+# the first release that supports AGP 9.
 pitest = "1.30.2"
+pitestAndroid = "0.3.0"
 pitestGradle = "1.19.0"
 robolectric = "4.17"
 # The android-all jars Robolectric runs the app tests on, one per SDK they use (robolectric.properties and @Config).
@@ -104,5 +106,6 @@ kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "ko
 detekt = { id = "dev.detekt", version.ref = "detekt" }
 kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
-# Mutation testing (#412) for core.
+# Mutation testing (#412): core, and app (the Android port).
 pitest = { id = "info.solidsoft.pitest", version.ref = "pitestGradle" }
+pitest-android = { id = "pl.droidsonroids.pitest", version.ref = "pitestAndroid" }
