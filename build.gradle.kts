@@ -45,10 +45,12 @@ subprojects {
     }
 }
 
-// The same floors (#147) for Android Lint, which AGP and the standalone lint plugin resolve per module.
+// The same floors (#147) for Android Lint, which AGP and the standalone lint plugin resolve per module, and for the
+// detekt and PIT tool classpaths (#444).
 subprojects {
     val constraints = dependencies.constraints
-    configurations.matching { it.name == "androidLintTool" }.configureEach {
+    val toolConfigurations = setOf("androidLintTool", "detekt", "pitest")
+    configurations.matching { it.name in toolConfigurations }.configureEach {
         libs.bundles.build.tool.floors
             .get()
             .forEach { constraints.add(name, it) }
