@@ -205,6 +205,30 @@ class DocsClaimsTest {
         assertEquals(listOf(work, clone, work, clone), listOf(docWork, docClone) + suffixes!!)
     }
 
+    // settings.gradle.kts decides which modules exist; the README's Modules bullet lists them all (#441). The module
+    // summaries in the agent guidance files name only app and core on purpose, so they are not held to this.
+    @Test
+    fun `the README Modules bullet lists every module settings gradle includes`() {
+        val included =
+            Regex("""(?m)^include\(":([^"]+)"\)$""")
+                .findAll(Repo.read("settings.gradle.kts"))
+                .map { it.groupValues[1] }
+                .toSet()
+        val bullet =
+            Regex("""(?s)\*\*Modules:\*\*(.*?)(?=\n- \*\*)""")
+                .find(Repo.read("README.md"))
+                ?.groupValues
+                ?.get(1)
+        assertTrue("include(\":<name>\") lines in settings.gradle.kts", included.isNotEmpty())
+        assertTrue("a **Modules:** bullet in README.md", bullet != null)
+
+        assertEquals(
+            "modules settings.gradle.kts includes that the README lacks",
+            emptySet<String>(),
+            included - backticked(bullet!!),
+        )
+    }
+
     // The certificate digest is stated in the release-key runbook and again in the README's install section.
     @Test
     fun `the README and the release key runbook state the same certificate digest`() {

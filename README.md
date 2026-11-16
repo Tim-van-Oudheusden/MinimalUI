@@ -129,7 +129,8 @@ clones and MinimalUI's own settings) is described in [`docs/usage.md`](docs/usag
 
 - **App:** Kotlin, Jetpack Compose with Material 3, AndroidX Activity
 - **Modules:** `app` (the Android shell and Compose UI), `core` (plain Kotlin/JVM logic, no Android dependencies),
-  `e2e` (end-to-end tests on an emulator), `tests` (tests over the CI workflows and scripts)
+  `e2e` (end-to-end tests on an emulator), `pitest-compose` (a PIT plugin for `app`'s mutation run that filters the
+  Compose compiler's mutants), `tests` (tests over the CI workflows and scripts)
 - **Build:** Gradle with the Kotlin DSL and a version catalog (`gradle/libs.versions.toml`), Android Gradle Plugin, JDK 21
 - **Testing:** JUnit, Robolectric with Compose UI tests on the JVM (no emulator), UiAutomator end-to-end tests on a
   Gradle Managed Device emulator, Kover coverage floors
