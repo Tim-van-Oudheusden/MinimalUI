@@ -2,18 +2,26 @@ package dev.buildwithtim.minimalui
 
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.util.Locale
+import java.util.TimeZone
 
 // 28 is minSdk, with the oldest ICU the app meets; 35 is the newest Robolectric runs here.
 @Config(sdk = [28, 35])
 @RunWith(RobolectricTestRunner::class)
 class ClockTest {
     private val defaultLocale = Locale.getDefault()
+
+    // The build sets user.timezone (#439): on a UTC machine nothing would notice clockText losing its GMT pin.
+    @Test
+    fun `the tests run in a zone off GMT, so the clock's GMT pin is checked`() {
+        assertNotEquals(0, TimeZone.getDefault().rawOffset)
+    }
 
     // On a device the default locale is the clock's too, and String.format writes its digits: set it, as there.
     private fun clock(

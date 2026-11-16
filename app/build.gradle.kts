@@ -126,6 +126,9 @@ tasks.withType<Test>().configureEach {
         .withPropertyName("robolectricJars")
         .withPathSensitivity(PathSensitivity.NAME_ONLY)
     systemProperty("robolectric.offline", "true")
+    // A zone off GMT with no daylight saving (#439): clockText pins its formatter to GMT, and on a UTC machine (GitHub's
+    // runners) a test could not notice that pin going missing.
+    systemProperty("user.timezone", "Asia/Kolkata")
     // Relative to the test JVM's working directory, the app module, so the build cache key holds no absolute path.
     systemProperty(
         "robolectric.dependency.dir",
@@ -214,6 +217,7 @@ pitest {
             // unit tests (Robolectric's file descriptor shadow needs it), and Robolectric offline from the same jars.
             "--add-opens=java.base/java.io=ALL-UNNAMED",
             "-Drobolectric.offline=true",
+            "-Duser.timezone=Asia/Kolkata",
             "-Drobolectric.dependency.dir=${robolectricJarsDir.get().asFile.absolutePath}",
         ),
     )
