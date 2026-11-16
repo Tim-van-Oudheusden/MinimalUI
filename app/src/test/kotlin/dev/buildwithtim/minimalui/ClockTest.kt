@@ -2,6 +2,7 @@ package dev.buildwithtim.minimalui
 
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -14,6 +15,12 @@ import java.util.Locale
 @RunWith(RobolectricTestRunner::class)
 class ClockTest {
     private val defaultLocale = Locale.getDefault()
+
+    // The build sets user.timezone (#439): on a UTC machine nothing would notice clockText losing its GMT pin.
+    @Test
+    fun `the tests run in a zone off GMT, so the clock's GMT pin is checked`() {
+        assertNotEquals(0, java.util.TimeZone.getDefault().rawOffset)
+    }
 
     // On a device the default locale is the clock's too, and String.format writes its digits: set it, as there.
     private fun clock(

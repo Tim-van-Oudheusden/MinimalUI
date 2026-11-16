@@ -262,6 +262,9 @@ classpath, Robolectric's `test_config.properties`, the unit test task's JVM flag
 clean exit deletes it, which a JVM PIT kills never has, so the script gives each JVM a directory of its own and deletes
 those of JVMs that have exited. It needs bash, so the task does not run on Windows.
 
+The unit tests and PIT's JVMs both run in `Asia/Kolkata` (#439): UTC+05:30 with no daylight saving. `clockText` pins its
+formatter to GMT, which a test can only notice on a machine whose zone is not GMT, and GitHub's runners are UTC.
+
 Not every survivor is worth a test. PIT mutates bytecode, so Kotlin's generated code (null checks, `copy`, `when`
 tables) and the Compose compiler's skipping checks give mutants no test can kill, and some survivors are equivalent to
 the original code. The accepted ones live in a reviewed baseline per module, `config/mutation/<module>.txt`, one line
