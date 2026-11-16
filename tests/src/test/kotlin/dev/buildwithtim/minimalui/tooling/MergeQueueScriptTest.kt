@@ -21,9 +21,10 @@ class MergeQueueScriptTest {
      * Fake `gh` first on PATH. `pr list` and `pr view <number>` answer from the pull requests in [pulls], filtered
      * through `--jq` the way gh does; every other call is logged to [calls], its arguments tab-separated on one line.
      * A `fail-pr-list` file in [dir] makes `pr list` fail, `fail-merge-state` makes `pr view` fail when it asks for
-     * the merge state (and only then, so the other reads still pass); `fail-<workflow>` makes
-     * `workflow run <workflow>` fail every time, and `fail-once-<workflow>` once (the file is removed). A failing
-     * call is logged first. The fake `sleep` returns at once, so retries cost no time.
+     * the merge state (and only then, so the other reads still pass); `fail-pr-merge` makes `pr merge` fail with
+     * `EOF`, the way gh fails when it loses GitHub's answer; `fail-<workflow>` makes `workflow run <workflow>` fail
+     * every time, and `fail-once-<workflow>` once (the file is removed). A failing call is logged first. The fake
+     * `sleep` returns at once, so retries cost no time.
      */
     private val bin =
         dir.resolve("bin").apply {
@@ -64,6 +65,10 @@ class MergeQueueScriptTest {
                       exit 0
                     fi
                     (IFS=${'$'}'\t'; printf '%s\n' "${'$'}*") >> "${calls.path}"
+                    if [ "${'$'}1" = pr ] && [ "${'$'}2" = merge ] && [ -e "${dir.path}/fail-pr-merge" ]; then
+                      echo EOF >&2
+                      exit 1
+                    fi
                     if [ "${'$'}1" = workflow ] && [ "${'$'}2" = run ]; then
                       if [ -e "${dir.path}/fail-${'$'}3" ]; then
                         exit 1
@@ -108,6 +113,8 @@ class MergeQueueScriptTest {
         val isCrossRepository: Boolean = false,
         val labels: List<String> = emptyList(),
         val mergeStateStatus: String = "CLEAN",
+        /** OPEN, or MERGED for one GitHub merged although gh failed to say so. */
+        val state: String = "OPEN",
         /** The head `gh pr list` reports, when a push since the listing moved the real one. */
         val listedHead: String? = null,
     )
@@ -162,7 +169,7 @@ class MergeQueueScriptTest {
                 """{"number": ${pull.number}, "headRefOid": "${pull.listedHead ?: heads.getValue(pull.number)}", """ +
                     """"isDraft": ${pull.isDraft}, "isCrossRepository": ${pull.isCrossRepository}, """ +
                     """"labels": ${pull.labels.joinToString(",", "[", "]") { """{"name": "$it"}""" }}, """ +
-                    """"mergeStateStatus": "${pull.mergeStateStatus}"}"""
+                    """"mergeStateStatus": "${pull.mergeStateStatus}", "state": "${pull.state}"}"""
             },
         )
         return heads
@@ -508,6 +515,35 @@ class MergeQueueScriptTest {
         assertEquals(3, workflowRuns().count { it == "merge-queue.yml" })
         assertEquals(pushWorkflows, workflowRuns().filter { it != "merge-queue.yml" })
         assertTrue(result.stdout, result.stdout.contains("::error title=Merge queue::could not start merge-queue.yml"))
+    }
+
+    // gh can lose GitHub's answer after the merge went through and fail with only `EOF`, which stopped land in
+    // pindu-launcher's copy of this queue (its #356). The merge landed, so main's gates and the next run must start.
+    @Test
+    fun `land starts main's push workflows and the next run when gh fails on a merge that landed`() {
+        val head = setUp(mapOf("README.md" to "launcher\n"), Pull(7, state = "MERGED")).getValue(7)
+        dir.resolve("fail-pr-merge").writeText("")
+
+        val result = mergeQueue("land", "7", head, cloneHead())
+
+        assertEquals(result.stderr, 0, result.exitCode)
+        assertEquals(listOf("pr", "merge", "7", "--merge", "--match-head-commit", head), calls().first())
+        assertEquals(pushWorkflows + "merge-queue.yml", workflowRuns())
+        assertTrue(
+            result.stdout,
+            result.stdout.contains("::warning title=Merge queue::gh failed merging #7, but GitHub shows it merged"),
+        )
+    }
+
+    @Test
+    fun `land fails and starts nothing when the merge fails and the pull request is not merged`() {
+        val head = setUp(mapOf("README.md" to "launcher\n"), Pull(7)).getValue(7)
+        dir.resolve("fail-pr-merge").writeText("")
+
+        val result = mergeQueue("land", "7", head, cloneHead())
+
+        assertTrue(result.stderr, result.exitCode != 0)
+        assertEquals(listOf(listOf("pr", "merge", "7", "--merge", "--match-head-commit", head)), calls())
     }
 
     // A failed listing must not pass for an empty queue.

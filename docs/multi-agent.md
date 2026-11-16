@@ -98,7 +98,9 @@ against accidents, not against a hostile author. If the check passes and neither
 it merges the pull request (a merge commit) and starts `CI`, `Coverage gate`, `E2E` and `Quality report` on `main`: a
 merge made with `GITHUB_TOKEN` starts no push run, so without them a failure on `main` would go unnoticed. A dispatch
 is tried three times, 10 s apart; if one still will not start, the queue starts the rest and the next run, then fails
-the run with an `::error` naming the workflow and the `gh workflow run` command to start it by hand.
+the run with an `::error` naming the workflow and the `gh workflow run` command to start it by hand. gh can fail after
+GitHub merged (it lost GitHub's answer); the queue then re-reads the pull request and, when GitHub shows it merged at
+the verified head, logs a warning and starts the same runs. Any other failed merge starts nothing.
 `Release` is not started: it runs only for a change to `app/build.gradle.kts`, which is high risk, so a maintainer
 merges it and the push starts the release. If the check fails, the pull request gets `hold` and a comment linking the
 run; fix it and remove `hold` to queue it again. Each run starts the next, so the queue merges one pull request at a
