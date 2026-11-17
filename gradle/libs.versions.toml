@@ -41,7 +41,7 @@ robolectric = "4.18"
 # The android-all jars Robolectric runs the app tests on, one per SDK they use (robolectric.properties and @Config).
 # Each is the build Robolectric's DefaultSdkProvider names for that SDK: change them together with robolectric (#279).
 robolectricAndroidAll28 = "9-robolectric-4913185-2-i7"
-robolectricAndroidAll35 = "15-robolectric-13954326-i7"
+robolectricAndroidAll35 = "15-robolectric-14663667-2-i7"
 spotless = "8.11.0"
 
 [libraries]
