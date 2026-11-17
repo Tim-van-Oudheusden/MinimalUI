@@ -119,6 +119,16 @@ class ReleaseVersionScriptTest {
         }
     }
 
+    // Android requires a versionCode above 0 (#442).
+    @Test
+    fun `refuses versionCode 0`() {
+        val result = releaseOf("        versionCode = 0", "        versionName = \"1.0.0\"")
+
+        assertEquals(result.stdout, 1, result.exitCode)
+        assertTrue(result.stdout, result.stdout.startsWith("::error::"))
+        assertTrue(result.stdout, "versionCode '0'" in result.stdout)
+    }
+
     // The version becomes a git tag and a release name; anything but MAJOR.MINOR.PATCH[-suffix] is refused.
     @Test
     fun `refuses a version that is not semantic`() {

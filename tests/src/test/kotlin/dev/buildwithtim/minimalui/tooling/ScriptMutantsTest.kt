@@ -1,0 +1,135 @@
+package dev.buildwithtim.minimalui.tooling
+
+import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Test
+import org.junit.runner.JUnitCore
+import org.junit.runner.Result
+import java.io.File
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
+
+/**
+ * A mutation gate for `scripts/` (#442). PIT mutates only the Kotlin modules, so nothing checked that a script's tests
+ * fail when its behaviour changes, and four times a branch ran in a test that asserted nothing about it (#309, #343,
+ * #388, #442).
+ *
+ * Each row of [mutants] names a script, an exact edit to it and the test class that must fail on it. The test copies
+ * the repository's `scripts/` into a temp directory, applies the edit there and runs that class in this JVM against
+ * the copy: [runScript] takes its scripts from the directory the [Repo.SCRIPTS_ROOT] system property names. First each
+ * class must pass on an unmutated copy, so no row is killed by a broken copy.
+ *
+ * To add a row: name the script, a piece of its text that occurs exactly once, its replacement, the test class that
+ * runs the script, and what the change would break. A new or changed script adds rows for its error and exit
+ * branches. A row that survives needs a test that fails on it; write that test, not a weaker row.
+ */
+class ScriptMutantsTest {
+    private val root: File = Files.createTempDirectory("script-mutants").toFile()
+
+    private data class Mutant(
+        val script: String,
+        val old: String,
+        val replacement: String,
+        val testClass: Class<*>,
+        val breaks: String,
+    )
+
+    private val mutants =
+        listOf(
+            Mutant(
+                "scripts/pitest-minion-java.sh",
+                "tmp=\"\$PITEST_MINION_TMP/minion.\$\$\"",
+                "tmp=\"\$PITEST_MINION_TMP/\$\$\"",
+                PitestMinionJavaScriptTest::class.java,
+                "the cleanup globs minion.*, so no temp directory is deleted again",
+            ),
+            Mutant(
+                "scripts/pitest-minion-java.sh",
+                "tmp=\"\$PITEST_MINION_TMP/minion.\$\$\"",
+                "tmp=\"\$PITEST_MINION_TMP/minion.\$RANDOM\"",
+                PitestMinionJavaScriptTest::class.java,
+                "the name holds no process ID, so the next minion deletes a running one's directory or none",
+            ),
+            Mutant(
+                "scripts/pitest-minion-java.sh",
+                "exec \"\$PITEST_MINION_JAVA\"",
+                "\"\$PITEST_MINION_JAVA\"",
+                PitestMinionJavaScriptTest::class.java,
+                "the JVM is not the process the directory is named after, and PIT's kill reaches bash",
+            ),
+            Mutant(
+                "scripts/pitest-minion-java.sh",
+                "mkdir -p \"\$tmp\" || exit 2",
+                "mkdir -p \"\$tmp\"",
+                PitestMinionJavaScriptTest::class.java,
+                "java starts without its temp directory instead of the script exiting 2",
+            ),
+            Mutant(
+                "scripts/release-version.sh",
+                "^[1-9][0-9]*\$",
+                "^[0-9]+\$",
+                ReleaseVersionScriptTest::class.java,
+                "a release with versionCode 0 passes",
+            ),
+        )
+
+    @After
+    fun cleanUp() {
+        root.deleteRecursively()
+    }
+
+    @Test
+    fun `the script tests fail on every mutant in the table`() {
+        val unmutated = copyOfScripts("unmutated")
+        for (testClass in mutants.map { it.testClass }.distinct()) {
+            val result = runAgainst(unmutated, testClass)
+            assertTrue("${testClass.simpleName} fails on unmutated scripts: ${result.failures}", result.wasSuccessful())
+        }
+
+        val survivors =
+            mutants.filterIndexed { index, mutant ->
+                val copy = copyOfScripts("mutant-$index")
+                mutant.applyTo(copy)
+                runAgainst(copy, mutant.testClass).wasSuccessful()
+            }
+
+        assertEquals(
+            "mutants their test class still passes on",
+            emptyList<String>(),
+            survivors.map { "${it.script}: `${it.old}` -> `${it.replacement}` (${it.breaks})" },
+        )
+    }
+
+    /** A copy of the repository's `scripts/`, modes and all, in [root]/[name]/scripts. */
+    private fun copyOfScripts(name: String): File {
+        val copy = root.resolve(name)
+        for (source in Repo.file("scripts").walkTopDown()) {
+            val target = copy.resolve(source.relativeTo(Repo.root))
+            target.parentFile.mkdirs()
+            Files.copy(source.toPath(), target.toPath(), StandardCopyOption.COPY_ATTRIBUTES)
+        }
+        return copy
+    }
+
+    /** Replaces [Mutant.old], which must occur exactly once in its script, in [copy]'s copy of the script. */
+    private fun Mutant.applyTo(copy: File) {
+        val file = copy.resolve(script)
+        val text = file.readText()
+        assertEquals("times `$old` occurs in $script", 1, text.split(old).size - 1)
+        file.writeText(text.replace(old, replacement))
+    }
+
+    /** Runs [testClass] with [runScript] taking its scripts from [copy]. */
+    private fun runAgainst(
+        copy: File,
+        testClass: Class<*>,
+    ): Result {
+        System.setProperty(Repo.SCRIPTS_ROOT, copy.path)
+        try {
+            return JUnitCore().run(testClass)
+        } finally {
+            System.clearProperty(Repo.SCRIPTS_ROOT)
+        }
+    }
+}
