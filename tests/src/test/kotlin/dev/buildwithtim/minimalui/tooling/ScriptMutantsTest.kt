@@ -16,9 +16,10 @@ import java.nio.file.StandardCopyOption
  * #388, #442).
  *
  * Each row of [mutants] names a script, an exact edit to it and the test class that must fail on it. The test copies
- * the repository's `scripts/` into a temp directory, applies the edit there and runs that class in this JVM against
- * the copy: [runScript] takes its scripts from the directory the [Repo.SCRIPTS_ROOT] system property names. First each
- * class must pass on an unmutated copy, so no row is killed by a broken copy.
+ * the repository's `scripts/` and the `.github/` policy files they read into a temp directory, applies the edit there
+ * and runs that class in this JVM against the copy: [runScript] takes its scripts from the directory the
+ * [Repo.SCRIPTS_ROOT] system property names. First each class must pass on an unmutated copy, so no row is killed by a
+ * broken copy.
  *
  * To add a row: name the script, a piece of its text that occurs exactly once, its replacement, the test class that
  * runs the script, and what the change would break. A new or changed script adds rows for its error and exit
@@ -72,6 +73,13 @@ class ScriptMutantsTest {
                 ReleaseVersionScriptTest::class.java,
                 "a release with versionCode 0 passes",
             ),
+            Mutant(
+                "scripts/merge-queue.sh",
+                " and .headRefOid == \\\"\$head\\\"",
+                "",
+                MergeQueueScriptTest::class.java,
+                "a failed merge passes for the verified one when GitHub merged the pull request at a later head",
+            ),
         )
 
     @After
@@ -101,10 +109,15 @@ class ScriptMutantsTest {
         )
     }
 
-    /** A copy of the repository's `scripts/`, modes and all, in [root]/[name]/scripts. */
+    /**
+     * A copy of the repository's `scripts/`, modes and all, in [root]/[name]/scripts, with `.github/` beside it:
+     * scripts find their policy files through their own root (`tier-classify.sh` reads `.github/risk-assessment.yml`,
+     * `auto-qa-tuner.sh` `.github/auto-qa-tuning.json`), so without it their test classes fail on an unmutated copy and
+     * no row can name them.
+     */
     private fun copyOfScripts(name: String): File {
         val copy = root.resolve(name)
-        for (source in Repo.file("scripts").walkTopDown()) {
+        for (source in listOf("scripts", ".github").flatMap { Repo.file(it).walkTopDown() }) {
             val target = copy.resolve(source.relativeTo(Repo.root))
             target.parentFile.mkdirs()
             Files.copy(source.toPath(), target.toPath(), StandardCopyOption.COPY_ATTRIBUTES)

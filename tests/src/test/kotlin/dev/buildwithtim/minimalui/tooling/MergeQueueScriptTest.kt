@@ -546,6 +546,23 @@ class MergeQueueScriptTest {
         assertEquals(listOf(listOf("pr", "merge", "7", "--merge", "--match-head-commit", head)), calls())
     }
 
+    // --match-head-commit refuses a branch pushed to since verification; someone may then merge it at that later head.
+    // That merge is not the one the queue verified, so land must not take it for its own.
+    @Test
+    fun `land fails and starts nothing when the merge fails and the pull request merged at another head`() {
+        val head =
+            setUp(
+                mapOf("README.md" to "launcher\n"),
+                Pull(7, state = "MERGED", listedHead = "0123456789abcdef0123456789abcdef01234567"),
+            ).getValue(7)
+        dir.resolve("fail-pr-merge").writeText("")
+
+        val result = mergeQueue("land", "7", head, cloneHead())
+
+        assertTrue(result.stderr, result.exitCode != 0)
+        assertEquals(listOf(listOf("pr", "merge", "7", "--merge", "--match-head-commit", head)), calls())
+    }
+
     // A failed listing must not pass for an empty queue.
     @Test
     fun `next fails and picks nothing when the pull request listing fails`() {
