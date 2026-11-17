@@ -24,6 +24,10 @@ updates:
     groups:
       minor-and-patch:
         update-types: [minor, patch]
+        # Robolectric needs its android-all jars changed with it (#279), which the ignore below leaves to a hand
+        # edit. In its own PR its red app tests do not hold back the rest of the group (#449).
+        exclude-patterns:
+          - org.robolectric:robolectric
     ignore:
       # The android-all jars must be the builds the Robolectric release names for each SDK (#279); a newer one alone
       # only fails the app tests. They change with Robolectric, by hand.
