@@ -54,6 +54,11 @@ A test library that pins a vulnerable transitive with no patched release of its 
 `app/build.gradle.kts` raises it to the `guava` floor (#274). Check it with
 `./gradlew :app:dependencyInsight --configuration debugUnitTestRuntimeClasspath --dependency <group>:<name>`.
 
+PIT's test classpath in `:app` has build-tool transitives of its own: pitest-android puts the old versions its
+mockable `android.jar` needs (`org.json:json:20080701`, `org.apache.httpcomponents:httpclient:4.0.1`) on
+`pitestTestCompile`, so the floors reach that configuration too (#456). Check it with
+`./gradlew :app:dependencies --configuration pitestTestCompile`.
+
 ### Accepting an advisory
 
 Add its GHSA id to `DEFAULT_ALERTS_IGNORE` in `scripts/nightly-compliance.sh`, with a comment on the line above that gives

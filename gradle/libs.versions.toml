@@ -8,7 +8,7 @@ androidxTestUiautomator = "2.4.1"
 # bouncycastle, commonsLang3, freemarker, guava, httpclient, jdom2, jose4j, orgJson: floors for build-tool transitives with
 # published advisories (#147, #257), applied from the build-tool-floors bundle in build.gradle.kts. guava is also the
 # floor for Robolectric's copy on the app's test classpath (#274), applied in app/build.gradle.kts. The same floors also
-# reach the detekt and PIT classpaths (#444).
+# reach the detekt and PIT classpaths (#444), PIT's test classpath in app included (pitestTestCompile, #456).
 bouncycastle = "1.86"
 commonsLang3 = "3.21.0"
 composeBom = "2026.09.00"

@@ -9,16 +9,19 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 
 ## Latest session
 
-- **Date:** 2026-11-15
-- **Worked:** #437 → `fix/437-version-code-rises`. Nothing checked that `versionCode` rises between releases.
-  `scripts/release-version.sh` now also prints `version_code` (exactly one, numeric) and, given the last release's
-  build file as a second argument, exits 1 unless `versionCode` is higher. The `Release` workflow's `plan` job fetches
-  that file from the newest non-draft release's tag, only when it will publish. `FastlaneMetadataTest` fails when a
-  changelog is numbered above `versionCode`. New tests in `ReleaseVersionScriptTest`, `ReleaseWorkflowTest` (the
-  step run with a fake `gh`) and `FastlaneMetadataTest` failed first.
-- **Outcome:** PR open, `Fixes #437`.
+- **Date:** 2026-11-17
+- **Worked:** #456 → `fix/456-pitest-test-compile-floor`. pitest-android 0.3.0 adds `org.json:json:20080701` and
+  `httpclient:4.0.1` (its mockable android.jar dependencies) to `pitestTestCompile`, which the build-tool floors did
+  not reach. `build.gradle.kts` now floors that configuration too; `:app:dependencies --configuration
+  pitestTestCompile` shows `20080701 -> 20260814` and `4.0.1 -> 4.5.14`, and the resolved `pitestDebug`
+  `additionalClasspath` (the plugin's `copyRecursive` of it) holds json-20260814, httpclient-4.5.14 and guava-33.8.0.
+- **Outcome:** PR open, `Fixes #456`.
 - **Open follow-ups:** none.
 - **Notes for next session:**
+  - To see what PIT's test JVM really gets, resolve `tasks.getByName("pitestDebug").additionalClasspath.files` from an
+    init script (`--no-configuration-cache`, after `:core:jar`): the plugin's classpath is a detached copy that
+    `dependencies` does not list.
+  - JDK 21 and the SDK were at `~/.local/jdk/jdk-21.0.13+9` and `~/Android/Sdk` this time; `ANDROID_HOME` was enough.
   - No JDK on this host again: a Temurin 21 tarball from `api.adoptium.net` into `~/.local/jdk` was enough for
     `:tests:test` and `spotlessCheck`.
   - This host had no JDK and no sandbox image: `podman build -f Dockerfile.sandbox -t localhost/minimalui-sandbox .`
