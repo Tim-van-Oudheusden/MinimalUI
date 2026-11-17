@@ -9,8 +9,8 @@ androidxTestUiautomator = "2.4.1"
 # published advisories (#147, #257), applied from the build-tool-floors bundle in build.gradle.kts. guava is also the
 # floor for Robolectric's copy on the app's test classpath (#274), applied in app/build.gradle.kts. The same floors also
 # reach the detekt and PIT classpaths (#444), pitestTestCompile included (#458).
-bouncycastle = "1.86"
-commonsLang3 = "3.21.0"
+bouncycastle = "1.87"
+commonsLang3 = "3.22.0"
 composeBom = "2026.09.00"
 # Slack's Compose lint checks, loaded into the app's Android Lint through lintChecks.
 composeLints = "1.6.1"
@@ -37,11 +37,11 @@ orgJson = "20260814"
 pitest = "1.30.2"
 pitestAndroid = "0.3.0"
 pitestGradle = "1.19.0"
-robolectric = "4.17"
+robolectric = "4.18"
 # The android-all jars Robolectric runs the app tests on, one per SDK they use (robolectric.properties and @Config).
 # Each is the build Robolectric's DefaultSdkProvider names for that SDK: change them together with robolectric (#279).
 robolectricAndroidAll28 = "9-robolectric-4913185-2-i7"
-robolectricAndroidAll35 = "15-robolectric-13954326-i7"
+robolectricAndroidAll35 = "15-robolectric-14663667-2-i7"
 spotless = "8.11.0"
 
 [libraries]
