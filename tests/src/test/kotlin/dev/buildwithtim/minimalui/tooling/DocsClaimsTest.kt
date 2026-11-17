@@ -7,10 +7,11 @@ import org.junit.Test
 /**
  * Facts the docs state about this repository, read from the docs and from the file that decides them. A doc names the
  * release APK, the required checks, the labels that keep a pull request out of the merge queue, the workflows that
- * start the queue or that it starts, the untranslated group and suffix names, the release certificate digest, and the
- * way out of a HOME-app lockout that the crash report form shows; a later pull request changes one of them, and until
- * now nothing failed (#329, after #175, #185 and #209). Each test extracts both sides with a Regex and fails when
- * either stops matching, so rewording a doc cannot make a claim pass by finding nothing to compare.
+ * start the queue or that it starts, the untranslated group and suffix names, the release certificate digest, the tool
+ * configurations the build-tool floors reach, and the way out of a HOME-app lockout that the crash report form shows; a
+ * later pull request changes one of them, and until now nothing failed (#329, after #175, #185 and #209). Each test
+ * extracts both sides with a Regex and fails when either stops matching, so rewording a doc cannot make a claim pass
+ * by finding nothing to compare.
  *
  * It covers facts a file records. A claim about code behaviour or about how Hive behaves at run time is out of scope.
  */
@@ -239,6 +240,32 @@ class DocsClaimsTest {
         assertTrue("a 64-digit hex digest in README.md", inReadme.isNotEmpty())
 
         assertEquals(inRunbook, inReadme)
+    }
+
+    // build.gradle.kts adds the build-tool-floors constraints to these tool configurations; the docs/testing.md section
+    // a Dependabot alert in a build-tool transitive sends a reader to names each one, so the floor's reach is not
+    // checked in one configuration while the alert sits in another (#454, after #444).
+    @Test
+    fun `the build tool advisories section names every configuration the floors reach`() {
+        val configurations =
+            Regex("""val toolConfigurations = setOf\(([^)]*)\)""")
+                .find(Repo.read("build.gradle.kts"))
+                ?.groupValues
+                ?.get(1)
+                ?.let { Regex(""""([^"]+)"""").findAll(it).map { m -> m.groupValues[1] }.toSet() }
+                .orEmpty()
+        val section =
+            Regex("""(?s)### Advisories in build tools.*?(?=\n### )""")
+                .find(Repo.read("docs/testing.md"))
+                ?.value
+        assertTrue("val toolConfigurations = setOf(\"...\") in build.gradle.kts", configurations.isNotEmpty())
+        assertTrue("### Advisories in build tools in docs/testing.md", section != null)
+
+        assertEquals(
+            "configurations build.gradle.kts floors that the section lacks",
+            emptySet<String>(),
+            configurations - backticked(section!!),
+        )
     }
 
     // The rollback runbook's first signal is a user's issue, and a user locked out by a crash-looping HOME app needs
