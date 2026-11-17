@@ -8,7 +8,7 @@ androidxTestUiautomator = "2.4.1"
 # bouncycastle, commonsLang3, freemarker, guava, httpclient, jdom2, jose4j, orgJson: floors for build-tool transitives with
 # published advisories (#147, #257), applied from the build-tool-floors bundle in build.gradle.kts. guava is also the
 # floor for Robolectric's copy on the app's test classpath (#274), applied in app/build.gradle.kts. The same floors also
-# reach the detekt and PIT classpaths (#444).
+# reach the detekt and PIT classpaths (#444), pitestTestCompile included (#458).
 bouncycastle = "1.87"
 commonsLang3 = "3.22.0"
 composeBom = "2026.09.00"
@@ -30,7 +30,7 @@ ktlint = "1.8.0"
 # Lint no longer has, so lint reports ObsoleteLintCustomCheck, an error here. Applied in app/build.gradle.kts.
 lifecycleRuntime = "2.11.0"
 # First release past GHSA-4jq9-2xhw-jpx7 and GHSA-3vqj-43w4-2q58, the org.json advisories (#444).
-orgJson = "20231013"
+orgJson = "20260814"
 # PIT, the mutation tester for the Kotlin modules (#412). gradle-pitest-plugin runs it on core, and its Android port on
 # app's Robolectric tests; both bring an older PIT by default, so pitest pins the engine they run. pitestAndroid 0.3.0 is
 # the first release that supports AGP 9.

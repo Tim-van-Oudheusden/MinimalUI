@@ -45,11 +45,13 @@ subprojects {
     }
 }
 
-// The same floors (#147) for Android Lint, which AGP and the standalone lint plugin resolve per module, and for the
-// detekt and PIT tool classpaths (#444).
+// The same floors (#147) for Android Lint, which AGP and the standalone lint plugin resolve per module, for the detekt
+// and PIT tool classpaths (#444), and for pitestTestCompile, where the app's PIT plugin adds the dependencies of
+// com.google.android:android 4.1.1.4 next to the mockable android.jar: org.json 20080701 and httpclient 4.0.1 among
+// them (#458).
 subprojects {
     val constraints = dependencies.constraints
-    val toolConfigurations = setOf("androidLintTool", "detekt", "pitest")
+    val toolConfigurations = setOf("androidLintTool", "detekt", "pitest", "pitestTestCompile")
     configurations.matching { it.name in toolConfigurations }.configureEach {
         libs.bundles.build.tool.floors
             .get()

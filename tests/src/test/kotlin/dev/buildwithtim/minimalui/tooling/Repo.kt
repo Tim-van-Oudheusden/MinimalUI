@@ -16,6 +16,15 @@ object Repo {
 
     fun read(path: String): String = file(path).readText()
 
+    /**
+     * The script at [path] (`scripts/...`) as [runScript] runs it: under the directory the [SCRIPTS_ROOT] system
+     * property names when it is set, in the repository otherwise. [ScriptMutantsTest] points it at a copy of `scripts/`
+     * that holds one mutant (#442).
+     */
+    fun script(path: String): File = System.getProperty(SCRIPTS_ROOT)?.let { File(it).resolve(path) } ?: file(path)
+
+    const val SCRIPTS_ROOT = "scripts.root"
+
     /** Every module `settings.gradle.kts` includes, as its directory relative to the root (`app`, `core`, ...). */
     fun modules(): List<String> =
         Regex("""include\(\s*"(:[^"]+)"\s*\)""")
@@ -105,7 +114,8 @@ data class ScriptResult(
 
 /**
  * Runs [script] (a path relative to the repository root) the way CI does: executed directly, so its shebang and
- * executable bit count. [env] is added to a copy of this process's environment.
+ * executable bit count. [env] is added to a copy of this process's environment. [Repo.script] finds the script, so the
+ * `scripts.root` system property can swap in a copy of `scripts/` (#442).
  */
 fun runScript(
     script: String,
@@ -113,7 +123,7 @@ fun runScript(
     env: Map<String, String> = emptyMap(),
     stdin: String = "",
     workDir: File = Repo.root,
-): ScriptResult = runProcess(listOf(Repo.file(script).path) + args, workDir, env, stdin, name = script)
+): ScriptResult = runProcess(listOf(Repo.script(script).path) + args, workDir, env, stdin, name = script)
 
 /**
  * Runs [command] in [workDir] with [env] added to a copy of this process's environment and [stdin] as its input, and
