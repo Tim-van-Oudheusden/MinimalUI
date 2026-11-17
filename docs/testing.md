@@ -51,13 +51,14 @@ for each of `androidLintTool`, `detekt`, `pitest` and `pitestTestCompile`. Drop 
 library in ships the patched version itself.
 
 A test library that pins a vulnerable transitive with no patched release of its own gets the same treatment, as a
-`constraints { testImplementation(...) }` entry next to it: Robolectric 4.17 brings Guava 33.6.0, so
-`app/build.gradle.kts` raises it to the `guava` floor (#274). Check it with
+`constraints { testImplementation(...) }` entry next to it. Robolectric 4.17 brought Guava 33.6.0, so
+`app/build.gradle.kts` raised it to the `guava` floor (#274) until Robolectric 4.18 brought the patched 33.7.2 (#461).
+Check such a floor with
 `./gradlew :app:dependencyInsight --configuration debugUnitTestRuntimeClasspath --dependency <group>:<name>`.
 
 The dependency graph also holds what a plugin resolves outside those configurations. To look for a JUnit Platform
-launcher, the app's PIT plugin resolved the direct `testImplementation` dependencies on their own, without that
-constraint, which put Guava 33.6.0 back into the graph; `app/build.gradle.kts` turns the lookup off
+launcher, the app's PIT plugin resolved the direct `testImplementation` dependencies on their own, outside every
+constraint, which put Robolectric 4.17's Guava 33.6.0 back into the graph; `app/build.gradle.kts` turns the lookup off
 (`addJUnitPlatformLauncher`, #458). To find where a vulnerable version comes from, run the submission locally:
 `gradle/actions/dependency-submission` applies the `github-dependency-graph-gradle-plugin` through an init script and
 runs `:ForceDependencyResolutionPlugin_resolveAllDependencies`; a `DependencyResolutionListener` in a second init script

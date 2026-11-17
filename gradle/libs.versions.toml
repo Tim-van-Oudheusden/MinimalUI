@@ -6,8 +6,7 @@ activityCompose = "1.13.0"
 androidxTestRunner = "1.7.0"
 androidxTestUiautomator = "2.4.1"
 # bouncycastle, commonsLang3, freemarker, guava, httpclient, jdom2, jose4j, orgJson: floors for build-tool transitives with
-# published advisories (#147, #257), applied from the build-tool-floors bundle in build.gradle.kts. guava is also the
-# floor for Robolectric's copy on the app's test classpath (#274), applied in app/build.gradle.kts. The same floors also
+# published advisories (#147, #257), applied from the build-tool-floors bundle in build.gradle.kts. The same floors also
 # reach the detekt and PIT classpaths (#444), pitestTestCompile included (#458).
 bouncycastle = "1.87"
 commonsLang3 = "3.22.0"
@@ -68,8 +67,8 @@ robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "
 # Never on a classpath: app/build.gradle.kts copies them into the directory Robolectric reads offline (#279).
 robolectric-android-all-28 = { group = "org.robolectric", name = "android-all-instrumented", version.ref = "robolectricAndroidAll28" }
 robolectric-android-all-35 = { group = "org.robolectric", name = "android-all-instrumented", version.ref = "robolectricAndroidAll35" }
-# Never dependencies: constraints raising what AGP, Kover and Android Lint pull onto the build classpath (#147), and
-# (guava) what Robolectric pulls onto the app's test classpath (#274).
+# Never dependencies: constraints raising what AGP, Kover, Android Lint, detekt and PIT pull onto their classpaths (#147,
+# #444).
 bouncycastle-bcpkix = { group = "org.bouncycastle", name = "bcpkix-jdk18on", version.ref = "bouncycastle" }
 bouncycastle-bcprov = { group = "org.bouncycastle", name = "bcprov-jdk18on", version.ref = "bouncycastle" }
 bouncycastle-bcutil = { group = "org.bouncycastle", name = "bcutil-jdk18on", version.ref = "bouncycastle" }
