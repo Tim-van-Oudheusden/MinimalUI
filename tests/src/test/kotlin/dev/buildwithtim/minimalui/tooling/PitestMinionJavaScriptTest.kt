@@ -12,14 +12,16 @@ class PitestMinionJavaScriptTest {
     private val dir: File = Files.createTempDirectory("pitest-minion-java").toFile()
     private val base = dir.resolve("minions")
     private val calls = dir.resolve("java-args.txt")
+    private val javaPid = dir.resolve("java-pid")
 
-    /** Fake `java`: writes its arguments one per line and exits with FAKE_EXIT. */
+    /** Fake `java`: writes its arguments one per line, and its process ID, and exits with FAKE_EXIT. */
     private val java =
         dir.resolve("java").apply {
             writeText(
                 """
                 #!/usr/bin/env bash
                 printf '%s\n' "${'$'}@" > "${calls.path}"
+                echo "${'$'}${'$'}" > "${javaPid.path}"
                 exit "${'$'}{FAKE_EXIT:-0}"
 
                 """.trimIndent(),
@@ -61,6 +63,27 @@ class PitestMinionJavaScriptTest {
         val tmp = File(args.first().removePrefix("-Djava.io.tmpdir="))
         assertTrue("$tmp is not a directory", tmp.isDirectory)
         assertEquals(base.canonicalFile, tmp.canonicalFile.parentFile)
+    }
+
+    // The next minion finds a directory to delete by the process ID in its name, so the name must be the ID of the
+    // process that runs java: the script's own, which exec hands to the JVM (#442).
+    @Test
+    fun `names its temp directory after the process that runs java`() {
+        val result = minion("Minion")
+
+        assertEquals(result.stderr, 0, result.exitCode)
+        val tmp = File(calls.readLines().first().removePrefix("-Djava.io.tmpdir="))
+        assertEquals("minion." + javaPid.readText().trim(), tmp.name)
+    }
+
+    @Test
+    fun `exits 2 without running java when the temp directory cannot be made`() {
+        base.writeText("a file, not a directory")
+
+        val result = minion("Minion")
+
+        assertEquals(result.stderr, 2, result.exitCode)
+        assertFalse("java ran", calls.exists())
     }
 
     // PIT kills a minion it gives up on, so no minion cleans up after itself: the next one does.

@@ -154,7 +154,9 @@ started instead of leaving it running after the test (#357). A script that repor
 another command's result needs a test that makes that write or command fail and asserts a nonzero exit and no success
 message: a shell script can carry on past a failed command and exit 0 (#377, #385, #431), and neither ShellCheck nor
 actionlint notices. Make it fail for real (an unwritable path, `/dev/full`, a stub command on `PATH` that exits
-nonzero), and assert on the exit status and output, never the script's text. `FastlaneMetadataTest` holds the store
+nonzero), and assert on the exit status and output, never the script's text. `ScriptMutantsTest` holds the script
+tests to a table of mutants, edits to a script that its test class must fail on; a new or changed script adds rows for
+its error and exit branches ([Mutation testing](docs/testing.md#scripts)). `FastlaneMetadataTest` holds the store
 listing to the stores' limits and requires a changelog for the current `versionCode`. The module sits at the root as
 `tests/` because the ACMM evaluation finds a test suite only by a root `tests/` directory (#235); module tests under
 `<module>/src/test/` are invisible to it.
