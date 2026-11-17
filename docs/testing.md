@@ -300,10 +300,11 @@ PR. PIT cannot mutate the manifest or resources, so a case like #408's `android:
 PIT does not reach `scripts/`, and four times a script branch ran in a test that asserted nothing about it (#309,
 #343, #388, #442). `ScriptMutantsTest` (in `tests/`, so part of `./gradlew check`) holds a table of hand-written
 mutants: each row names a script, a piece of its text that occurs exactly once, the replacement, and the test class
-that must fail on the change. The test copies `scripts/` into a temp directory, applies one row's edit there and runs
-that class, in the test's own JVM, against the copy: `runScript` takes its scripts from the directory the
-`scripts.root` system property names. Each class must first pass on an unmutated copy, so a broken copy cannot kill a
-row. A row its class still passes on fails the test.
+that must fail on the change. The test copies `scripts/` into a temp directory, with `.github/` beside it for the
+policy files scripts read through their own root (`.github/risk-assessment.yml`, `.github/auto-qa-tuning.json`),
+applies one row's edit there and runs that class, in the test's own JVM, against the copy: `runScript` takes its
+scripts from the directory the `scripts.root` system property names. Each class must first pass on an unmutated copy,
+so a broken copy cannot kill a row. A row its class still passes on fails the test.
 
 A new or changed script adds rows for its error and exit branches, the way a new Kotlin survivor gets a test. When a
 row survives, write the test that kills it rather than changing the row.
