@@ -41,13 +41,14 @@ message for this workflow ([rhysd/actionlint#713](https://github.com/rhysd/actio
 
 ### Advisories in build tools
 
-An advisory in a library that only a build tool pulls in (AGP, Kover, Android Lint) cannot be fixed by Dependabot: no
-build file declares it, so its security update ends in `security_update_dependency_not_found`. Raise it instead with
-the `build-tool-floors` bundle in `gradle/libs.versions.toml`: `build.gradle.kts` adds each library of the bundle as a
-constraint to the plugin classpath and every module's `androidLintTool`, so the patched version resolves there unless a
-tool brings a newer one (#147). Check the result with `./gradlew buildEnvironment` and
-`./gradlew :<module>:dependencies --configuration androidLintTool`. Drop a floor once every tool that pulled the library
-in ships the patched version itself.
+An advisory in a library that only a build tool pulls in (AGP, Kover, Android Lint, detekt, PIT) cannot be fixed by
+Dependabot: no build file declares it, so its security update ends in `security_update_dependency_not_found`. Raise it
+instead with the `build-tool-floors` bundle in `gradle/libs.versions.toml`: `build.gradle.kts` adds each library of the
+bundle as a constraint to the plugin classpath and to every module's `androidLintTool`, `detekt` and `pitest`
+configurations, so the patched version resolves there unless a tool brings a newer one (#147, #444). Check the result
+with `./gradlew buildEnvironment` and `./gradlew :<module>:dependencies --configuration <name>` for each of
+`androidLintTool`, `detekt` and `pitest`. Drop a floor once every tool that pulled the library in ships the patched
+version itself.
 
 A test library that pins a vulnerable transitive with no patched release of its own gets the same treatment, as a
 `constraints { testImplementation(...) }` entry next to it: Robolectric 4.17 brings Guava 33.6.0, so

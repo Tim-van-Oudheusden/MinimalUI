@@ -9,14 +9,12 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 
 ## Latest session
 
-- **Date:** 2026-11-15
-- **Worked:** #437 → `fix/437-version-code-rises`. Nothing checked that `versionCode` rises between releases.
-  `scripts/release-version.sh` now also prints `version_code` (exactly one, numeric) and, given the last release's
-  build file as a second argument, exits 1 unless `versionCode` is higher. The `Release` workflow's `plan` job fetches
-  that file from the newest non-draft release's tag, only when it will publish. `FastlaneMetadataTest` fails when a
-  changelog is numbered above `versionCode`. New tests in `ReleaseVersionScriptTest`, `ReleaseWorkflowTest` (the
-  step run with a fake `gh`) and `FastlaneMetadataTest` failed first.
-- **Outcome:** PR open, `Fixes #437`.
+- **Date:** 2026-11-17
+- **Worked:** #454 → `docs/454-tool-floor-configurations`. `docs/testing.md` "Advisories in build tools" named only
+  `androidLintTool` although #444 extended the build-tool floors to `detekt` and `pitest`. The section now names all
+  three and the check command for each. New `DocsClaimsTest` case reads `toolConfigurations` in `build.gradle.kts` and
+  fails on any name the section lacks; it failed first on `[detekt, pitest]`.
+- **Outcome:** PR open, `Closes #454`.
 - **Open follow-ups:** none.
 - **Notes for next session:**
   - No JDK on this host again: a Temurin 21 tarball from `api.adoptium.net` into `~/.local/jdk` was enough for
