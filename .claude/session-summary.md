@@ -10,14 +10,13 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 ## Latest session
 
 - **Date:** 2026-11-17
-- **Worked:** #458 → `fix/458-pitest-android-stub-floors`. Nightly compliance failed on 4 high Dependabot alerts
-  (org.json x2, httpclient, guava), all from the app's PIT plugin (#412). Its `pitestTestCompile` declares the
-  dependencies of `com.google.android:android:4.1.1.4` (org.json 20080701, httpclient 4.0.1); `build.gradle.kts` now
-  floors that configuration too. Its JUnit Platform launcher lookup resolved `testImplementation`'s direct dependencies
-  in a detached configuration without the guava constraint; `addJUnitPlatformLauncher.set(false)` in
-  `app/build.gradle.kts` (the tests are JUnit 4). Before/after with the real dependency-submission plugin run locally.
-  Rebased onto #454's docs rewrite; supersedes #457 (#456, the same `pitestTestCompile` floor without the guava fix).
-- **Outcome:** PR open, `Fixes #458`, `Fixes #456`.
+- **Worked:** merged the overlapping PRs (#459 over #457, #447 with the SDK 35 android-all jar for Robolectric 4.18,
+  then #452), then #461 → `build/461-robolectric-418-cleanup`. Robolectric 4.18 brings the patched Guava 33.7.2, so the
+  `testImplementation` guava constraint in `app/build.gradle.kts` is gone (`dependencyInsight` on the unit-test
+  classpaths: 33.7.2-jre). The comments and `docs/testing.md` that still described 4.17 now match 4.18.
+  `robolectric.properties` keeps `sdk=35`: with 4.18 on JDK 21, SDK 37 fails 171/192 (Espresso key injection) and
+  SDK 36 fails 11 (`MainActivityTest.launcherActivity` reflection), checked with the 36/37 jars added temporarily.
+- **Outcome:** PR open, `Fixes #461`.
 - **Open follow-ups:** none.
 - **Notes for next session:**
   - To see what Dependabot sees, run `gradle/actions` v6.4.1's

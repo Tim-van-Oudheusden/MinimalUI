@@ -155,11 +155,6 @@ dependencies {
 
     testImplementation(libs.junit)
     testImplementation(libs.robolectric)
-    constraints {
-        // Robolectric 4.17 brings Guava 33.6.0, which has GHSA-xxph-c9ww-hj94 (#274); raised to the guava floor until a
-        // Robolectric release brings the patched version itself.
-        testImplementation(libs.guava)
-    }
     testImplementation(platform(libs.androidx.compose.bom))
     testImplementation(libs.androidx.compose.ui.test.junit4)
     // Declares the empty activity that createComposeRule() hosts content in; debug builds only.
@@ -202,8 +197,8 @@ pitest {
     threads.set(4)
     outputFormats.set(listOf("XML", "HTML"))
     // The tests are JUnit 4, so they need no JUnit Platform launcher. Looking for one, the plugin resolved the direct
-    // testImplementation dependencies on their own, without the guava constraint above, and put Robolectric's Guava
-    // 33.6.0 back into the dependency graph Dependabot alerts on (#458).
+    // testImplementation dependencies on their own, outside every constraint, and put Robolectric 4.17's Guava 33.6.0
+    // back into the dependency graph Dependabot alerts on (#458).
     addJUnitPlatformLauncher.set(false)
     // One fixed report directory, the path the check script reads.
     timestampedReports.set(false)
