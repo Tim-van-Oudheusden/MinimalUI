@@ -10,13 +10,22 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 ## Latest session
 
 - **Date:** 2026-11-17
-- **Worked:** #454 → `docs/454-tool-floor-configurations`. `docs/testing.md` "Advisories in build tools" named only
-  `androidLintTool` although #444 extended the build-tool floors to `detekt` and `pitest`. The section now names all
-  three and the check command for each. New `DocsClaimsTest` case reads `toolConfigurations` in `build.gradle.kts` and
-  fails on any name the section lacks; it failed first on `[detekt, pitest]`.
-- **Outcome:** PR open, `Closes #454`.
+- **Worked:** #458 → `fix/458-pitest-android-stub-floors`. Nightly compliance failed on 4 high Dependabot alerts
+  (org.json x2, httpclient, guava), all from the app's PIT plugin (#412). Its `pitestTestCompile` declares the
+  dependencies of `com.google.android:android:4.1.1.4` (org.json 20080701, httpclient 4.0.1); `build.gradle.kts` now
+  floors that configuration too. Its JUnit Platform launcher lookup resolved `testImplementation`'s direct dependencies
+  in a detached configuration without the guava constraint; `addJUnitPlatformLauncher.set(false)` in
+  `app/build.gradle.kts` (the tests are JUnit 4). Before/after with the real dependency-submission plugin run locally.
+  Rebased onto #454's docs rewrite; supersedes #457 (#456, the same `pitestTestCompile` floor without the guava fix).
+- **Outcome:** PR open, `Fixes #458`, `Fixes #456`.
 - **Open follow-ups:** none.
 - **Notes for next session:**
+  - To see what Dependabot sees, run `gradle/actions` v6.4.1's
+    `sources/src/resources/init-scripts/gradle-actions.github-dependency-graph.init.gradle` with
+    `GITHUB_DEPENDENCY_GRAPH_ENABLED=true`, `GITHUB_DEPENDENCY_GRAPH_{JOB_CORRELATOR,JOB_ID,REF,SHA,WORKSPACE}` and
+    `DEPENDENCY_GRAPH_REPORT_DIR` set, task `:ForceDependencyResolutionPlugin_resolveAllDependencies`. The JSON has no
+    configuration names; a second init script with a `DependencyResolutionListener` printing
+    `ResolvableDependencies.path` names detached configurations that `:<module>:dependencies` never shows.
   - No JDK on this host again: a Temurin 21 tarball from `api.adoptium.net` into `~/.local/jdk` was enough for
     `:tests:test` and `spotlessCheck`.
   - This host had no JDK and no sandbox image: `podman build -f Dockerfile.sandbox -t localhost/minimalui-sandbox .`

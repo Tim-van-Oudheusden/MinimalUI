@@ -44,16 +44,24 @@ message for this workflow ([rhysd/actionlint#713](https://github.com/rhysd/actio
 An advisory in a library that only a build tool pulls in (AGP, Kover, Android Lint, detekt, PIT) cannot be fixed by
 Dependabot: no build file declares it, so its security update ends in `security_update_dependency_not_found`. Raise it
 instead with the `build-tool-floors` bundle in `gradle/libs.versions.toml`: `build.gradle.kts` adds each library of the
-bundle as a constraint to the plugin classpath and to every module's `androidLintTool`, `detekt` and `pitest`
-configurations, so the patched version resolves there unless a tool brings a newer one (#147, #444). Check the result
-with `./gradlew buildEnvironment` and `./gradlew :<module>:dependencies --configuration <name>` for each of
-`androidLintTool`, `detekt` and `pitest`. Drop a floor once every tool that pulled the library in ships the patched
-version itself.
+bundle as a constraint to the plugin classpath and to every module's `androidLintTool`, `detekt`, `pitest` and
+`pitestTestCompile` configurations, so the patched version resolves there unless a tool brings a newer one (#147, #444,
+#458). Check the result with `./gradlew buildEnvironment` and `./gradlew :<module>:dependencies --configuration <name>`
+for each of `androidLintTool`, `detekt`, `pitest` and `pitestTestCompile`. Drop a floor once every tool that pulled the
+library in ships the patched version itself.
 
 A test library that pins a vulnerable transitive with no patched release of its own gets the same treatment, as a
 `constraints { testImplementation(...) }` entry next to it: Robolectric 4.17 brings Guava 33.6.0, so
 `app/build.gradle.kts` raises it to the `guava` floor (#274). Check it with
 `./gradlew :app:dependencyInsight --configuration debugUnitTestRuntimeClasspath --dependency <group>:<name>`.
+
+The dependency graph also holds what a plugin resolves outside those configurations. To look for a JUnit Platform
+launcher, the app's PIT plugin resolved the direct `testImplementation` dependencies on their own, without that
+constraint, which put Guava 33.6.0 back into the graph; `app/build.gradle.kts` turns the lookup off
+(`addJUnitPlatformLauncher`, #458). To find where a vulnerable version comes from, run the submission locally:
+`gradle/actions/dependency-submission` applies the `github-dependency-graph-gradle-plugin` through an init script and
+runs `:ForceDependencyResolutionPlugin_resolveAllDependencies`; a `DependencyResolutionListener` in a second init script
+prints the path of every resolution that picked it.
 
 ### Accepting an advisory
 

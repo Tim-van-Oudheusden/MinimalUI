@@ -201,6 +201,10 @@ pitest {
     // Each test JVM holds a Robolectric sandbox in up to 2 GB of heap: four fit GitHub's 16 GB runner, and its 4 CPUs.
     threads.set(4)
     outputFormats.set(listOf("XML", "HTML"))
+    // The tests are JUnit 4, so they need no JUnit Platform launcher. Looking for one, the plugin resolved the direct
+    // testImplementation dependencies on their own, without the guava constraint above, and put Robolectric's Guava
+    // 33.6.0 back into the dependency graph Dependabot alerts on (#458).
+    addJUnitPlatformLauncher.set(false)
     // One fixed report directory, the path the check script reads.
     timestampedReports.set(false)
     // PIT starts a new test JVM after each timeout, and Robolectric's start in a cold JVM takes longer than PIT's default
