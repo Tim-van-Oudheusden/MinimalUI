@@ -74,6 +74,14 @@ class TierClassifyScriptTest {
     }
 
     @Test
+    fun `applies the last rule of a risk assessment without a final newline`() {
+        val result = classifyWithFile("rules:\n  - low   docs/*\n  - high  scripts/*", "docs/a.md", "scripts/b.sh")
+
+        assertEquals(result.stderr, 0, result.exitCode)
+        assertEquals(mapOf("docs/a.md" to "low", "scripts/b.sh" to "high"), result.tiers())
+    }
+
+    @Test
     fun `lets star match across directory separators`() {
         val paths = listOf("src/main/deep/File.kt")
 
@@ -176,9 +184,11 @@ class TierClassifyScriptTest {
 
     @Test
     fun `fails without a tier when the risk assessment file is missing`() {
-        val result = classify("docs/a.md", env = mapOf("RISK_TIER_POLICY" to temp.root.resolve("absent.yml").path))
+        val absent = temp.root.resolve("absent.yml").path
+        val result = classify("docs/a.md", env = mapOf("RISK_TIER_POLICY" to absent))
 
         assertNotEquals(0, result.exitCode)
+        assertTrue(result.stderr, result.stderr.contains("cannot read policy file $absent"))
         assertFalse(result.stdout, result.stdout.contains("tier="))
     }
 
