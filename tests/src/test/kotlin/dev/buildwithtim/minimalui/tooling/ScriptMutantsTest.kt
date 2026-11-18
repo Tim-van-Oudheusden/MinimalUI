@@ -80,6 +80,20 @@ class ScriptMutantsTest {
                 MergeQueueScriptTest::class.java,
                 "a failed merge passes for the verified one when GitHub merged the pull request at a later head",
             ),
+            Mutant(
+                "scripts/tier-classify.sh",
+                "read -r item tier glob extra || [ -n \"\${item:-}\" ]; do",
+                "read -r item tier glob extra; do",
+                TierClassifyScriptTest::class.java,
+                "a risk assessment without a final newline loses its last rule, and the paths it rates fall to medium",
+            ),
+            Mutant(
+                "scripts/tier-classify.sh",
+                "[ -r \"\$policy\" ] || fail",
+                "[ -r \"\$policy\" ] || true",
+                TierClassifyScriptTest::class.java,
+                "a missing risk assessment is reported as one holding no rules, without naming the file",
+            ),
         )
 
     @After
