@@ -96,14 +96,14 @@ class ScriptMutantsTest {
             ),
             Mutant(
                 "scripts/mutation-check.sh",
-                "sed 's/^/  /' <<<\"\$gone\"",
+                "printf '  %s\\n' \"\${gone//\$'\\n'/\$'\\n  '}\"",
                 "printf '  %s\\n' \"\$gone\"",
                 MutationCheckScriptTest::class.java,
                 "only the first stale entry is indented, so in the log the next one reads as a new survivor",
             ),
             Mutant(
                 "scripts/mutation-check.sh",
-                "sed 's/^/  /' <<<\"\$new\" >&2",
+                "printf '  %s\\n' \"\${new//\$'\\n'/\$'\\n  '}\" >&2",
                 "printf '  %s\\n' \"\$new\" >&2",
                 MutationCheckScriptTest::class.java,
                 "only the first new survivor is indented, so the rest read as lines of the next message",
