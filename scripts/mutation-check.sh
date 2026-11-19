@@ -92,11 +92,11 @@ gone="$(LC_ALL=C comm -13 <(printf '%s\n' "$found" | grep .) <(printf '%s\n' "$a
 
 if [ -n "$gone" ]; then
   echo "$(grep -c . <<<"$gone") baseline entry(ies) in $baseline no longer survive; remove them:"
-  printf '  %s\n' "$gone"
+  sed 's/^/  /' <<<"$gone"
 fi
 if [ -n "$new" ]; then
   echo "::error::$(grep -c . <<<"$new") survivor(s) in $report that $baseline does not list:" >&2
-  printf '  %s\n' "$new" >&2
+  sed 's/^/  /' <<<"$new" >&2
   echo "Add a test that kills each one, or, if no test can, add its line to the baseline with the reason." >&2
   exit 1
 fi
