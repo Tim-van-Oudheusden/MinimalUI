@@ -50,8 +50,6 @@ jobs:
       - name: Mutation run
         run: ./gradlew "$TASK"
       - name: Check survivors against the baseline
-        # Report-only until two runs here match the baseline built locally (#412); then delete this line.
-        continue-on-error: true
         run: scripts/mutation-check.sh "$REPORT" "config/mutation/$MODULE.txt"
       - name: Upload mutation report
         if: always()
