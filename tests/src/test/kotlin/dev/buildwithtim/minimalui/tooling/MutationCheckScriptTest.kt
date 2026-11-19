@@ -110,6 +110,20 @@ class MutationCheckScriptTest {
     }
 
     @Test
+    fun `every entry of a list of several is indented under its own heading`() {
+        writeReport(pitMutation("SURVIVED", method = "take"), pitMutation("SURVIVED", method = "peek"))
+        check("--write", report.path, baseline.path)
+        writeReport(pitMutation("SURVIVED", method = "skipSpace"), pitMutation("SURVIVED", method = "loop"))
+
+        val result = check(report.path, baseline.path)
+
+        // GitHub's log interleaves stdout and stderr, so an entry is told from a heading only by its indent.
+        val entries = (result.stdout.lines() + result.stderr.lines()).filter { "dev.example.JsonCursor" in it }
+        assertEquals(result.stdout + result.stderr, 4, entries.size)
+        assertTrue(entries.joinToString("\n"), entries.all { it.startsWith("  ") })
+    }
+
+    @Test
     fun `comments and blank lines in the baseline are not entries`() {
         writeReport(pitMutation("SURVIVED"))
         check("--write", report.path, baseline.path)
