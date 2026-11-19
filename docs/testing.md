@@ -252,9 +252,8 @@ runs the Robolectric unit tests of `testDebugUnitTest` (without `StoreScreenshot
 `app/build/reports/pitest/debug/mutations.xml`. Neither task is part of `check` or runs on a PR.
 `.github/workflows/mutation.yml` (job **Mutation survivors**, one per module: weekly on Monday at 05:41 UTC and on
 demand) runs them, checks each report against the module's baseline below and uploads it as the
-`mutation-report-<module>` artifact. The check is report-only (`continue-on-error`) until two runs there match the
-baseline built locally; then it fails on a new survivor, and `auto-issues.yml` opens a `Mutation testing fails on main`
-issue.
+`mutation-report-<module>` artifact. A new survivor fails the run, and `auto-issues.yml` opens a
+`Mutation testing fails on main` issue.
 
 `app`'s run is slow: each mutant reruns the Robolectric tests that cover it, 2,266 mutants in 49 minutes on GitHub's
 runner (19 on a 16-core machine). Most of the code the Compose compiler adds to a composable gives mutants no test
