@@ -57,6 +57,7 @@ internal class AppStarter(
     ): Boolean {
         val user = app.profile?.let(userManager::getUserForSerialNumber)
         if (user == null) {
+            Log.w(LOG_TAG, "start failed: profile removed")
             refresh()
             return false
         }
