@@ -2822,6 +2822,30 @@ class MainActivityTest {
     }
 
     @Test
+    @Config(shadows = [GlyphsFound::class, LauncherAppsRecorder::class])
+    fun `a press on a work app whose profile was removed logs one warning and nothing else`() {
+        install("Alarm", "com.example.alarm")
+        addWorkProfile()
+        installWork("Mail", "com.example.mail")
+        launch()
+        awaitListed("Alarm")
+        openWorkGroup("Mail")
+
+        ReflectionHelpers.callInstanceMethod<Boolean>(
+            userManager,
+            "removeUser",
+            ClassParameter.from(Int::class.javaPrimitiveType, WORK_USER),
+        )
+        press(Key.Enter)
+        rule.waitForIdle()
+
+        val logs = ShadowLog.getLogsForTag("MinimalUI")
+        assertEquals(1, logs.size)
+        assertEquals(Log.WARN, logs.single().type)
+        assertEquals("start failed: profile removed", logs.single().msg)
+    }
+
+    @Test
     @Config(shadows = [GlyphsFound::class])
     fun `a package change in the work profile reloads the list, whichever LauncherApps reports`() {
         install("Alarm", "com.example.alarm")
