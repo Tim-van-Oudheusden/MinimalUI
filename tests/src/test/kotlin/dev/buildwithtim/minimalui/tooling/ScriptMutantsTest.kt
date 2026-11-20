@@ -108,6 +108,20 @@ class ScriptMutantsTest {
                 MutationCheckScriptTest::class.java,
                 "only the first new survivor is indented, so the rest read as lines of the next message",
             ),
+            Mutant(
+                "scripts/auto-issues.sh",
+                "failure | timed_out | startup_failure)",
+                "failure | timed_out)",
+                AutoIssuesScriptTest::class.java,
+                "a workflow that cannot start on main opens no issue, and such a run has no log to notice it by",
+            ),
+            Mutant(
+                "scripts/auto-issues.sh",
+                "--label \"\$label\" --limit 200",
+                "--limit 200",
+                AutoIssuesScriptTest::class.java,
+                "any open issue with the workflow's title, not only the ci one, gets the comments and is closed",
+            ),
         )
 
     @After

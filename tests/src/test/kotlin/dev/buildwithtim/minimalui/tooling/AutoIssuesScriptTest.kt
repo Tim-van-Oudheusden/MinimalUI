@@ -153,11 +153,29 @@ class AutoIssuesScriptTest {
         assertEquals(listOf("issue", "create"), changes().single().take(2))
     }
 
+    // Otherwise an issue someone else filed under the same title would get these comments and be closed by a green run.
+    @Test
+    fun `looks for the issue among the open ci issues only`() {
+        autoIssues("success", open = "[${issue(7, "CI fails on main")}]")
+
+        val lookup = calls().single { it.take(2) == listOf("issue", "list") }
+        assertEquals("ci", lookup.option("--label"))
+        assertEquals("open", lookup.option("--state"))
+    }
+
     @Test
     fun `treats a timed-out run as a failure`() {
         autoIssues("timed_out", workflow = "E2E")
 
         assertEquals("E2E fails on main", changes().single().option("--title"))
+    }
+
+    // A run that cannot start (a bad action pin, an invalid workflow file) has no log; this issue is its only trace.
+    @Test
+    fun `treats a run that failed to start as a failure`() {
+        autoIssues("startup_failure", workflow = "Release")
+
+        assertEquals("Release fails on main", changes().single().option("--title"))
     }
 
     @Test
