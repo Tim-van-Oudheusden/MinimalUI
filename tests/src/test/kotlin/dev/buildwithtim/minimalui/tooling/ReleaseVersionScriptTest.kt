@@ -111,8 +111,10 @@ class ReleaseVersionScriptTest {
         val none = releaseOf("        versionName = \"1.0.0\"")
         val two = releaseOf("        versionCode = 2", "        versionCode = 3", "        versionName = \"1.0.0\"")
         val notANumber = releaseOf("        versionCode = two", "        versionName = \"1.0.0\"")
+        // A trailing comment would reach $GITHUB_OUTPUT as version_code=3 // was 2.
+        val trailingText = releaseOf("        versionCode = 3 // was 2", "        versionName = \"1.0.0\"")
 
-        for (result in listOf(none, two, notANumber)) {
+        for (result in listOf(none, two, notANumber, trailingText)) {
             assertEquals(result.stdout, 1, result.exitCode)
             assertTrue(result.stdout, result.stdout.startsWith("::error::"))
             assertTrue(result.stdout, "versionCode" in result.stdout)
@@ -136,6 +138,17 @@ class ReleaseVersionScriptTest {
 
         assertEquals(1, result.exitCode)
         assertTrue(result.stdout, result.stdout.startsWith("::error::"))
+    }
+
+    // The tag is v<version>, so a leading v would tag vv1.0.0, and trailing text would put a space or + in the tag.
+    @Test
+    fun `refuses a semantic version with text before or after it`() {
+        for (version in listOf("v1.0.0", "1.0.0 beta", "1.0.0+build.1")) {
+            val result = releaseNamed(version)
+
+            assertEquals(version, 1, result.exitCode)
+            assertTrue(result.stdout, result.stdout.startsWith("::error::versionName '$version'"))
+        }
     }
 
     @Test
