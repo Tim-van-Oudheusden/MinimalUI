@@ -74,6 +74,27 @@ class ScriptMutantsTest {
                 "a release with versionCode 0 passes",
             ),
             Mutant(
+                "scripts/release-version.sh",
+                "^[1-9][0-9]*\$ ]]",
+                "^[1-9][0-9]* ]]",
+                ReleaseVersionScriptTest::class.java,
+                "a versionCode line with a trailing comment passes and the comment reaches version_code",
+            ),
+            Mutant(
+                "scripts/release-version.sh",
+                "=~ ^[0-9]+\\.",
+                "=~ [0-9]+\\.",
+                ReleaseVersionScriptTest::class.java,
+                "versionName v1.0.0 passes and the release is tagged vv1.0.0",
+            ),
+            Mutant(
+                "scripts/release-version.sh",
+                "(-[0-9A-Za-z.-]+)?\$ ]]",
+                "(-[0-9A-Za-z.-]+)? ]]",
+                ReleaseVersionScriptTest::class.java,
+                "versionName 1.0.0 beta passes and the tag holds a space",
+            ),
+            Mutant(
                 "scripts/merge-queue.sh",
                 " and .headRefOid == \\\"\$head\\\"",
                 "",
