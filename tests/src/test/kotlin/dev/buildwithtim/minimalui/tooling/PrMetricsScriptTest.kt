@@ -156,4 +156,13 @@ class PrMetricsScriptTest {
 
         assertTrue(result.exitCode != 0)
     }
+
+    // "not json" fails in jq's parser before the script's own check runs; an object parses and reaches it.
+    @Test
+    fun `fails on an object in place of the PR list`() {
+        val result = runScript("scripts/pr-metrics.sh", "--since", "2026-09-14", "--days", "28", stdin = "{}")
+
+        assertTrue(result.exitCode != 0)
+        assertTrue(result.stderr, result.stderr.contains("expected a JSON array of pull requests"))
+    }
 }
