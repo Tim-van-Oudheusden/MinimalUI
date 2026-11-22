@@ -177,6 +177,14 @@ class AiAuditReportScriptTest {
         assertTrue(dependabot, dependabot.contains("| Dependabot | — | — | Tim-van-Oudheusden | — |"))
     }
 
+    // gh lists the newest merge first, so without the tie-break two merges in one second come out newest first.
+    @Test
+    fun `lists merges in the same second in PR number order`() {
+        val result = report(pr(12), pr(11))
+
+        assertEquals(listOf("#11", "#12"), result.rows("Ledger").map { it.split(" | ")[0].drop(2) })
+    }
+
     @Test
     fun `states the reporting window`() {
         assertTrue(report().stdout.contains("Pull requests merged into `main` since 2026-10-01 (UTC)."))
@@ -196,6 +204,8 @@ class AiAuditReportScriptTest {
             emptyList(),
             listOf("--since"),
             listOf("--since", "1 Oct"),
+            listOf("--since", "x2026-10-01"),
+            listOf("--since", "2026-10-01x"),
             listOf("--days", "7"),
             listOf("--since", "2026-10-01", "stray"),
         )) {
@@ -219,5 +229,14 @@ class AiAuditReportScriptTest {
 
         assertTrue(result.exitCode != 0)
         assertEquals("", result.stdout)
+    }
+
+    // "not json" fails in jq's parser before the script's own check runs; an object parses and reaches it.
+    @Test
+    fun `fails on an object in place of the PR list`() {
+        val result = runScript("scripts/ai-audit-report.sh", "--since", "2026-10-01", stdin = "{}")
+
+        assertTrue(result.exitCode != 0)
+        assertTrue(result.stderr, result.stderr.contains("expected a JSON array of pull requests"))
     }
 }

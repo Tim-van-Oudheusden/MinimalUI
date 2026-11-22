@@ -108,6 +108,20 @@ class StrategyReportScriptTest {
     }
 
     @Test
+    fun `leaves closed issues out of the backlog, staged or not`() {
+        val result =
+            report(
+                listOf(
+                    issue(1),
+                    issue(2, closedAt = "2026-10-02T10:00:00Z"),
+                    issue(3, labels = listOf("stage/010-actionable"), closedAt = "2026-10-02T10:00:00Z"),
+                ),
+            )
+
+        assertEquals(listOf("| No stage | 1 |"), result.rows("Backlog by stage"))
+    }
+
+    @Test
     fun `counts only a label that starts with stage-slash as a stage`() {
         val result = report(listOf(issue(1, labels = listOf("not-stage/010-actionable"))))
 
@@ -145,6 +159,13 @@ class StrategyReportScriptTest {
     }
 
     @Test
+    fun `escapes pipes so an ACMM gap title cannot add table columns`() {
+        val result = report(listOf(issue(15, title = "[ACMM L6] Add Lint | format", labels = listOf("acmm"))))
+
+        assertEquals(listOf("| L6 | 0 | 1 | #15 Lint \\| format |"), result.rows("ACMM progress"))
+    }
+
+    @Test
     fun `states the reporting window`() {
         assertTrue(report(emptyList()).stdout.contains("Since 2026-10-01."))
     }
@@ -166,6 +187,19 @@ class StrategyReportScriptTest {
         val result = report(listOf("not json"))
 
         assertTrue(result.exitCode != 0)
+    }
+
+    // "not json" fails in jq's parser before the script's own check runs; an object parses and reaches it.
+    @Test
+    fun `fails on an object in place of the issue list`() {
+        val issues = temp.newFile("issues.json").apply { writeText("{}") }
+        val prs = temp.newFile("prs.json").apply { writeText("[]") }
+
+        val result =
+            runScript("scripts/strategy-report.sh", "--since", "2026-10-01", "--issues", issues.path, "--prs", prs.path)
+
+        assertTrue(result.exitCode != 0)
+        assertTrue(result.stderr, result.stderr.contains("expected a JSON array of issues"))
     }
 
     // Under set -u a missing $2 stops the script with bash's error and exit 1; only a guard gives usage and exit 2.
