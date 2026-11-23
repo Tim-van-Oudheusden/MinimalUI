@@ -212,6 +212,9 @@ class StrategyReportScriptTest {
             listOf("--issues", "a.json", "--prs"),
             listOf("--prs", "a.json", "--issues"),
             listOf("--issues", "a.json", "--since"),
+            listOf("--since", "1 Oct", "--issues", "a.json", "--prs", "a.json"),
+            listOf("--since", "x2026-10-01", "--issues", "a.json", "--prs", "a.json"),
+            listOf("--since", "2026-10-01x", "--issues", "a.json", "--prs", "a.json"),
             listOf("--since", "2026-10-01", "--issues", "a.json", "--prs", "a.json", "stray"),
         )) {
             val result = runScript("scripts/strategy-report.sh", *args.toTypedArray())
