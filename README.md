@@ -176,7 +176,8 @@ flowchart LR
   release --> gh["GitHub Release<br/>signed minimalui-vX.Y.Z.apk"]
 ```
 
-`main` changes only through pull requests whose required checks pass. A merge that raises `versionName` in
+`main` changes only through pull requests whose required checks pass (an admin can bypass them on a pull request; see
+[CONTRIBUTING.md](CONTRIBUTING.md)). A merge that raises `versionName` in
 `app/build.gradle.kts` publishes a release signed with the release key; see [Releasing](CONTRIBUTING.md#releasing).
 
 ## Building from source

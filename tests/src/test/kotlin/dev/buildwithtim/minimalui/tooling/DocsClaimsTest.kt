@@ -1,6 +1,7 @@
 package dev.buildwithtim.minimalui.tooling
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -89,6 +90,32 @@ class DocsClaimsTest {
 
         assertEquals("merge methods the ruleset allows", setOf("merge", "squash"), allowed)
         assertEquals("merge methods CONTRIBUTING.md names, then the ruleset's", inDoc, allowed)
+    }
+
+    // The ruleset's bypass_actors let a role merge a pull request past the required checks; CONTRIBUTING.md's
+    // branch-protection paragraph must say so (#483), and must not claim a bypass when the list is empty.
+    @Test
+    fun `CONTRIBUTING describes the bypass actors of the main ruleset`() {
+        val bypassActors =
+            Regex(""""bypass_actors":\s*\[([^\]]*)]""")
+                .find(Repo.read(".github/rulesets/main.json"))
+                ?.groupValues
+                ?.get(1)
+        assertTrue("a bypass_actors list in .github/rulesets/main.json", bypassActors != null)
+        val modes =
+            Regex(""""bypass_mode":\s*"([^"]+)"""").findAll(bypassActors!!).map { it.groupValues[1] }.toList()
+        val paragraph =
+            Regex("""(?s)`main` is protected by the ruleset.*?(?:\n\n|\z)""").find(Repo.read("CONTRIBUTING.md"))?.value
+        assertTrue("the branch-protection paragraph in CONTRIBUTING.md", paragraph != null)
+
+        if (modes.isEmpty()) {
+            assertFalse("CONTRIBUTING.md claims a bypass the ruleset lacks", "bypass" in paragraph!!.lowercase())
+        } else {
+            assertTrue("`bypass_actors` in the branch-protection paragraph", "`bypass_actors`" in paragraph!!)
+            modes.forEach { mode ->
+                assertTrue("`bypass_mode` `$mode` in the branch-protection paragraph", "`$mode`" in paragraph)
+            }
+        }
     }
 
     // The queue's rule in docs/multi-agent.md is "has neither a `hold` nor a `sentinel-alert` label".
