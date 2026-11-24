@@ -102,6 +102,13 @@ class ScriptMutantsTest {
                 "a failed merge passes for the verified one when GitHub merged the pull request at a later head",
             ),
             Mutant(
+                "scripts/merge-queue.sh",
+                "(.state != \\\"CLOSED\\\") and ",
+                "",
+                MergeQueueScriptTest::class.java,
+                "land merges a pull request closed unmerged during verification, and the refused merge fails the run",
+            ),
+            Mutant(
                 "scripts/tier-classify.sh",
                 "read -r item tier glob extra || [ -n \"\${item:-}\" ]; do",
                 "read -r item tier glob extra; do",
