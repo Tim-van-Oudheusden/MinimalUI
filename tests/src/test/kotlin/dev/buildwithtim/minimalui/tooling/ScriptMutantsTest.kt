@@ -152,6 +152,20 @@ class ScriptMutantsTest {
             ),
             Mutant(
                 "scripts/strategy-report.sh",
+                "[[ \"\$since\" =~ ^[0-9]",
+                "[[ \"\$since\" =~ [0-9]",
+                StrategyReportScriptTest::class.java,
+                "--since x2026-10-01 passes and the report is silently empty",
+            ),
+            Mutant(
+                "scripts/strategy-report.sh",
+                "[0-9]{2}-[0-9]{2}\$ ]]",
+                "[0-9]{2}-[0-9]{2} ]]",
+                StrategyReportScriptTest::class.java,
+                "--since 2026-10-01x passes and the items from that day drop out of the window",
+            ),
+            Mutant(
+                "scripts/strategy-report.sh",
                 "\"| No stage | \\(\$open | map(",
                 "\"| No stage | \\(\$all | map(",
                 StrategyReportScriptTest::class.java,
