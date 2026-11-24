@@ -113,7 +113,7 @@ class MergeQueueScriptTest {
         val isCrossRepository: Boolean = false,
         val labels: List<String> = emptyList(),
         val mergeStateStatus: String = "CLEAN",
-        /** OPEN, or MERGED for one GitHub merged although gh failed to say so. */
+        /** OPEN; CLOSED for one closed unmerged; MERGED for one GitHub merged although gh failed to say so. */
         val state: String = "OPEN",
         /** The head `gh pr list` reports, when a push since the listing moved the real one. */
         val listedHead: String? = null,
@@ -438,6 +438,12 @@ class MergeQueueScriptTest {
     @Test
     fun `land does not merge a pull request turned back into a draft during verification`() {
         assertLandSkips(Pull(7, isDraft = true))
+    }
+
+    // A pull request closed unmerged still reads CLEAN, so only its state tells land to leave it.
+    @Test
+    fun `land does not merge a pull request closed unmerged during verification`() {
+        assertLandSkips(Pull(7, state = "CLOSED"))
     }
 
     @Test
