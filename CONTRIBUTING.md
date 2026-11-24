@@ -190,7 +190,9 @@ renamed workflow that runs on `main` must be added there (`AutoIssuesWorkflowTes
 
 `main` is protected by the ruleset in [`.github/rulesets/main.json`](.github/rulesets/main.json): no direct pushes,
 force-pushes or deletion; changes land only through pull requests whose `PR review rubric`, `Build, lint, test`,
-`Unit-test coverage floors`, `Static checks` and `End-to-end tests` checks pass. The ruleset allows the merge methods
+`Unit-test coverage floors`, `Static checks` and `End-to-end tests` checks pass. One exception: the ruleset's `bypass_actors` lets the repository admin role
+bypass it on a pull request (`bypass_mode` `pull_request`), so an admin can merge a pull request whose required
+checks have not passed. Nobody can push to `main` directly. The ruleset allows the merge methods
 `merge` and `squash`, not rebase: the merge queue makes a merge commit, so each issue's single commit lands on `main`
 unchanged, and Hive's merge sweep squash-merges, which lands the pull request as one commit titled after its commit (or
 its title, when it has several) with ` (#<PR>)` appended. The head branch is deleted on merge. The file is the source
@@ -438,7 +440,8 @@ AI agents working in this repo are bounded by several layers:
 2. **Project permissions** — `.claude/settings.json` pre-approves the quality gates, asks before dependency and
    history-rewriting commands, and denies reading secrets (`.env*`, keystores), force-pushes and `--no-verify` commits.
 3. **Personal overrides** — `.claude/settings.local.json` (gitignored). Deny rules from the project file still apply.
-4. **Structural gates** — the ruleset on `main` and CI must pass before merge, regardless of who wrote the change.
+4. **Structural gates** — the ruleset on `main` and CI must pass before merge, regardless of who wrote the change (except for an admin bypass
+   on a pull request; see the branch protection paragraph under Development workflow).
    `.github/CODEOWNERS` makes the maintainer the owner of the high-risk paths
    ([`docs/risk-tiers.md`](docs/risk-tiers.md)): a change to CI, scripts, the detekt or ktlint configuration, the build,
    the manifest or agent instructions requests his review, and the merge queue leaves it for him to merge. What `GITHUB_TOKEN` may do in each workflow is

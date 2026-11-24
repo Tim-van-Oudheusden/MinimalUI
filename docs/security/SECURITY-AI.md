@@ -75,7 +75,8 @@ Personal `.claude/settings.local.json` overrides may add permissions but cannot 
 
 Agent changes go through the same gates as human ones, with no shortcuts:
 
-- The `main` ruleset (`.github/rulesets/main.json`) requires a pull request and the required checks; CI
+- The `main` ruleset (`.github/rulesets/main.json`) requires a pull request and the required checks (except for an admin bypass on a pull request; see the branch
+  protection paragraph in [CONTRIBUTING.md](../../CONTRIBUTING.md)); CI
   (`.github/workflows/ci.yml`) runs `./gradlew check assembleDebug`, which includes the `tests` module's tests that
   pin the workflows' security invariants. The PR review rubric (`.github/workflows/review.yml`) runs as well.
 - The merge queue (`.github/workflows/merge-queue.yml`) merges low- and medium-risk PRs once their required checks
