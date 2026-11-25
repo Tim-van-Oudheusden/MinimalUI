@@ -2,21 +2,20 @@
 
 Hand-off notes for agent work in this repository, so the next session starts from where the last one stopped instead
 of cold (AGENTS.md "Session Completion" step 7). Keep it short: overwrite the "Latest session" section at the end of
-each session, in the issue's own commit; durable lessons belong in `.claude/memory/corrections.tsv`,
-`docs/reflections/` or `bd remember`, not here.
+each session, in the issue's own commit; durable lessons belong in `.claude/memory/corrections.tsv` or
+`docs/reflections/`, not here.
 
 Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 
 ## Latest session
 
 - **Date:** 2026-11-25
-- **Worked:** #492 → `build/492-compile-sdk-37-1`. `app` and `e2e` compile against API 37.1 through AGP 9's
-  `compileSdk { version = release(37) { minorApiLevel = 1 } }`; `targetSdk` 37 and `minSdk` 28 stay. `composeBom` is
-  2026.11.01 (Compose 1.13, which needs 37.1). `SdkLevelsTest` reads both `compileSdk` forms as `major.minor`, so an
-  `e2e` left on `compileSdk = 37` fails as `37.0` against the app's `37.1`. `Dockerfile.sandbox` and CONTRIBUTING name
-  `platforms;android-37.1`.
-- **Outcome:** PR open, `Fixes #492`. Once it merges, Dependabot drops `composeBom` from #486 (Gradle 9.9.2, AGP 9.5.2).
-- **Open follow-ups:** none.
+- **Worked:** #493 → `refactor/493-retire-beads`. Removed `.beads/`, every `bd` step and `GITHUB_TOKEN` export from the
+  agent instructions and docs, `bd` from `Dockerfile.sandbox`, and the `.beads` rules from CODEOWNERS, the labeler,
+  the risk tiers and Spotless. `.gitignore` still ignores leftover local beads state so it cannot be committed.
+  `refs/dolt/data` stays on the remote as readable history (`docs/research/beads-retirement.md`).
+- **Outcome:** PR open, `Closes #493`.
+- **Open follow-ups:** deleting `refs/dolt/data` and `refs/heads/__dolt_remote_info__` is the maintainer's call.
 - **Notes for next session:**
   - To see what Dependabot sees, run `gradle/actions` v6.4.1's
     `sources/src/resources/init-scripts/gradle-actions.github-dependency-graph.init.gradle` with

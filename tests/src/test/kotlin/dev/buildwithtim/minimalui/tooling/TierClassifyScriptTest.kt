@@ -415,7 +415,6 @@ class TierClassifyScriptTest {
                 "CLAUDE.md",
                 ".claude/settings.json",
                 ".cursor/rules/agents.mdc",
-                ".beads/config.yaml",
                 "prompts/code-review.md",
                 ".devcontainer/devcontainer.json",
                 "Dockerfile",

@@ -131,7 +131,7 @@ To keep a pull request out of the queue, add `hold` or leave it a draft. To drai
 
 ## Handing off between sessions
 
-A new session starts from what the repository and the trackers hold:
+A new session starts from what the repository and its GitHub issues hold:
 
 | Where | What |
 | --- | --- |
@@ -139,7 +139,6 @@ A new session starts from what the repository and the trackers hold:
 | `.claude/session-summary.md` | The latest session's outcome, open follow-ups and gotchas |
 | `.claude/memory/corrections.tsv` | Each correction round a person had to make |
 | [`reflections/`](reflections/README.md) | Why a non-obvious lesson holds |
-| `bd remember` | Persistent knowledge in the beads tracker |
 
 ## Stage labels
 

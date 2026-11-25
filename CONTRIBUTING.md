@@ -54,7 +54,7 @@ android sdk install platform-tools platforms/android-37.1   # keep in step with 
 `android --sdk=<path> sdk install ...` to target an SDK other than the one `android info` reports.
 
 To skip the local SDK install, use the sandbox image instead: `Dockerfile.sandbox` (JDK 21, Android SDK, `git`, `jq`,
-`gh`, `bd`) is also what `.devcontainer/devcontainer.json` builds, so VS Code "Reopen in Container" and a plain
+`gh`) is also what `.devcontainer/devcontainer.json` builds, so VS Code "Reopen in Container" and a plain
 `podman build -f Dockerfile.sandbox -t minimalui-sandbox .` give the same environment. It runs the quality gates; see
 [docs/testing.md](docs/testing.md#agent-sandbox-what-runs-where) for what needs a real device.
 
@@ -163,8 +163,7 @@ listing to the stores' limits and requires a changelog for the current `versionC
 
 ## Finding and claiming work
 
-- GitHub issues are the **primary source of truth**. Browse open issues and assign one to yourself before starting.
-- Issues are mirrored into the local `bd` (beads) tracker; run `bd ready` to see available work.
+- GitHub issues are the **single source of truth**. Browse open issues and assign one to yourself before starting.
 - Several agents take issues from the same queue; [`docs/multi-agent.md`](docs/multi-agent.md) covers how they claim
   work, keep out of each other's way, and hand over to a person.
 
@@ -253,7 +252,7 @@ The `main` ruleset also requires the **Static checks** job in `.github/workflows
 [shellcheck](https://www.shellcheck.net/) and [actionlint](https://github.com/rhysd/actionlint) releases (versions and
 SHA-256 checksums in the job's `env:`) and runs `shellcheck -x` on every tracked `*.sh` file and every extensionless
 sh/bash script under `scripts/`, then `actionlint` on `.github/workflows/`. actionlint reads `.github/actionlint.yaml`
-and runs shellcheck on each `run:` block too. `gradlew` (Gradle's) and the generated `.beads/hooks/` are not linted.
+and runs shellcheck on each `run:` block too. `gradlew` (Gradle's) is not linted.
 Run the same locally, with both tools at the versions in `ci.yml` on your `PATH`:
 
 ```bash

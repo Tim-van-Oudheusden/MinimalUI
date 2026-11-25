@@ -6,15 +6,14 @@ layout and quality gates.
 
 ## Issue Tracking
 
-### GitHub Issues — Primary Source
+### GitHub Issues — Single Source
 
-GitHub issues are the **primary source of truth** for issue information. All issue content (requirements, acceptance
-criteria, discussion, links to PRs/commits) lives in GitHub. Access, read, address, and implement issues **exclusively
-through the GitHub API** — never through beads alone.
+GitHub issues are the **single source of truth** for issue information and tracking state. All issue content
+(requirements, acceptance criteria, discussion, status, links to PRs/commits) lives in GitHub. Access, read, address,
+and implement issues **exclusively through the GitHub API**.
 
 - Repository: `Tim-van-Oudheusden/MinimalUI` (remote `origin`, git@github.com)
 - Use the `gh` CLI when available; otherwise call the REST API with `GITHUB_TOKEN`
-- Beads only mirrors tracking state (see below); it is not a source of issue information
 
 ```bash
 gh issue list -S "is:open"      # Find available work
@@ -23,23 +22,6 @@ gh issue create --title "Summary" --body "Why and what"   # File remaining/follo
 gh issue comment <number> --body "Progress / links"       # Report progress
 gh pr create --title "type(scope): summary (#<number>)" --body-file <file>   # Land work; body says "Fixes #<number>"
 ```
-
-### Beads — Tracking Layer
-
-Beads tracks every issue locally (status, dependencies, blocking, history) and mirrors GitHub issues:
-
-```bash
-bd github sync --pull-only   # Mirror GitHub -> beads
-bd github status             # Show sync state
-bd ready                     # Find available work
-bd prime                     # Full beads workflow reference
-```
-
-> Agent shells (non-interactive) don't source `~/.bashrc`, so `GITHUB_TOKEN` is unset by default. Before any
-> `bd github` command, run `export GITHUB_TOKEN="$(gh auth token)"`.
-
-- Use `bd` for task tracking — not markdown TODO lists
-- Use `bd remember` for persistent knowledge — not MEMORY.md files
 
 ## Sessions with GitHub issues
 
@@ -61,12 +43,11 @@ Work is NOT complete until the issue branch is pushed and its pull request is op
    debug build); `./gradlew spotlessApply` fixes formatting. After touching `scripts/` or `.github/workflows/`, also
    run `shellcheck -x scripts/*.sh scripts/lib/*.sh` and `actionlint` at the versions pinned in `ci.yml`'s
    `Static checks` job
-3. **Update issue status** — comment progress on the GitHub issue; run `bd github sync --pull-only`
+3. **Update issue status** — comment progress on the GitHub issue
 4. **Push the branch and open a PR** — `main` is protected by `.github/rulesets/main.json`: it only changes through
    merged pull requests with passing checks (`PR review rubric`, `Build, lint, test`, `Unit-test coverage floors`,
    `Static checks`, `End-to-end tests`):
    ```bash
-   bd dolt push
    git push -u origin HEAD
    gh pr create --title "type(scope): summary (#<number>)" --body-file <file>  # follow .github/pull_request_template.md
    git status  # MUST show "up to date with 'origin/<branch>'"
@@ -82,8 +63,6 @@ Never push to `main`, never force-push, and never say "ready to push when you ar
 ## Git and Version Management
 
 - Commits follow the Conventional Commits specification; one commit per issue, referencing the issue number.
-- Bead data lives in the Dolt database (`.beads/embeddeddolt/`, gitignored), synced with `bd dolt push` / `bd dolt pull`.
-  `.beads/issues.jsonl` is only an optional export — do not commit it as a sync step.
 - The ruleset in `.github/rulesets/main.json` is the source of truth for branch protection; change it by PR, then apply
   it with `gh api -X PUT repos/Tim-van-Oudheusden/MinimalUI/rulesets/<id> --input .github/rulesets/main.json`. It
   allows merge commits (the merge queue) and squash merges (Hive's merge sweep), not rebase; the repository's

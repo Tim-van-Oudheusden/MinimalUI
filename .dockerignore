@@ -3,8 +3,6 @@
 
 # VCS and local agent state
 .git
-.beads
-.dolt
 worktrees
 .tmp
 .superpowers
