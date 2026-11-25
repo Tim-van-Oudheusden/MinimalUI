@@ -1,6 +1,9 @@
 package dev.buildwithtim.minimalui.core
 
-/** What a menu row does: in an app's context menu, a group's menu (#69) or the import-setup question (#208). */
+/**
+ * What a row of an app's context menu does. A group's menu (#69) and the import-setup question (#208) have their own
+ * types, [GroupMenuAction] and [SetupChoice], so each menu's handler covers exactly its own rows.
+ */
 enum class MenuAction {
     /** Android's App info screen for the app. */
     AppInfo,
@@ -46,26 +49,35 @@ enum class MenuAction {
 
     /** Empties the recently used apps. */
     ClearRecents,
+}
 
-    /** In a group's menu: opens the text editor to give the user group another name, or merge it into another. */
+/** What a row of a group's menu (#69) does. */
+enum class GroupMenuAction {
+    /** Opens the text editor to give the user group another name, or merge it into another. */
     RenameGroup,
 
-    /** In a group's menu: deletes the user group; its apps stay installed, and in any automatic group of its name. */
+    /** Deletes the user group; its apps stay installed, and in any automatic group of its name. */
     DeleteGroup,
+}
 
+/** The answer to the question an imported setup asks (#208). */
+enum class SetupChoice {
     /**
-     * Confirming an imported setup (#208): it replaces every favourite, collection, rename, hidden app, group, recently
-     * used app and setting.
+     * Confirming the imported setup: it replaces every favourite, collection, rename, hidden app, group, recently used
+     * app and setting.
      */
     ReplaceSetup,
 
-    /** Turning an imported setup down: the current one stays as it is. */
+    /** Turning the imported setup down: the current one stays as it is. */
     KeepSetup,
 }
 
-/** One row of the context menu. A disabled row is still listed, drawn dim, and does nothing when chosen. */
-data class MenuItem(
-    val action: MenuAction,
+/**
+ * One row of a menu, doing [action]: a [MenuAction], [GroupMenuAction] or [SetupChoice]. A disabled row is still
+ * listed, drawn dim, and does nothing when chosen.
+ */
+data class MenuItem<A : Enum<A>>(
+    val action: A,
     val enabled: Boolean = true,
 )
 
@@ -106,7 +118,7 @@ data class AppFacts(
  * hides the app or shows it again, by its state; disabled for the Settings entry, which is never hidden.
  * The recents rows show only when they would change something.
  */
-fun contextMenu(facts: AppFacts): List<MenuItem> =
+fun contextMenu(facts: AppFacts): List<MenuItem<MenuAction>> =
     buildList {
         add(MenuItem(MenuAction.AppInfo))
         add(
@@ -134,11 +146,12 @@ fun contextMenu(facts: AppFacts): List<MenuItem> =
  * The menu of a group in the Groups list (#69): Rename group and Delete group. A purely automatic group has nothing
  * to rename or delete, so both rows show disabled rather than the key doing nothing.
  */
-fun groupMenu(isUserGroup: Boolean): List<MenuItem> =
-    listOf(MenuItem(MenuAction.RenameGroup, isUserGroup), MenuItem(MenuAction.DeleteGroup, isUserGroup))
+fun groupMenu(isUserGroup: Boolean): List<MenuItem<GroupMenuAction>> =
+    listOf(MenuItem(GroupMenuAction.RenameGroup, isUserGroup), MenuItem(GroupMenuAction.DeleteGroup, isUserGroup))
 
 /**
  * The question an imported setup asks before it replaces the current one (#208): replace it, the first row, or keep it.
  * Nothing changes until the user confirms.
  */
-val importSetupMenu: List<MenuItem> = listOf(MenuItem(MenuAction.ReplaceSetup), MenuItem(MenuAction.KeepSetup))
+val importSetupMenu: List<MenuItem<SetupChoice>> =
+    listOf(MenuItem(SetupChoice.ReplaceSetup), MenuItem(SetupChoice.KeepSetup))

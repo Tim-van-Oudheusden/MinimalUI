@@ -1,14 +1,14 @@
 package dev.buildwithtim.minimalui.core
 
 /**
- * Whether choosing this action keeps its menu on screen, below the list or text editor it opens on top: Add to
- * collection, Add to group, Rename and Rename group, so Back returns to the menu. Every other action closes the menu.
+ * Whether choosing this context-menu action keeps the menu on screen, below the list or text editor it opens on top:
+ * Add to collection, Add to group and Rename, so Back returns to the menu. Every other action closes the menu. A
+ * group's menu keeps itself below the editor Rename group opens (ListEdits.chooseForGroup).
  */
 val MenuAction.keepsMenu: Boolean
     get() = this in KeptMenuActions
 
-private val KeptMenuActions =
-    setOf(MenuAction.AddToCollection, MenuAction.AddToGroup, MenuAction.Rename, MenuAction.RenameGroup)
+private val KeptMenuActions = setOf(MenuAction.AddToCollection, MenuAction.AddToGroup, MenuAction.Rename)
 
 /**
  * How many lists close after a change to the collection or group called [name], given the [shown] names left: its
