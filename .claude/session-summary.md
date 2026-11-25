@@ -2,21 +2,20 @@
 
 Hand-off notes for agent work in this repository, so the next session starts from where the last one stopped instead
 of cold (AGENTS.md "Session Completion" step 7). Keep it short: overwrite the "Latest session" section at the end of
-each session, in the issue's own commit; durable lessons belong in `.claude/memory/corrections.tsv`,
-`docs/reflections/` or `bd remember`, not here.
+each session, in the issue's own commit; durable lessons belong in `.claude/memory/corrections.tsv` or
+`docs/reflections/`, not here.
 
 Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 
 ## Latest session
 
 - **Date:** 2026-11-25
-- **Worked:** #490 → `refactor/490-split-menu-actions`. `MenuAction` keeps the app context menu's 15 rows; the group
-  menu's rows are `GroupMenuAction` and the import question's `SetupChoice`. `MenuItem<A>` and `ui.ContextMenu<A>` are
-  generic (the caller passes the `label` lookup), so `AppActions.choose`, `ListEdits.chooseForGroup` and the import
-  handler each switch exhaustively over their own menu with no `else`. `AppActions.change`/`changeList` folded into
-  `choose`; `RenameGroup` left `KeptMenuActions`, which only the context menu reads.
-- **Outcome:** PR open, `Fixes #490`.
-- **Open follow-ups:** none.
+- **Worked:** #493 → `refactor/493-retire-beads`. Removed `.beads/`, every `bd` step and `GITHUB_TOKEN` export from the
+  agent instructions and docs, `bd` from `Dockerfile.sandbox`, and the `.beads` rules from CODEOWNERS, the labeler,
+  the risk tiers and Spotless. `.gitignore` still ignores leftover local beads state so it cannot be committed.
+  `refs/dolt/data` stays on the remote as readable history (`docs/research/beads-retirement.md`).
+- **Outcome:** PR open, `Closes #493`.
+- **Open follow-ups:** deleting `refs/dolt/data` and `refs/heads/__dolt_remote_info__` is the maintainer's call.
 - **Notes for next session:**
   - To see what Dependabot sees, run `gradle/actions` v6.4.1's
     `sources/src/resources/init-scripts/gradle-actions.github-dependency-graph.init.gradle` with

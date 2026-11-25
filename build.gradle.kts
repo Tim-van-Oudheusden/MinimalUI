@@ -98,7 +98,7 @@ subprojects {
 
 // Formatting for the whole repository: `./gradlew spotlessApply` fixes it, `spotlessCheck` (part of `check`) fails on
 // it. ktlint takes its style from .editorconfig; build output, tool state and local checkouts are not ours to format.
-val notOurs = listOf("**/build/**", ".gradle/**", ".kotlin/**", ".beads/**", ".tmp/**", "worktrees/**")
+val notOurs = listOf("**/build/**", ".gradle/**", ".kotlin/**", ".tmp/**", "worktrees/**")
 
 spotless {
     kotlin {

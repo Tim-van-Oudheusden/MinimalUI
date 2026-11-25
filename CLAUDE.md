@@ -6,14 +6,10 @@ when this file conflicts with AGENTS.md, AGENTS.md wins.**
 
 ## Issue tracking
 
-- GitHub issues are the primary source of truth for all work. Read and claim
-  issues through the GitHub API (`gh` CLI), never via local mirrors; an issue
-  closes when the PR that says `Fixes #<number>` merges.
-- Beads (`bd`) mirrors issue state locally; before any `bd github` command run
-  `export GITHUB_TOKEN="$(gh auth token)"`. After GitHub-only changes use
-  `bd github sync --pull-only`. Never make a standalone sync/`issues.jsonl`
-  commit.
-- Work one issue at a time; pick work via `bd ready` / `gh issue list`, and let
+- GitHub issues are the single source of truth for all work. Read and claim
+  issues through the GitHub API (`gh` CLI); an issue closes when the PR that
+  says `Fixes #<number>` merges.
+- Work one issue at a time; pick work via `gh issue list`, and let
   child/follow-up issues wait for their parents.
 
 ## Engineering rules
@@ -35,7 +31,7 @@ when this file conflicts with AGENTS.md, AGENTS.md wins.**
   the version catalog.
 - Conventional Commits, one commit per issue, referencing the issue number.
 - Land each issue through a pull request: branch `<type>/<number>-<slug>` off
-  `main`, `bd dolt push`, `git push -u origin HEAD`, then `gh pr create` with
+  `main`, `git push -u origin HEAD`, then `gh pr create` with
   `Fixes #<number>` in the body. `main` is protected; once the required checks
   pass the merge queue or Hive's merge sweep merges it (the maintainer merges
   high-risk, `hold` or `sentinel-alert` PRs).

@@ -32,7 +32,6 @@ ci:
           - '.github/**'
           - 'scripts/**'
           - 'tests/**'
-          - '.beads/**'
           - 'config/**'
           - '.editorconfig'
 

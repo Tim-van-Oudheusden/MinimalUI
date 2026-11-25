@@ -75,5 +75,5 @@ body:
     attributes:
       label: Checks
       options:
-        - label: Followed the workflow in AGENTS.md (issues via GitHub API, beads sync, Conventional Commits)
+        - label: Followed the workflow in AGENTS.md (issues via GitHub API, Conventional Commits)
           required: false

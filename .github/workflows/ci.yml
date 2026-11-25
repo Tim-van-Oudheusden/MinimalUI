@@ -80,8 +80,8 @@ jobs:
           echo "${ACTIONLINT_SHA256}  ${actionlint_archive}" | sha256sum -c -
           tar -xzf "$actionlint_archive" -C bin actionlint
           echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
-      # Every tracked *.sh file plus extensionless sh/bash scripts under scripts/. gradlew (Gradle's) and the
-      # generated .beads/hooks are left out on purpose.
+      # Every tracked *.sh file plus extensionless sh/bash scripts under scripts/. gradlew (Gradle's) is left out on
+      # purpose.
       - name: shellcheck
         run: |
           {

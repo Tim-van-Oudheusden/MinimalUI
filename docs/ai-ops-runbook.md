@@ -120,15 +120,6 @@ Ignored rules, an injection attempt that got through, changes outside the issue'
 a line to `.claude/memory/corrections.tsv` saying where the fix is encoded. If the lesson needs context, write a
 reflection in [`reflections/`](reflections/README.md).
 
-### Beads is out of step with GitHub
-
-GitHub is the source of truth. In a non-interactive shell, export the token first, then pull only:
-
-```bash
-export GITHUB_TOKEN="$(gh auth token)"
-bd github sync --pull-only
-```
-
 ## Stopping the agents
 
 To pause agent work, for example during an incident or while a bad instruction gets fixed, stop each entry point:

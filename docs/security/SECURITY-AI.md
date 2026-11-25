@@ -33,11 +33,11 @@ quality gates.
 
 - No secrets live in this repo. Release signing material (`keystore.properties`, `*.jks`, `*.keystore`) stays outside
   the workspace or gitignored; `.gitignore` excludes it and `.env*`.
-- Agents must not read `.env*`, keystores, `keystore.properties`, or `.beads-credential-key`. `.claude/settings.json`
-  denies these reads.
-- Tokens such as `GITHUB_TOKEN` exist only in the shell environment (`export GITHUB_TOKEN="$(gh auth token)"`); the CI
-  secret `CLAUDE_CODE_OAUTH_TOKEN` exists only in GitHub Actions. Never echo, log, commit, or paste them into a prompt,
-  issue, PR, or comment.
+- Agents must not read `.env*`, keystores or `keystore.properties`. `.claude/settings.json` denies these reads.
+- Local GitHub access goes through `gh`, which keeps its token in the system keyring. Don't export a token such as
+  `GITHUB_TOKEN` into the shell environment: every agent and child process started from that shell inherits it. The CI
+  secret `CLAUDE_CODE_OAUTH_TOKEN` exists only in GitHub Actions. Never echo, log, commit, or paste a token into a
+  prompt, issue, PR, or comment.
 - If an agent exposes a secret, rotate it right away, then record what happened (see [Reporting](#reporting)).
 
 ## Supply chain
