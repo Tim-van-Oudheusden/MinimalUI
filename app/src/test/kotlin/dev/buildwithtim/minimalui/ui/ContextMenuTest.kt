@@ -48,7 +48,7 @@ class ContextMenuTest {
         )
 
     private fun show(
-        items: List<MenuItem> = all,
+        items: List<MenuItem<MenuAction>> = all,
         status: StatusPill? = null,
     ) {
         rule.setContent {
@@ -56,6 +56,7 @@ class ContextMenuTest {
                 ContextMenu(
                     title = "Camera",
                     items = items,
+                    label = { it.label },
                     onChoose = { chosen += it },
                     onClose = { closed++ },
                     status = status,

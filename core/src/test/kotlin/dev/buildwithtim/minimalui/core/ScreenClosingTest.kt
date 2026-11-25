@@ -8,10 +8,7 @@ class ScreenClosingTest {
     fun `an action that opens a list or editor on top keeps the menu below it`() {
         val kept = MenuAction.entries.filter { it.keepsMenu }
 
-        assertEquals(
-            listOf(MenuAction.AddToCollection, MenuAction.AddToGroup, MenuAction.Rename, MenuAction.RenameGroup),
-            kept,
-        )
+        assertEquals(listOf(MenuAction.AddToCollection, MenuAction.AddToGroup, MenuAction.Rename), kept)
     }
 
     @Test

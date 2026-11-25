@@ -1,7 +1,7 @@
 package dev.buildwithtim.minimalui
 
+import dev.buildwithtim.minimalui.core.GroupMenuAction
 import dev.buildwithtim.minimalui.core.LauncherApp
-import dev.buildwithtim.minimalui.core.MenuAction
 import dev.buildwithtim.minimalui.core.component
 import dev.buildwithtim.minimalui.core.groupMenu
 
@@ -24,21 +24,18 @@ internal class ListEdits(
     // and those close too when no group is left to show. A merged automatic group of that name stays.
     fun chooseForGroup(
         menu: Screen.GroupMenu,
-        action: MenuAction,
+        action: GroupMenuAction,
     ) {
         when (action) {
-            MenuAction.RenameGroup -> {
+            GroupMenuAction.RenameGroup -> {
                 state.push(Screen.RenameGroup(menu.name))
             }
 
-            MenuAction.DeleteGroup -> {
+            GroupMenuAction.DeleteGroup -> {
                 state.back()
                 stores.save(stores.userGroups.deleted(menu.name))
                 if (state.shownGroups.isEmpty()) state.back()
             }
-
-            // A group's menu lists only these two (groupMenu); naming both keeps a new row from deleting the group.
-            else -> {}
         }
     }
 

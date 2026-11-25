@@ -1,11 +1,12 @@
 package dev.buildwithtim.minimalui.core
 
+import dev.buildwithtim.minimalui.core.GroupMenuAction.DeleteGroup
+import dev.buildwithtim.minimalui.core.GroupMenuAction.RenameGroup
 import dev.buildwithtim.minimalui.core.MenuAction.AddToCollection
 import dev.buildwithtim.minimalui.core.MenuAction.AddToFavourites
 import dev.buildwithtim.minimalui.core.MenuAction.AddToGroup
 import dev.buildwithtim.minimalui.core.MenuAction.AppInfo
 import dev.buildwithtim.minimalui.core.MenuAction.ClearRecents
-import dev.buildwithtim.minimalui.core.MenuAction.DeleteGroup
 import dev.buildwithtim.minimalui.core.MenuAction.Hide
 import dev.buildwithtim.minimalui.core.MenuAction.MoveDown
 import dev.buildwithtim.minimalui.core.MenuAction.MoveUp
@@ -14,7 +15,6 @@ import dev.buildwithtim.minimalui.core.MenuAction.RemoveFromFavourites
 import dev.buildwithtim.minimalui.core.MenuAction.RemoveFromGroup
 import dev.buildwithtim.minimalui.core.MenuAction.RemoveFromRecents
 import dev.buildwithtim.minimalui.core.MenuAction.Rename
-import dev.buildwithtim.minimalui.core.MenuAction.RenameGroup
 import dev.buildwithtim.minimalui.core.MenuAction.Unhide
 import dev.buildwithtim.minimalui.core.MenuAction.Uninstall
 import org.junit.Assert.assertEquals
@@ -156,5 +156,10 @@ class ContextMenuTest {
             listOf(MenuItem(RenameGroup, enabled = false), MenuItem(DeleteGroup, enabled = false)),
             groupMenu(isUserGroup = false),
         )
+    }
+
+    @Test
+    fun `an imported setup asks to replace the current one first, or keep it`() {
+        assertEquals(listOf(MenuItem(SetupChoice.ReplaceSetup), MenuItem(SetupChoice.KeepSetup)), importSetupMenu)
     }
 }

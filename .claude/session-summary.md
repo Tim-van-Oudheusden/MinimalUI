@@ -9,14 +9,13 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 
 ## Latest session
 
-- **Date:** 2026-11-17
-- **Worked:** merged the overlapping PRs (#459 over #457, #447 with the SDK 35 android-all jar for Robolectric 4.18,
-  then #452), then #461 → `build/461-robolectric-418-cleanup`. Robolectric 4.18 brings the patched Guava 33.7.2, so the
-  `testImplementation` guava constraint in `app/build.gradle.kts` is gone (`dependencyInsight` on the unit-test
-  classpaths: 33.7.2-jre). The comments and `docs/testing.md` that still described 4.17 now match 4.18.
-  `robolectric.properties` keeps `sdk=35`: with 4.18 on JDK 21, SDK 37 fails 171/192 (Espresso key injection) and
-  SDK 36 fails 11 (`MainActivityTest.launcherActivity` reflection), checked with the 36/37 jars added temporarily.
-- **Outcome:** PR open, `Fixes #461`.
+- **Date:** 2026-11-25
+- **Worked:** #490 → `refactor/490-split-menu-actions`. `MenuAction` keeps the app context menu's 15 rows; the group
+  menu's rows are `GroupMenuAction` and the import question's `SetupChoice`. `MenuItem<A>` and `ui.ContextMenu<A>` are
+  generic (the caller passes the `label` lookup), so `AppActions.choose`, `ListEdits.chooseForGroup` and the import
+  handler each switch exhaustively over their own menu with no `else`. `AppActions.change`/`changeList` folded into
+  `choose`; `RenameGroup` left `KeptMenuActions`, which only the context menu reads.
+- **Outcome:** PR open, `Fixes #490`.
 - **Open follow-ups:** none.
 - **Notes for next session:**
   - To see what Dependabot sees, run `gradle/actions` v6.4.1's

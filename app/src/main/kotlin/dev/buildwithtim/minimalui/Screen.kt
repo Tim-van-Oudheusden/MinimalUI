@@ -1,7 +1,9 @@
 package dev.buildwithtim.minimalui
 
+import dev.buildwithtim.minimalui.core.GroupMenuAction
 import dev.buildwithtim.minimalui.core.LauncherApp
 import dev.buildwithtim.minimalui.core.LauncherSetup
+import dev.buildwithtim.minimalui.core.MenuAction
 import dev.buildwithtim.minimalui.core.MenuItem
 import dev.buildwithtim.minimalui.core.ScreenStack
 import dev.buildwithtim.minimalui.core.SettingsLink
@@ -37,7 +39,7 @@ internal sealed interface Screen {
      */
     class Menu(
         val app: LauncherApp,
-        val items: List<MenuItem>,
+        val items: List<MenuItem<MenuAction>>,
         val collection: String?,
         val group: String?,
     ) : OfApp {
@@ -88,7 +90,7 @@ internal sealed interface Screen {
     /** The menu of the group called [name]: its [items] rename or delete it. */
     class GroupMenu(
         val name: String,
-        val items: List<MenuItem>,
+        val items: List<MenuItem<GroupMenuAction>>,
     ) : OfGroup {
         val list = PillListState()
     }

@@ -2,8 +2,8 @@ package dev.buildwithtim.minimalui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
-import dev.buildwithtim.minimalui.core.MenuAction
 import dev.buildwithtim.minimalui.core.SettingsLink
+import dev.buildwithtim.minimalui.core.SetupChoice
 import dev.buildwithtim.minimalui.core.StatusPill
 import dev.buildwithtim.minimalui.core.importSetupMenu
 import dev.buildwithtim.minimalui.ui.AboutList
@@ -16,6 +16,7 @@ import dev.buildwithtim.minimalui.ui.ContextMenu
 import dev.buildwithtim.minimalui.ui.HiddenAppsList
 import dev.buildwithtim.minimalui.ui.SettingsList
 import dev.buildwithtim.minimalui.ui.TextEntry
+import dev.buildwithtim.minimalui.ui.label
 
 /**
  * The list on top of the launcher's [state], which alone shows, doing what [actions] and [edits] do, and exporting and
@@ -71,6 +72,7 @@ private fun AppScreen(
             ContextMenu(
                 title = screen.app.label,
                 items = screen.items,
+                label = { it.label },
                 onChoose = { actions.choose(screen, it) },
                 onClose = { state.back() },
                 status = status,
@@ -196,6 +198,7 @@ private fun GroupScreen(
             ContextMenu(
                 title = screen.name,
                 items = screen.items,
+                label = { it.label },
                 onChoose = { edits.chooseForGroup(screen, it) },
                 onClose = { state.back() },
                 status = status,
@@ -284,9 +287,13 @@ private fun SettingsScreen(
             ContextMenu(
                 title = stringResource(R.string.settings_import_setup),
                 items = importSetupMenu,
-                onChoose = { action ->
+                label = { it.label },
+                onChoose = { choice ->
                     state.back()
-                    if (action == MenuAction.ReplaceSetup) files.replace(screen.setup)
+                    when (choice) {
+                        SetupChoice.ReplaceSetup -> files.replace(screen.setup)
+                        SetupChoice.KeepSetup -> Unit
+                    }
                 },
                 onClose = { state.back() },
                 status = status,

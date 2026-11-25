@@ -64,93 +64,57 @@ internal class AppActions(
         menu: Screen.Menu,
         action: MenuAction,
     ) {
-        val app = menu.app
         if (!action.keepsMenu) state.back()
+        perform(menu, action)
+    }
+
+    // Every row of the context menu, and what it does to the app or the list the menu was opened in.
+    private fun perform(
+        menu: Screen.Menu,
+        action: MenuAction,
+    ) {
+        val app = menu.app
         when (action) {
             MenuAction.AppInfo -> starter.showInfo(app)
-
             MenuAction.Uninstall -> starter.start(app.uninstallIntent())
-
             MenuAction.AddToCollection -> state.push(Screen.CollectionChoice(app))
-
             MenuAction.AddToGroup -> state.push(Screen.GroupChoice(app))
-
             MenuAction.Rename -> state.push(Screen.Rename(app))
-
-            MenuAction.AddToFavourites, MenuAction.RemoveFromFavourites, MenuAction.Hide, MenuAction.Unhide,
-            MenuAction.RemoveFromRecents, MenuAction.ClearRecents,
-            -> change(menu, action)
-
-            MenuAction.RemoveFromCollection, MenuAction.MoveUp, MenuAction.MoveDown, MenuAction.RemoveFromGroup,
-            -> changeList(menu, action)
-
-            // Only a group's menu and an imported setup's question list these, and each has its own handler.
-            MenuAction.RenameGroup, MenuAction.DeleteGroup, MenuAction.ReplaceSetup, MenuAction.KeepSetup -> Unit
-        }
-    }
-
-    /** The app's own state changed by [action]: a favourite, hidden, or one of the recently used apps. */
-    private fun change(
-        menu: Screen.Menu,
-        action: MenuAction,
-    ) {
-        val app = menu.app
-        when (action) {
             MenuAction.AddToFavourites, MenuAction.RemoveFromFavourites -> stores.save(stores.favourites.toggled(app))
-
             MenuAction.Hide -> hide(menu)
-
             MenuAction.Unhide -> stores.save(stores.hidden.unhidden(app))
-
             MenuAction.RemoveFromRecents -> stores.save(stores.recents.without(app))
-
             MenuAction.ClearRecents -> stores.save(stores.recents.cleared())
-
-            // The other actions are chosen in [choose].
-            else -> Unit
+            MenuAction.RemoveFromCollection -> removeFromCollection(menu)
+            MenuAction.MoveUp, MenuAction.MoveDown -> moveInCollection(menu, action)
+            MenuAction.RemoveFromGroup -> removeFromGroup(menu)
         }
     }
 
-    /** The collection or user group the menu was opened in changed by [action]: the app taken out, or moved. */
-    private fun changeList(
+    // The app taken out of the collection the menu was opened in, which closes once it shows no app.
+    private fun removeFromCollection(menu: Screen.Menu) {
+        menu.collection?.let { name ->
+            stores.save(stores.collections.removed(name, menu.app))
+            state.leaveCollectionIfGone(name)
+        }
+    }
+
+    // The collection's list follows the app to its new row, one up or down.
+    private fun moveInCollection(
         menu: Screen.Menu,
         action: MenuAction,
     ) {
-        val app = menu.app
-        when (action) {
-            MenuAction.RemoveFromCollection -> {
-                menu.collection?.let { name ->
-                    stores.save(stores.collections.removed(name, app))
-                    state.leaveCollectionIfGone(name)
-                }
-            }
-
-            MenuAction.MoveUp -> {
-                menu.collection?.let { moveInCollection(it, app, -1) }
-            }
-
-            MenuAction.MoveDown -> {
-                menu.collection?.let { moveInCollection(it, app, 1) }
-            }
-
-            MenuAction.RemoveFromGroup -> {
-                menu.group?.let { name ->
-                    stores.save(stores.userGroups.removed(name, app))
-                    state.leaveGroupIfGone(name)
-                }
-            }
-
-            // The other actions are chosen in [choose].
-            else -> {}
-        }
+        val step = if (action == MenuAction.MoveUp) -1 else 1
+        menu.collection?.let { stores.save(stores.collections.moved(it, menu.app, step, state.visibleApps)) }
     }
 
-    // The collection's list follows the app to its new row.
-    private fun moveInCollection(
-        name: String,
-        app: LauncherApp,
-        step: Int,
-    ) = stores.save(stores.collections.moved(name, app, step, state.visibleApps))
+    // The app taken out of the user group the menu was opened in, which closes once it shows no app.
+    private fun removeFromGroup(menu: Screen.Menu) {
+        menu.group?.let { name ->
+            stores.save(stores.userGroups.removed(name, menu.app))
+            state.leaveGroupIfGone(name)
+        }
+    }
 
     // Hidden from inside a collection, the app leaves its list as if removed, though the collection still holds it.
     private fun hide(menu: Screen.Menu) {
