@@ -1,5 +1,5 @@
 [versions]
-agp = "9.5.1"
+agp = "9.5.2"
 kotlin = "2.4.21"
 activityCompose = "1.13.0"
 # AndroidJUnitRunner and UiAutomator for the end-to-end tests in e2e/, run on an emulator (#236).
@@ -42,7 +42,7 @@ robolectric = "4.18"
 # Each is the build Robolectric's DefaultSdkProvider names for that SDK: change them together with robolectric (#279).
 robolectricAndroidAll28 = "9-robolectric-4913185-2-i7"
 robolectricAndroidAll35 = "15-robolectric-14663667-2-i7"
-spotless = "8.11.0"
+spotless = "8.12.0"
 
 [libraries]
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
