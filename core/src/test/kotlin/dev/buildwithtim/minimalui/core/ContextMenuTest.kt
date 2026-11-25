@@ -157,4 +157,9 @@ class ContextMenuTest {
             groupMenu(isUserGroup = false),
         )
     }
+
+    @Test
+    fun `an imported setup asks to replace the current one first, or keep it`() {
+        assertEquals(listOf(MenuItem(SetupChoice.ReplaceSetup), MenuItem(SetupChoice.KeepSetup)), importSetupMenu)
+    }
 }
