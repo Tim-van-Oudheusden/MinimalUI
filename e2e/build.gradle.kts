@@ -10,7 +10,9 @@ plugins {
 android {
     namespace = "dev.buildwithtim.minimalui.e2e"
     // compileSdk, minSdk and targetSdk equal the app's in app/build.gradle.kts; SdkLevelsTest fails when they drift.
-    compileSdk = 37
+    compileSdk {
+        version = release(37) { minorApiLevel = 1 }
+    }
     targetProjectPath = ":app"
     // The tests run in their own process, not the app's: they see it only as a user does, and their androidx.test
     // libraries never replace the app's own AndroidX classes at runtime.

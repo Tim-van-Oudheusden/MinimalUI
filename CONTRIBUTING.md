@@ -47,7 +47,7 @@ platform tools and the `compileSdk` platform:
 curl -fsSL https://dl.google.com/android/cli/latest/linux_x86_64/install.sh | bash   # Linux, per-user install
 android update                                              # move to the latest Android CLI
 android info                                                # shows the SDK path it manages
-android sdk install platform-tools platforms/android-37.0   # keep in step with compileSdk
+android sdk install platform-tools platforms/android-37.1   # keep in step with compileSdk
 ```
 
 `android sdk install` accepts the SDK licence, so AGP downloads the build tools it needs on the first build. Use
