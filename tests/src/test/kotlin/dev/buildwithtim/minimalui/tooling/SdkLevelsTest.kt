@@ -9,9 +9,19 @@ import org.junit.Test
  * `app/build.gradle.kts` as the place `compileSdk` lives, but `e2e/build.gradle.kts` (#236) declares its own
  * `compileSdk`, `minSdk` and `targetSdk` too. A bump made only in the app would leave the end-to-end tests on the old
  * levels, so a module that declares a level different from the app's fails here (#296).
+ *
+ * `compileSdk` comes in two forms: `compileSdk = 37`, and AGP 9's block for a minor API level,
+ * `compileSdk { version = release(37) { minorApiLevel = 1 } }` (#492). Both read as `major.minor`, so `37` and
+ * `release(37)` agree and `37.1` differs from them.
  */
 class SdkLevelsTest {
     private val levels = listOf("compileSdk", "minSdk", "targetSdk")
+
+    private val compileSdkBlock =
+        Regex(
+            """(?m)^\s*compileSdk\s*\{\s*version\s*=\s*release\((\d+)\)\s*""" +
+                """(?:\{\s*minorApiLevel\s*=\s*(\d+)\s*}\s*)?}""",
+        )
 
     /** The values [module]'s build script assigns to each SDK level, by level; levels it never assigns are left out. */
     private fun declared(module: String): Map<String, List<String>> {
@@ -22,10 +32,19 @@ class SdkLevelsTest {
                 .joinToString("\n") { it.substringBefore("//") }
         return levels
             .associateWith { level ->
-                Regex("""(?m)^\s*$level\s*=\s*(\S+)\s*$""")
-                    .findAll(code)
-                    .map { it.groupValues[1] }
-                    .toList()
+                val assigned =
+                    Regex("""(?m)^\s*$level\s*=\s*(\S+)\s*$""")
+                        .findAll(code)
+                        .map { it.groupValues[1] }
+                        .toList()
+                if (level == "compileSdk") {
+                    assigned.map { if (it.all(Char::isDigit)) "$it.0" else it } +
+                        compileSdkBlock
+                            .findAll(code)
+                            .map { "${it.groupValues[1]}.${it.groupValues[2].ifEmpty { "0" }}" }
+                } else {
+                    assigned
+                }
             }.filterValues { it.isNotEmpty() }
     }
 

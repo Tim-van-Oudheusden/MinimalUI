@@ -10,12 +10,12 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 ## Latest session
 
 - **Date:** 2026-11-25
-- **Worked:** #490 → `refactor/490-split-menu-actions`. `MenuAction` keeps the app context menu's 15 rows; the group
-  menu's rows are `GroupMenuAction` and the import question's `SetupChoice`. `MenuItem<A>` and `ui.ContextMenu<A>` are
-  generic (the caller passes the `label` lookup), so `AppActions.choose`, `ListEdits.chooseForGroup` and the import
-  handler each switch exhaustively over their own menu with no `else`. `AppActions.change`/`changeList` folded into
-  `choose`; `RenameGroup` left `KeptMenuActions`, which only the context menu reads.
-- **Outcome:** PR open, `Fixes #490`.
+- **Worked:** #492 → `build/492-compile-sdk-37-1`. `app` and `e2e` compile against API 37.1 through AGP 9's
+  `compileSdk { version = release(37) { minorApiLevel = 1 } }`; `targetSdk` 37 and `minSdk` 28 stay. `composeBom` is
+  2026.11.01 (Compose 1.13, which needs 37.1). `SdkLevelsTest` reads both `compileSdk` forms as `major.minor`, so an
+  `e2e` left on `compileSdk = 37` fails as `37.0` against the app's `37.1`. `Dockerfile.sandbox` and CONTRIBUTING name
+  `platforms;android-37.1`.
+- **Outcome:** PR open, `Fixes #492`. Once it merges, Dependabot drops `composeBom` from #486 (Gradle 9.9.2, AGP 9.5.2).
 - **Open follow-ups:** none.
 - **Notes for next session:**
   - To see what Dependabot sees, run `gradle/actions` v6.4.1's

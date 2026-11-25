@@ -24,7 +24,10 @@ val releaseKeystoreFile: String? = providers.environmentVariable("RELEASE_KEYSTO
 
 android {
     namespace = "dev.buildwithtim.minimalui"
-    compileSdk = 37
+    // API 37.1: Compose 1.13 (BOM 2026.11.01) requires compiling against 37.1 or later (#492).
+    compileSdk {
+        version = release(37) { minorApiLevel = 1 }
+    }
 
     defaultConfig {
         applicationId = "dev.buildwithtim.minimalui"
