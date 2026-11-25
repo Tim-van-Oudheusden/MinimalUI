@@ -41,7 +41,6 @@
 /CLAUDE.md                          @Tim-van-Oudheusden
 /.claude/                           @Tim-van-Oudheusden
 /.cursor/                           @Tim-van-Oudheusden
-/.beads/                            @Tim-van-Oudheusden
 /prompts/                           @Tim-van-Oudheusden
 
 # Development container and image configuration.

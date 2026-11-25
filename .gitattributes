@@ -5,6 +5,3 @@
 *.jar binary
 *.png binary
 *.webp binary
-
-# Use bd merge for beads JSONL files
-.beads/issues.jsonl merge=beads

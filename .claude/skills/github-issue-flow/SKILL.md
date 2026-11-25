@@ -1,6 +1,6 @@
 ---
 name: github-issue-flow
-description: Complete one GitHub issue end-to-end: claim, branch, implement with TDD, open a pull request, mirror into beads. Use when starting or finishing issue-tracked work in this repository.
+description: Complete one GitHub issue end-to-end: claim, branch, implement with TDD, open a pull request. Use when starting or finishing issue-tracked work in this repository.
 ---
 
 # GitHub Issue Flow
@@ -10,7 +10,7 @@ encodes its workflow into concrete commands.
 
 ## 1. Start an issue
 
-1. `gh issue list -S "is:open"` and `bd ready` to find work. Pick one issue;
+1. `gh issue list -S "is:open"` to find work. Pick one issue;
    child issues wait for their parents.
 2. Read the full body: `gh issue view <number>`.
 3. Claim it: `gh issue edit <number> --add-assignee @me`.
@@ -33,7 +33,7 @@ encodes its workflow into concrete commands.
 changes through merged pull requests whose required checks pass, so the issue
 branch is what you push.
 
-1. Push: `bd dolt push`, then `git push -u origin HEAD`.
+1. Push: `git push -u origin HEAD`.
 2. Open the PR, following `.github/pull_request_template.md`:
    `gh pr create --title "type(scope): summary (#<number>)" --body-file <file>`.
    The body says `Fixes #<number>`; the `PR review rubric` check fails without
@@ -42,8 +42,3 @@ branch is what you push.
    the PR URL. The merge queue or Hive's merge sweep (or the maintainer, for
    high-risk, `hold` or `sentinel-alert` PRs) merges it, and the merge closes
    the issue.
-4. Mirror into beads. Non-interactive shells lack the token:
-   `export GITHUB_TOKEN="$(gh auth token)"`, then `bd github sync --pull-only`.
-
-Never make a standalone `issues.jsonl` sync commit; only the repo's own hooks
-may stage that export.

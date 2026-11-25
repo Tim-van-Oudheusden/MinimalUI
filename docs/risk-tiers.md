@@ -49,7 +49,7 @@ behave. A mistake here can bypass every other check or ship to every device.
 | `gradle/*`, `*.gradle.kts`, `*.gradle`, `buildSrc/*`                                 | Build scripts and version catalog (supply chain)     |
 | `gradle.properties`, `gradlew`, `gradlew.bat`                                        | Build settings and wrapper (supply chain)            |
 | `app/src/*/AndroidManifest.xml`                                                      | App permissions and the HOME intent filter           |
-| `AGENTS.md`, `CLAUDE.md`, `.claude/*`, `.cursor/*`, `.beads/*`, `prompts/*`          | Agent instructions and governance                    |
+| `AGENTS.md`, `CLAUDE.md`, `.claude/*`, `.cursor/*`, `prompts/*`                      | Agent instructions and governance                    |
 | `.gitattributes`                                                                     | Line endings, binary handling, diff/merge drivers    |
 | `.devcontainer/*`, `Dockerfile*`, `*/Dockerfile`, `.dockerignore`                    | Development container and image configuration        |
 

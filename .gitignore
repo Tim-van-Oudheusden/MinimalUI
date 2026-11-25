@@ -33,9 +33,10 @@ worktrees/
 # Claude Code personal settings (project settings in .claude/settings.json are tracked)
 .claude/settings.local.json
 
-# Beads / Dolt files (added by bd init)
+# Leftover local state of the retired beads tracker (#493), kept ignored so it is never committed;
+# docs/research/beads-retirement.md says how to remove it
+.beads/
+.beads-credential-key
 .dolt/
 *.db
-.beads-credential-key
-.beads/proxieddb/
 *.gate.lock*
