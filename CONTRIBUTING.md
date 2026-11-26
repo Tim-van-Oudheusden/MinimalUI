@@ -266,7 +266,7 @@ Fix a finding rather than silencing it. A check that cannot apply to this reposi
 ### Formatting
 
 [Spotless](https://github.com/diffplug/spotless) formats the repository: Kotlin and `*.gradle.kts` with
-[ktlint](https://pinterest.github.io/ktlint/) in its `ktlint_official` style, at 120 columns, and every other text file
+[ktlint](https://ktlint.github.io/ktlint/) in its `ktlint_official` style, at 120 columns, and every other text file
 to no trailing whitespace (Markdown keeps it, as a line break) and a final newline. `./gradlew spotlessCheck`, part of
 `check`, fails on a deviation; `./gradlew spotlessApply` fixes it. ktlint cannot shorten a long string or comment, so
 those you wrap by hand. Its settings live in `.editorconfig`, which Android Studio reads too, so **Code → Reformat Code**
