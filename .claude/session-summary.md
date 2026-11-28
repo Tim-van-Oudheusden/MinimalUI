@@ -9,13 +9,13 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
 
 ## Latest session
 
-- **Date:** 2026-11-25
-- **Worked:** #493 → `refactor/493-retire-beads`. Removed `.beads/`, every `bd` step and `GITHUB_TOKEN` export from the
-  agent instructions and docs, `bd` from `Dockerfile.sandbox`, and the `.beads` rules from CODEOWNERS, the labeler,
-  the risk tiers and Spotless. `.gitignore` still ignores leftover local beads state so it cannot be committed.
-  `refs/dolt/data` stays on the remote as readable history (`docs/research/beads-retirement.md`).
-- **Outcome:** PR open, `Closes #493`.
-- **Open follow-ups:** deleting `refs/dolt/data` and `refs/heads/__dolt_remote_info__` is the maintainer's call.
+- **Date:** 2026-11-28
+- **Worked:** #502 → `fix/502-hive-signature-prefix`. `scripts/lib/pr-source.jq` now takes `-- hive: ` (Hive's
+  signature since 2026-11-20) as well as the older `— hive: `; new cases in `AiAuditReportScriptTest` and
+  `PrMetricsScriptTest`, a second `ScriptMutantsTest` row for the new prefix, and `docs/metrics/README.md` and
+  `docs/agent-tasks/README.md` describe the current signature and the `🐝 **Hive Agent**` issue footer.
+- **Outcome:** PR open, `Fixes #502`.
+- **Open follow-ups:** none.
 - **Notes for next session:**
   - To see what Dependabot sees, run `gradle/actions` v6.4.1's
     `sources/src/resources/init-scripts/gradle-actions.github-dependency-graph.init.gradle` with
@@ -42,9 +42,9 @@ Format: date, issue/PR worked, outcome, open follow-ups, gotchas for next time.
   - Podman may be missing on this host; then build on the host with `JAVA_HOME=~/tools/jdk` and
     `sdk.dir=/home/dev/tools/sdk` in `local.properties`. actionlint is not installed, and the host shellcheck is 0.9.0:
     fetch the pinned releases from `ci.yml` into `/tmp/bin`.
-  - The host's `jq` is jaq 3.1.1, which rejects `$module`/`$label` as variable names, so 12 tests in
-    `AutoQaTunerScriptTest`, `PrMetricsScriptTest` and `QualityReportScriptTest` fail locally on an unmodified `main`
-    too; CI uses jq and passes. Put jq 1.7.1 (`jqlang/jq` release `jq-linux-amd64`) first on `PATH` to run them.
+  - The host's `jq` may be jaq 3.1.1 or jq 1.6, both of which reject `$module`/`$label` as variable names, so 12 tests
+    in `AutoQaTunerScriptTest`, `PrMetricsScriptTest` and `QualityReportScriptTest` fail locally on an unmodified
+    `main` too; CI uses jq and passes. Put jq 1.7.1 (`jqlang/jq` release `jq-linux-amd64`) first on `PATH` to run them.
   - The emulator on this host segfaults with SwiftShader Vulkan; use `-gpu swangle_indirect`
     (`docs/reflections/2026-10-29-emulator-on-this-host.md`).
   - Sandbox Gradle in this checkout needs `--project-cache-dir /tmp/pcache`, otherwise Spotless trips over host paths
