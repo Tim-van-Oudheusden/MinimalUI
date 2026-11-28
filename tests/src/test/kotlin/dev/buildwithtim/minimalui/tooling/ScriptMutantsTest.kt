@@ -222,10 +222,17 @@ class ScriptMutantsTest {
             ),
             Mutant(
                 "scripts/lib/pr-source.jq",
-                "select(startswith(\"— hive: \"))",
-                "select(contains(\"— hive: \"))",
+                "select(startswith(\"— hive: \")",
+                "select(contains(\"— hive: \")",
                 PrMetricsScriptTest::class.java,
                 "a PR body that quotes Hive's signature mid-line counts as agent work",
+            ),
+            Mutant(
+                "scripts/lib/pr-source.jq",
+                "startswith(\"-- hive: \"))",
+                "contains(\"-- hive: \"))",
+                PrMetricsScriptTest::class.java,
+                "a PR body that quotes Hive's two-hyphen signature mid-line counts as agent work",
             ),
         )
 

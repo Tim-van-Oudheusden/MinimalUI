@@ -98,6 +98,21 @@ class AiAuditReportScriptTest {
         assertTrue(row, row.startsWith("| #7 | 2026-10-10 12:00 | Hive | scanner | claude-sonnet-5 |"))
     }
 
+    // Hive signs with two ASCII hyphens since 2026-11-20 (#502); the em-dash form above is what it signed before.
+    @Test
+    fun `reads agent and model from the two-hyphen signature`() {
+        val result =
+            report(
+                pr(8, body = "Fixes #1\n\n-- hive: agent=scanner backend=claude model=claude-opus-5-5\n"),
+                pr(9, branch = "fix/9-x", body = "Fixes #9\n\n-- hive: backend=omp model=anthropic/claude-opus-5-5\n"),
+            )
+
+        assertEquals(result.stderr, 0, result.exitCode)
+        val rows = result.rows("Ledger")
+        assertTrue(rows[0], rows[0].startsWith("| #8 | 2026-10-10 12:00 | Hive | scanner | claude-opus-5-5 |"))
+        assertTrue(rows[1], rows[1].startsWith("| #9 | 2026-10-10 12:00 | Hive | — | anthropic/claude-opus-5-5 |"))
+    }
+
     @Test
     fun `prints dashes for a signature with no fields and for a deleted author`() {
         val deleted = pr(7, author = "ghost", body = "— hive: nothing here\n").replace("""{"login":"ghost"}""", "null")

@@ -82,6 +82,20 @@ class PrMetricsScriptTest {
         assertEquals("| Other | 1 | 0 | 1 | 0% |", result.row("Other"))
     }
 
+    // Hive signs with two ASCII hyphens since 2026-11-20 (#502); the em-dash form above is what it signed before.
+    @Test
+    fun `counts a two-hyphen Hive-signed PR as an agent whatever its author and branch`() {
+        val signature = "\\n\\n-- hive: backend=omp model=claude-opus-5-5 effort=high"
+        val result =
+            report(
+                pr(11, merged = true, branch = "fix/11-crash", body = "Fixes #11$signature"),
+                pr(12, merged = false, branch = "fix/12-crash", body = "Mentions -- hive: mid-line"),
+            )
+
+        assertEquals("| Agent | 1 | 1 | 0 | 100% |", result.row("Agent"))
+        assertEquals("| Other | 1 | 0 | 1 | 0% |", result.row("Other"))
+    }
+
     // pr-source.jq reads a missing body as empty, so without `body` signed runs land in Other and nothing fails.
     @Test
     fun `the workflow requests the PR body the source rule reads`() {

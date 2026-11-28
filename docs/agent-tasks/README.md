@@ -9,11 +9,11 @@ The coordination rules behind it are in [`../multi-agent.md`](../multi-agent.md)
 
 | Link | Carries the issue number as | Example | Enforced by |
 | --- | --- | --- | --- |
-| Issue | The task itself, filed by a person, an agent or a workflow; Hive's issues end with `— hive: agent=<name>` | #246 | — |
+| Issue | The task itself, filed by a person, an agent or a workflow; Hive's issues end with a `🐝 **Hive Agent**: <name> \| …` line | #246 | — |
 | Claim | Assignee, or a Hive `<!-- hive:claim … -->` comment with its `hive/claimed-by-<agent>` label | `gh issue edit 246 --add-assignee @me` | Convention ([`multi-agent.md`](../multi-agent.md#how-work-flows)) |
 | Branch | `<type>/<N>-<slug>` for local agents; `claude/*` for Claude Code in CI (`claude/issue-<N>-…` when it starts from an issue); Hive uses `<type>/<N>-<slug>` or `<agent>/<slug>` | `docs/246-multi-agent` | Convention |
 | Commit | `(#<N>)` at the end of the Conventional Commits subject | `docs(agents): document multi-agent orchestration (#246)` | Convention |
-| Pull request | `Fixes #<N>` in the body (or `Closes`, `Resolves`, `Refs`); Hive's PRs also end with `— hive: agent=<name> … model=<model> …` | #248 | `PR review rubric` check (`scripts/pr-review-check.sh`), required on `main` |
+| Pull request | `Fixes #<N>` in the body (or `Closes`, `Resolves`, `Refs`); Hive's PRs also carry a `-- hive: agent=<name> … model=<model> …` line | #248 | `PR review rubric` check (`scripts/pr-review-check.sh`), required on `main` |
 | Merge | Merge commit `Merge pull request #<PR> from <owner>/<branch>`, made by the merge queue or a maintainer; or a squash commit `<commit subject> (#<PR>)`, made by Hive's merge sweep | `9af64d1` | `main` only changes through merged PRs (`.github/rulesets/main.json`), by merge commit or squash |
 | Close | The merge closes the issue through `Fixes #<N>` | #246 closed by #248 | GitHub |
 
@@ -47,7 +47,8 @@ gh pr list --state merged --search "<commit>"  # the PR, whose body links the is
 
 From an agent to everything it did: filter pull requests by author or branch, for example
 `gh pr list --state all --author app/hive-worker-bee` for Hive, `gh pr list --state all --search "head:claude/"` for
-Claude Code in CI. The `— hive: agent=<name>` signature at the end of a Hive PR body names the Hive agent.
+Claude Code in CI. The `-- hive: agent=<name>` line in a Hive PR body, and the `🐝 **Hive Agent**: <name>` line at the
+end of a Hive issue, name the Hive agent.
 
 ## When the chain breaks
 

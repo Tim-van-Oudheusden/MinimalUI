@@ -3,8 +3,9 @@
 # `gh pr list --json author,headRefName,body`; without a body only the author and the branch decide.
 #
 # Sources, first match wins:
-#   Hive             the body has Hive's signature line ("— hive: agent=<a> … model=<m> …"; contributor runs
-#                    leave out agent=), or the author is the hive-worker-bee GitHub App, formerly hive-forge-app
+#   Hive             the body has Hive's signature line ("-- hive: agent=<a> … model=<m> …"; PRs merged before
+#                    2026-11-20 used an em-dash, "— hive: …"; contributor runs leave out agent=), or the author is
+#                    the hive-worker-bee GitHub App, formerly hive-forge-app
 #                    (gh pr list reports it as app/hive-worker-bee, the REST API as hive-worker-bee[bot]; the old
 #                    names are still matched)
 #   Claude Code (CI) head branch claude/*
@@ -15,7 +16,7 @@ def sources: ["Hive", "Claude Code (CI)", "Dependabot", "Other"];
 
 # Hive's signature is a line of its own, usually near the end of the body but not always last, so read every line.
 def signature:
-  (.body // "") | split("\n") | map(rtrimstr("\r") | select(startswith("— hive: "))) | .[0];
+  (.body // "") | split("\n") | map(rtrimstr("\r") | select(startswith("— hive: ") or startswith("-- hive: "))) | .[0];
 
 def source:
   (.headRefName // "") as $branch
